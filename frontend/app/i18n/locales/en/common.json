@@ -1,0 +1,34 @@
+{
+    "headerMenu": {
+        "findRide": "Find Ride",
+        "postRide": "Post Ride",
+        "how": "How It Works",
+        "trust": "Trust",
+        "login": "Log in",
+        "signup": "Sign up"
+    },
+    "hero": {
+        "title1": "Ride info you can understand",
+        "titleColored": " at a glance",
+        "title2": "",
+        "description": "No buried posts. No endless comment threads. UIUC - Chicago rides, made clear.",
+        "list1": "Compare price, time, and pickup easily",
+        "list2": "Live seat availability — no more guessing",
+        "list3": "Clear driver info with ride history",
+        "actionTxt": "Browse rides →"
+    },
+    "metadata": {
+        "title": "RideList",
+        "description": "A tool for organizing peer-to-peer ride sharing information near UIUC and Chicago."
+    },
+    "riderSteps": {
+        "title": "Find Your Ride in 3 Steps",
+        "description": "Search, compare, and book. All in one place without requiring accounts up-front.",
+        "search": "Search",
+        "searchDesc": "Enter from, to, and time to see all available rides. No more scrolling through chats or comments.",
+        "compare": "Compare",
+        "compareDesc": "Sort by price, driver rating, pickup time and distance. Filter with your own rules.",
+        "book": "Book",
+        "bookDesc": "Reserve a spot with verified UIUC email and pay on time. All drivers are verified."
+    }
+}

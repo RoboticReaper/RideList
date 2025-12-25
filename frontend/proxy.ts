@@ -1,0 +1,26 @@
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { languages, fallbackLng } from './app/i18n/settings';
+import acceptLanguage from 'accept-language';
+
+acceptLanguage.languages(languages);
+
+export default function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  
+  // Check if pathname is missing a locale
+  const pathnameIsMissingLocale = languages.every(
+    (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
+  );
+
+  if (pathnameIsMissingLocale) {
+    const locale = acceptLanguage.get(request.headers.get('Accept-Language')) || fallbackLng;
+    return NextResponse.redirect(
+      new URL(`/${locale}${pathname}`, request.url)
+    );
+  }
+}
+
+export const config = {
+  matcher: ['/((?!api|_next/static|.well-known|_next/image|.*\\.png$|.*\\.ico$).*)'],
+};

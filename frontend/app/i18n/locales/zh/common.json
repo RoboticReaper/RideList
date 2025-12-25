@@ -1,0 +1,34 @@
+{
+    "headerMenu": {
+        "findRide": "找拼车",
+        "postRide": "发布拼车",
+        "how": "使用说明",
+        "trust": "安全与信用",
+        "login": "登录",
+        "signup": "注册"
+    },
+    "hero": {
+        "title1": "拼车信息，",
+        "titleColored": "一眼看懂",
+        "title2": "",
+        "description": "不用翻群、不用加好友， UIUC–芝加哥拼车一次就搞清楚",
+        "list1": "价格 / 时间 / 上车点统一展示，方便对比",
+        "list2": "座位实时更新，不用反复问",
+        "list3": "司机信息清楚，有记录可查",
+        "actionTxt": "查看拼车 →"
+    },
+    "metadata": {
+        "title": "拼车版",
+        "description": "为 UIUC 与芝加哥地区的用户提供的拼车信息管理工具."
+    },
+    "riderSteps": {
+        "title": "Find Your Ride in 3 Steps",
+        "description": "Search, compare, and book. All in one place without requiring accounts up-front.",
+        "search": "Search",
+        "searchDesc": "Enter from, to, and time to see all available rides. No more scrolling through chats or comments.",
+        "compare": "Compare",
+        "compareDesc": "Sort by price, driver rating, pickup time and distance. Filter with your own rules.",
+        "book": "Book",
+        "bookDesc": "Reserve a spot with verified UIUC email and pay on time. All drivers are verified."
+    }
+}

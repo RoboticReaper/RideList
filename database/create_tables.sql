@@ -1,0 +1,346 @@
+-- Needed for gen_random_uuid()
+create extension if not exists pgcrypto;
+
+-- Needed for routing and locations
+create extension if not exists postgis;
+
+-- ======================
+-- ENUMS
+-- ======================
+create type trip_status as enum ('bookable', 'full', 'departed', 'done', 'cancelled');
+
+create type booking_status as enum (
+  'waiting_approval',
+  'joined_with_pay_window',
+  'pending_pay_confirmation_from_driver',
+  'confirmed',
+  'pay_timeout',
+  'removed',
+  'left_paid',
+  'left_unpaid',
+  'cancelled'
+);
+
+create type trip_event_type as enum (
+  'trip_created',
+  'trip_updated',
+  'trip_cancelled',
+  'trip_departed',
+  'trip_completed',
+  'paid_booking_cancelled_by_rider',
+  'unpaid_booking_cancelled_by_rider',
+  'system_cancelled'
+);
+
+-- ======================
+-- USERS / PROFILES / SETTINGS
+-- ======================
+create table users (
+  id text primary key,
+  created_at timestamptz not null default now(),
+  email text not null unique,
+  last_active timestamptz
+);
+
+create table profile_global (
+  id text primary key references users(id) on delete cascade,
+  name text not null,               -- preferred_name
+  verified bool not null default false,
+  created_at timestamptz not null default now(),
+  phone text,                       -- relationship-gated in app layer
+  photo_url text
+);
+
+create table profile_rider (
+  id text primary key references users(id) on delete cascade,
+  default_big_luggage int not null default 0,
+  default_small_luggage int not null default 0,
+  rating_cached double precision,
+  completed_rides int not null default 0
+);
+
+create table profile_driver (
+  id text primary key references users(id) on delete cascade,
+  rating_cached double precision,
+  completed_trips int not null default 0
+);
+
+create table settings_global (
+  id text primary key references users(id) on delete cascade,
+  -- global = channels/quiet hours/etc. (role-specific toggles live below)
+  notifications jsonb not null default '{}'::jsonb,
+  timezone text,
+  language text
+);
+
+create table settings_rider (
+  id text primary key references users(id) on delete cascade,
+  notifications jsonb not null default '{}'::jsonb
+);
+
+create table settings_driver (
+  id text primary key references users(id) on delete cascade,
+  notifications jsonb not null default '{}'::jsonb
+);
+
+-- ======================
+-- CARS
+-- ======================
+create table cars (
+  id uuid primary key default gen_random_uuid(),
+  owner text references users(id) not null,
+  make text,
+  model text,
+  seats int check (seats is null or seats > 0),
+  big_luggage int check (big_luggage is null or big_luggage >= 0),
+  small_luggage int check (small_luggage is null or small_luggage >= 0),
+  plate text,
+  deleted bool not null default false,
+  deleted_at timestamptz,
+  constraint cars_deleted_consistency check (
+    (deleted = false and deleted_at is null) or (deleted = true and deleted_at is not null)
+  )
+);
+
+-- ======================
+-- TRIPS / RULES
+-- ======================
+create table trips (
+  id uuid primary key default gen_random_uuid(),
+  driver text references users(id) not null,
+  car uuid references cars(id),
+  notes text,
+
+  -- display text
+  from_text text not null,
+  to_text text not null,
+
+  -- GIS fields (authoritative for search)
+  origin_geog geography(Point, 4326) not null,
+  destination_geog geography(Point, 4326) not null,
+
+  departure_time timestamptz not null,
+  total_seats int not null check (total_seats > 0),
+  seats_left int not null check (seats_left >= 0 and seats_left <= total_seats),
+
+  status trip_status not null default 'bookable',
+  created_at timestamptz not null default now(),
+  modified_at timestamptz
+);
+
+
+-- 1:1 rules with trips (PK=trip_id)
+create table trip_rules (
+  id uuid primary key references trips(id) on delete cascade,
+
+  big_luggage_lim int check (big_luggage_lim is null or big_luggage_lim >= 0),
+  small_luggage_lim int check (small_luggage_lim is null or small_luggage_lim >= 0),
+
+  pickup_rules text,
+  pickup_radius_meters int not null default 1000 check (pickup_radius_meters > 0),
+  drop_off_radius_meters int not null default 1000 check (drop_off_radius_meters > 0),
+
+  departure_time_flexibility interval not null default interval '15 minutes',
+  payment_methods text[],
+  cancellation_policy text,
+
+  auto_accept bool not null default true,
+  cutoff_time interval  -- nullable = no cutoff, or enforce a default in app
+);
+
+create table trip_routes (
+  trip_id uuid primary key references trips(id) on delete cascade,
+
+  -- full route geometry (polyline)
+  -- populate using Google Directions API
+  route_geog geography(LineString, 4326) not null,
+
+  -- optional metadata
+  distance_meters int,
+  duration_seconds int,
+  created_at timestamptz not null default now()
+);
+
+-- ======================
+-- TRIP EVENTS (semantic log)
+-- ======================
+create table trip_events (
+  id uuid primary key default gen_random_uuid(),
+  trip uuid references trips(id) not null,
+  actor_id text references users(id), -- null => system
+  created_at timestamptz not null default now(),
+
+  event_type trip_event_type not null,
+
+  affected_entities jsonb not null default '[]'::jsonb,
+  changes jsonb not null default '{}'::jsonb,
+  notes text
+);
+
+-- ======================
+-- BOOKINGS (authoritative booking state)
+-- ======================
+create table bookings (
+  id uuid primary key default gen_random_uuid(),
+  rider text references users(id) not null,
+  trip uuid references trips(id) not null,
+
+  big_luggage int not null default 0 check (big_luggage >= 0),
+  small_luggage int not null default 0 check (small_luggage >= 0),
+  seats_booked int not null check (seats_booked >= 1),
+
+  paid bool not null default false,
+  created_at timestamptz not null default now(),
+  status booking_status not null,
+
+  ready bool not null default false,
+  ready_at timestamptz,
+
+  constraint ready_time_consistency check (
+      (ready = false and ready_at is null) or (ready = true and ready_at is not null)
+      )
+);
+
+-- Snapshot rules per booking (PK=booking_id). This is your immutable truth.
+create table booking_rule_snapshot (
+  id uuid primary key references bookings(id) on delete cascade,
+  captured_at timestamptz not null default now(),
+
+  big_luggage_lim int,
+  small_luggage_lim int,
+  pickup_rules text,
+  pickup_radius_meters int not null default 1000,
+  drop_off_radius_meters int not null default 1000,
+  departure_time_flexibility interval not null default interval '15 minutes',
+  payment_methods text[],
+  cancellation_policy text,
+  auto_accept bool not null default true,
+  cutoff_time interval
+);
+
+create table booking_status_history (
+  id uuid primary key default gen_random_uuid(),
+  booking_id uuid references bookings(id) on delete cascade not null,
+  actor_id text references users(id), -- null => system
+  old_status booking_status,
+  new_status booking_status not null,
+  created_at timestamptz not null default now(),
+
+  -- optional but very useful causality link:
+  trigger_event_id uuid references trip_events(id)
+);
+
+-- Logs manual rider removals (separate from status history)
+create table booking_removal (
+  id uuid primary key default gen_random_uuid(),
+  bid uuid references bookings(id) on delete cascade not null,
+  actor_id text references users(id) not null,
+  reason text,
+  created_at timestamptz not null default now(),
+  trigger_event_id uuid references trip_events(id)
+);
+
+-- Snapshot car info for each trip at departure time (immutable history)
+create table car_snapshots (
+  id uuid primary key references trips(id) on delete cascade,
+  original_car_id uuid, -- no FK: traceability only
+  make text,
+  model text,
+  seats int,
+  big_luggage int,
+  small_luggage int,
+  plate text,
+  created_at timestamptz not null default now()
+);
+
+-- ======================
+-- TEMPLATES
+-- ======================
+create table rule_templates (
+  id uuid primary key default gen_random_uuid(),
+  driver text references users(id) not null,
+
+  big_luggage_lim int,
+  small_luggage_lim int,
+  pickup_rules text,
+  pickup_radius_meters int,
+  drop_off_radius_meters int,
+  departure_time_flexibility interval,
+  payment_methods text[],
+  cancellation_policy text,
+  auto_accept bool,
+  cutoff_time interval
+);
+
+create table trip_templates (
+  id uuid primary key default gen_random_uuid(),
+  driver text references users(id) not null,
+  car uuid references cars(id),
+  rule uuid references rule_templates(id),
+
+  notes text,
+  from_text text,
+  to_text text,
+  origin_geog geography(Point, 4326),
+  destination_geog geography(Point, 4326),
+
+  total_seats int check (total_seats is null or total_seats > 0),
+  created_at timestamptz not null default now(),
+  modified_at timestamptz
+);
+
+
+-- ======================
+-- Database Index
+-- ======================
+create unique index uniq_active_booking_per_rider_trip
+on bookings (rider, trip)
+where status in (
+  'waiting_approval',
+  'joined_with_pay_window',
+  'pending_pay_confirmation_from_driver',
+  'confirmed'
+);
+
+create index idx_bookings_trip_status
+on bookings (trip, status);
+
+-- fast “upcoming trips” queries
+create index idx_trips_departure_time on trips (departure_time);
+
+-- driver dashboard: upcoming trips
+create index idx_trips_driver_departure on trips (driver, departure_time);
+
+-- trip timeline / audit view
+create index idx_trip_events_trip_time on trip_events (trip, created_at);
+
+-- booking timeline view
+create index idx_booking_status_history_booking_time on booking_status_history (booking_id, created_at);
+
+-- rider dashboard: my bookings
+create index idx_bookings_rider_created on bookings (rider, created_at desc);
+
+-- my templates page for prefilling UI
+create index idx_trip_templates_driver
+on trip_templates (driver);
+
+create index idx_rule_templates_driver
+on rule_templates (driver);
+
+-- origin / destination radius search
+create index idx_trips_origin_geog
+on trips using gist (origin_geog);
+
+create index idx_trips_destination_geog
+on trips using gist (destination_geog);
+
+-- route off-track search
+create index idx_trip_routes_geog
+on trip_routes using gist (route_geog);
+
+-- filter by pre-departure trips
+create index idx_trips_active_departure
+on trips (departure_time)
+where status in ('bookable', 'full');
+
+
