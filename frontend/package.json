@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "/Users/baorenliu/Documents/Programming/google-cloud-sdk/cloud-sql-proxy --port 5432 --credentials-file=app/api/lib/ridelist-db-service-account.json ridelist-e9048:us-central1:free-trial-ridelist & next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -21,10 +21,12 @@
     "accept-language": "^3.0.20",
     "dayjs": "^1.11.19",
     "firebase": "^12.7.0",
+    "firebase-admin": "^13.6.0",
     "i18next": "^25.7.3",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-resources-to-backend": "^1.2.1",
     "next": "16.0.10",
+    "pg": "^8.16.3",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "react-i18next": "^16.5.0",
@@ -33,6 +35,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

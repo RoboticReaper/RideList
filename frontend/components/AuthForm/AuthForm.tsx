@@ -23,33 +23,33 @@ import { getLocalizedHref } from '../LocalizedLink';
 import { signInWithUIUC } from '../firebase/AuthContext';
 
 export function AuthForm(props: PaperProps) {
-    const [checked, setChecked] = useState(false)
-    const [error, setError] = useState<string | null>(null)
-    const {user, loading} = useAuth()
-    const router = useRouter()
-    const params = useParams();
+  const [checked, setChecked] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const { user, loading } = useAuth()
+  const router = useRouter()
+  const params = useParams();
 
 
-    const msLogin = () => {
-        if (!checked) {
-            setError("Please check agreements to login")
-            return
-        }
-
-        signInWithUIUC().then((success) => {
-            if (success) {
-                router.push(getLocalizedHref(params, "/home"))
-            }
-        })
-        
+  const msLogin = () => {
+    if (!checked) {
+      setError("Please check agreements to login")
+      return
     }
 
-    useEffect(()=>{
-        if (user) {
-            router.replace(getLocalizedHref(params, "/home"))
-        }
-    }, [])
-    
+    signInWithUIUC().then((success) => {
+      if (success) {
+        router.push(getLocalizedHref(params, "/dashboard"))
+      }
+    })
+
+  }
+
+  useEffect(() => {
+    if (user) {
+      router.replace(getLocalizedHref(params, "/dashboard"))
+    }
+  }, [user, router, params])
+
   return (
     <Paper radius="md" p="lg" withBorder {...props} maw={400}>
       <Text size="lg" fw={500}>
@@ -65,15 +65,15 @@ export function AuthForm(props: PaperProps) {
       </Text>
 
       <Input.Wrapper label="Agreements" withAsterisk error={error}>
-        <Checkbox 
-            label="I agree to privacy policy and terms of service" 
-            mt="xs" 
-            mb={error ? 'xs' : undefined}
-            checked={checked}
-            onChange={(event) => {
-                setChecked(event.currentTarget.checked)
-                setError(null)
-            }}
+        <Checkbox
+          label="I agree to privacy policy and terms of service"
+          mt="xs"
+          mb={error ? 'xs' : undefined}
+          checked={checked}
+          onChange={(event) => {
+            setChecked(event.currentTarget.checked)
+            setError(null)
+          }}
         />
       </Input.Wrapper>
 

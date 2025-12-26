@@ -39,7 +39,7 @@ create table users (
   id text primary key,
   created_at timestamptz not null default now(),
   email text not null unique,
-  last_active timestamptz
+  last_active timestamptz           -- used more like last website load
 );
 
 create table profile_global (
@@ -342,5 +342,4 @@ on trip_routes using gist (route_geog);
 create index idx_trips_active_departure
 on trips (departure_time)
 where status in ('bookable', 'full');
-
 

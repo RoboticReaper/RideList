@@ -7,7 +7,7 @@ acceptLanguage.languages(languages);
 
 export default function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  
+
   // Check if pathname is missing a locale
   const pathnameIsMissingLocale = languages.every(
     (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
@@ -15,12 +15,17 @@ export default function proxy(request: NextRequest) {
 
   if (pathnameIsMissingLocale) {
     const locale = acceptLanguage.get(request.headers.get('Accept-Language')) || fallbackLng;
+    request.nextUrl.searchParams.forEach((value, key) => {
+      // Just to be sure we are not losing anything, but search string approach is cleaner
+    });
     return NextResponse.redirect(
-      new URL(`/${locale}${pathname}`, request.url)
+      new URL(`/${locale}${pathname}${request.nextUrl.search}`, request.url)
     );
   }
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|.well-known|_next/image|.*\\.png$|.*\\.ico$).*)'],
+  matcher: ['/((?!api|_next/static|.well-known|_next/image|.*\\.png$|.*\\.ico$).*)',
+
+  ],
 };
