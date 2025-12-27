@@ -126,7 +126,7 @@ export function HeaderMenu() {
                   </Menu.Item>
                   <Menu.Item
                     component={LocalizedLink}
-                    href="/profile"
+                    href={"/profile/" + user?.uid}
                     leftSection={<IconUser size={14} />}
                   >
                     Profile
@@ -248,7 +248,7 @@ export function HeaderMenu() {
                   justify="start"
                   mb="xs"
                   component={LocalizedLink}
-                  href="/profile"
+                  href={"/profile/" + user?.uid}
                   onClick={closeDrawer}
                 >
                   Profile

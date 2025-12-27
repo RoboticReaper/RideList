@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { onAuthStateChanged, User, getAuth, signInWithRedirect, getRedirectResult, signInWithPopup, OAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { app } from "./firebase";
-import { useRouter, useParams, usePathname } from "next/navigation";
+import { useRouter, useParams, usePathname, useSearchParams } from "next/navigation";
 import { getLocalizedHref } from "../LocalizedLink";
 
 // --- LOGIN FUNCTION ---
@@ -34,6 +34,7 @@ interface AuthContextType {
   loading: boolean;
   isRegistered: boolean;
   checkingRegistration: boolean;
+  handleProtectedAction: (action?: () => void) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -41,6 +42,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   isRegistered: false,
   checkingRegistration: false,
+  handleProtectedAction: () => false,
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -51,6 +53,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
+
+  const searchParams = useSearchParams();
+
+  const handleProtectedAction = (action?: () => void) => {
+    if (!user) {
+      const currentParams = searchParams.toString();
+      const returnPath = pathname + (currentParams ? `?${currentParams}` : '');
+      const returnUrl = encodeURIComponent(returnPath);
+      router.push(getLocalizedHref(params, `/auth?returnUrl=${returnUrl}`));
+      return false;
+    }
+
+    if (!isRegistered) {
+      const currentParams = searchParams.toString();
+      const returnPath = pathname + (currentParams ? `?${currentParams}` : '');
+      const returnUrl = encodeURIComponent(returnPath);
+      router.push(getLocalizedHref(params, `/complete-profile?returnUrl=${returnUrl}`));
+      return false;
+    }
+
+    if (action) {
+      action();
+    }
+    return true;
+  };
 
   useEffect(() => {
     const auth = getAuth(app);
@@ -159,6 +186,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const isCompleteProfilePage = pathname?.includes('/complete-profile');
     const isAuthPage = pathname?.includes('/auth'); // Assuming login page is /auth
 
+    const currentParams = searchParams.toString();
+    const returnPath = pathname + (currentParams ? `?${currentParams}` : '');
+    const returnUrl = encodeURIComponent(returnPath);
+
     // 1. Logged In User
     if (user) {
       if (!checkingRegistration && !isRegistered) {
@@ -166,7 +197,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Only force redirect if on a protected route.
         if (isProtectedRoute && !isCompleteProfilePage) {
           console.log("User not registered on database, accessing protected route, forcing profile completion...");
-          const returnUrl = encodeURIComponent(pathname || '/dashboard');
           router.push(getLocalizedHref(params, `/complete-profile?returnUrl=${returnUrl}`));
         }
       }
@@ -177,15 +207,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // If trying to access a private route, send to login.
       if (isProtectedRoute) {
         console.log("No user, protecting private route...");
-        const returnUrl = encodeURIComponent(pathname || '/dashboard');
         router.push(getLocalizedHref(params, `/auth?returnUrl=${returnUrl}`));
       }
     }
 
-  }, [user, loading, checkingRegistration, isRegistered, pathname, router, params]);
+  }, [user, loading, checkingRegistration, isRegistered, pathname, router, params, searchParams]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, isRegistered, checkingRegistration }}>
+    <AuthContext.Provider value={{ user, loading, isRegistered, checkingRegistration, handleProtectedAction }}>
       {/* If we are loading, you might want to show a spinner 
          so the user doesn't see a flash of protected content 
          or the redirect happening.

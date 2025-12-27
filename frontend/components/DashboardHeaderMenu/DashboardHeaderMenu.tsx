@@ -119,7 +119,7 @@ export function DashboardHeaderMenu({ role, onRoleChange, drawerOpened, toggleDr
                                     </Menu.Item>
                                     <Menu.Item
                                         component={LocalizedLink}
-                                        href="/profile"
+                                        href={"/profile/" + user?.uid}
                                         leftSection={<IconUser size={14} />}
                                     >
                                         Profile

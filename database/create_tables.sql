@@ -91,12 +91,15 @@ create table cars (
   owner text references users(id) not null,
   make text,
   model text,
-  seats int check (seats is null or seats > 0),
+  color text,
+  year text,
+  seats int not null check (seats > 0),
   big_luggage int check (big_luggage is null or big_luggage >= 0),
   small_luggage int check (small_luggage is null or small_luggage >= 0),
   plate text,
   deleted bool not null default false,
   deleted_at timestamptz,
+  last_selected timestamptz,
   constraint cars_deleted_consistency check (
     (deleted = false and deleted_at is null) or (deleted = true and deleted_at is not null)
   )
@@ -109,6 +112,7 @@ create table trips (
   id uuid primary key default gen_random_uuid(),
   driver text references users(id) not null,
   car uuid references cars(id),
+  price decimal(8, 2),
   notes text,
 
   -- display text
@@ -143,12 +147,14 @@ create table trip_rules (
   departure_time_flexibility interval not null default interval '15 minutes',
   payment_methods text[],
   cancellation_policy text,
+  payment_handle text,
 
   auto_accept bool not null default true,
   cutoff_time interval  -- nullable = no cutoff, or enforce a default in app
 );
 
-create table trip_routes (
+create table trip_routes ( -- expensive feature. only paid users will have routes
+  -- this table is not used for now
   trip_id uuid primary key references trips(id) on delete cascade,
 
   -- full route geometry (polyline)
@@ -288,6 +294,7 @@ create table trip_templates (
   created_at timestamptz not null default now(),
   modified_at timestamptz
 );
+
 
 
 -- ======================

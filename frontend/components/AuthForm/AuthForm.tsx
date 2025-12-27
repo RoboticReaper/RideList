@@ -18,7 +18,7 @@ import { upperFirst, useToggle } from '@mantine/hooks';
 import { MicrosoftButton } from './MicrosoftButton';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../firebase/AuthContext';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { getLocalizedHref } from '../LocalizedLink';
 import { signInWithUIUC } from '../firebase/AuthContext';
 
@@ -28,7 +28,8 @@ export function AuthForm(props: PaperProps) {
   const { user, loading } = useAuth()
   const router = useRouter()
   const params = useParams();
-
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
 
   const msLogin = () => {
     if (!checked) {
@@ -38,7 +39,11 @@ export function AuthForm(props: PaperProps) {
 
     signInWithUIUC().then((success) => {
       if (success) {
-        router.push(getLocalizedHref(params, "/dashboard"))
+        if (returnUrl) {
+          router.push(getLocalizedHref(params, returnUrl));
+        } else {
+          router.push(getLocalizedHref(params, "/dashboard"));
+        }
       }
     })
 
@@ -46,9 +51,13 @@ export function AuthForm(props: PaperProps) {
 
   useEffect(() => {
     if (user) {
-      router.replace(getLocalizedHref(params, "/dashboard"))
+      if (returnUrl) {
+        router.replace(getLocalizedHref(params, returnUrl));
+      } else {
+        router.replace(getLocalizedHref(params, "/dashboard"));
+      }
     }
-  }, [user, router, params])
+  }, [user, router, params, returnUrl])
 
   return (
     <Paper radius="md" p="lg" withBorder {...props} maw={400}>
@@ -61,7 +70,7 @@ export function AuthForm(props: PaperProps) {
       </Group>
 
       <Text size="xs" mb="md">
-        Only UIUC account (@illinois.edu) are currently allowed for student verification.
+        Only UIUC accounts (@illinois.edu) are currently allowed for student verification.
       </Text>
 
       <Input.Wrapper label="Agreements" withAsterisk error={error}>
