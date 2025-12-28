@@ -12,6 +12,7 @@ import {
     Stepper,
     NumberInput,
     MultiSelect,
+    TagsInput,
     TextInput,
     Group,
     Switch,
@@ -24,12 +25,17 @@ import {
     Radio,
     Badge,
     Checkbox,
-    Modal
+    Modal,
+    Divider,
+    SimpleGrid
 } from '@mantine/core';
+import { useParams } from 'next/navigation';
 import { DateTimePicker } from '@mantine/dates';
 import { IconMapPin, IconCalendar, IconX, IconCar } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../firebase/AuthContext';
+import { getLocalizedHref } from '../LocalizedLink';
 
 // Type for Place Prediction from New API
 interface PlacePrediction {
@@ -59,11 +65,14 @@ interface Car {
 
 export function TripInputBar() {
     const { user, handleProtectedAction } = useAuth();
+    const router = useRouter();
+    const params = useParams();
     // Stepper State
     const [active, setActive] = useState(0);
 
     // Auth Modal State
     const [authModalOpen, setAuthModalOpen] = useState(false);
+    const [profileModalOpen, setProfileModalOpen] = useState(false);
 
     // --- Step 1: Route & Date State ---
     const [startLocation, setStartLocation] = useState('');
@@ -87,6 +96,10 @@ export function TripInputBar() {
     const [endSuggestions, setEndSuggestions] = useState<string[]>([]);
     const [loadingStart, setLoadingStart] = useState(false);
     const [loadingEnd, setLoadingEnd] = useState(false);
+
+    // Coords for Template Loading
+    const [startCoords, setStartCoords] = useState<{ lat: number, lng: number } | null>(null);
+    const [endCoords, setEndCoords] = useState<{ lat: number, lng: number } | null>(null);
 
     // --- Step 2: Core Details State ---
     const [price, setPrice] = useState<number | ''>('');
@@ -144,7 +157,7 @@ export function TripInputBar() {
 
     // --- Step 5: Rules State ---
     const [autoAccept, setAutoAccept] = useState(true);
-    const [flexibility, setFlexibility] = useState('15 minutes');
+    const [flexibility, setFlexibility] = useState<number | ''>(0.25);
     const [pickupRadius, setPickupRadius] = useState<number | ''>(1000);
     const [dropoffRadius, setDropoffRadius] = useState<number | ''>(1000);
     const [pickupRules, setPickupRules] = useState('');
@@ -152,6 +165,89 @@ export function TripInputBar() {
     const [cutoffEnabled, setCutoffEnabled] = useState(false);
     const [cutoffHours, setCutoffHours] = useState<number | ''>('');
     const [notes, setNotes] = useState('');
+    const [saveTemplate, setSaveTemplate] = useState(false);
+    const [saveTripTemplate, setSaveTripTemplate] = useState(false);
+    const [linkTemplates, setLinkTemplates] = useState(false);
+    const [ruleTemplateName, setRuleTemplateName] = useState('');
+    const [tripTemplateName, setTripTemplateName] = useState('');
+
+    const [templates, setTemplates] = useState<any[]>([]);
+    const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+
+    // Trip Templates State
+    const [tripTemplates, setTripTemplates] = useState<any[]>([]);
+    const [selectedTripTemplate, setSelectedTripTemplate] = useState<string | null>(null);
+    const [fieldSources, setFieldSources] = useState<Record<string, 'default' | 'template' | 'manual'>>({});
+    const [fieldSourceInfos, setFieldSourceInfos] = useState<Record<string, { type: 'Trip' | 'Rule'; name: string }>>({});
+
+    const hasFetchedTemplates = useRef(false);
+    const hasFetchedTripTemplates = useRef(false);
+
+    const [postedLink, setPostedLink] = useState<string>('');
+
+    const setFieldSourceManual = (fields: string[]) => {
+        setFieldSources(prev => {
+            const next = { ...prev };
+            fields.forEach(f => next[f] = 'manual');
+            return next;
+        });
+        setFieldSourceInfos(prev => {
+            const next = { ...prev };
+            fields.forEach(f => delete next[f]);
+            return next;
+        });
+    };
+
+    const setFieldSourceTemplate = (fields: string[], type: 'Trip' | 'Rule', name: string) => {
+        setFieldSources(prev => {
+            const next = { ...prev };
+            fields.forEach(f => next[f] = 'template');
+            return next;
+        });
+        setFieldSourceInfos(prev => {
+            const next = { ...prev };
+            fields.forEach(f => next[f] = { type, name });
+            return next;
+        });
+    };
+
+    const renderSourceBadge = (field: string) => {
+        if (fieldSources[field] === 'template' && fieldSourceInfos[field]) {
+            const info = fieldSourceInfos[field];
+            return <Badge size="xs" variant="light" color={info.type === 'Trip' ? 'blue' : 'green'}>{info.type} template: {info.name}</Badge>;
+        }
+        return null;
+    };
+
+    // Fetch Rule Templates (Step 4)
+    useEffect(() => {
+        if (user && active === 4 && !hasFetchedTemplates.current) {
+            user.getIdToken().then(token => {
+                fetch('/api/user/templates', { headers: { 'Authorization': `Bearer ${token}` } })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.templates) setTemplates(data.templates);
+                        hasFetchedTemplates.current = true;
+                    })
+                    .catch(err => console.error("Failed to fetch templates", err));
+            });
+        }
+    }, [user, active]);
+
+    // Fetch Trip Templates (Step 1)
+    useEffect(() => {
+        if (user && active === 0 && !hasFetchedTripTemplates.current) {
+            user.getIdToken().then(token => {
+                fetch('/api/user/trip-templates', { headers: { 'Authorization': `Bearer ${token}` } })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.templates) setTripTemplates(data.templates);
+                        hasFetchedTripTemplates.current = true;
+                    })
+                    .catch(err => console.error("Failed to fetch trip templates", err));
+            });
+        }
+    }, [user, active]);
 
     // --- Helper Functions for Step 1 ---
     // define TripDraft interface
@@ -176,7 +272,8 @@ export function TripInputBar() {
         bigLuggage: number | '';
         smallLuggage: number | '';
         autoAccept: boolean;
-        flexibility: string;
+        flexibility: number | '';
+
         pickupRadius: number | '';
         dropoffRadius: number | '';
         pickupRules: string;
@@ -226,7 +323,10 @@ export function TripInputBar() {
                 if (draft.smallLuggage !== undefined) setSmallLuggage(draft.smallLuggage);
 
                 if (draft.autoAccept !== undefined) setAutoAccept(draft.autoAccept);
-                if (draft.flexibility) setFlexibility(draft.flexibility);
+                if (draft.autoAccept !== undefined) setAutoAccept(draft.autoAccept);
+                if (draft.flexibility !== undefined && (typeof draft.flexibility === 'number' || draft.flexibility === '')) {
+                    setFlexibility(draft.flexibility);
+                }
                 if (draft.pickupRadius !== undefined) setPickupRadius(draft.pickupRadius);
                 if (draft.dropoffRadius !== undefined) setDropoffRadius(draft.dropoffRadius);
                 if (draft.pickupRules) setPickupRules(draft.pickupRules);
@@ -260,7 +360,7 @@ export function TripInputBar() {
                     (draft.bigLuggage !== 0 && draft.bigLuggage !== '' && draft.bigLuggage !== undefined) ||
                     (draft.smallLuggage !== 0 && draft.smallLuggage !== '' && draft.smallLuggage !== undefined) ||
                     (draft.autoAccept === false) || // Default is true
-                    (draft.flexibility !== '15 minutes' && !!draft.flexibility) ||
+                    (draft.flexibility !== 0.25 && !!draft.flexibility) ||
                     (draft.pickupRadius !== 1000 && draft.pickupRadius !== '' && draft.pickupRadius !== undefined) ||
                     (draft.dropoffRadius !== 1000 && draft.dropoffRadius !== '' && draft.dropoffRadius !== undefined) ||
                     (!!draft.pickupRules) ||
@@ -283,8 +383,84 @@ export function TripInputBar() {
         }
     }, []);
 
+    // --- Reset Logic ---
+    const resetForm = () => {
+        setActive(0);
+        setStartLocation('');
+        setEndLocation('');
+        setStartTime(null);
+        setIsStartSelected(false);
+        setIsEndSelected(false);
+        startLastSelection.current = '';
+        endLastSelection.current = '';
+        setStartPlaceId(null);
+        setEndPlaceId(null);
+        setStartCoords(null);
+        setEndCoords(null);
+        setPrice('');
+        setSeats(1);
+        setSelectedCarId('new');
+        setCarMake('');
+        setCarModel('');
+        setCarColor('');
+        setCarYear('');
+        setCarPlate('');
+        setCarBigLuggage('');
+        setCarSmallLuggage('');
+        setCarSeats('');
+        setPaymentMethods([]);
+        setPaymentHandle('');
+        setBigLuggage(0);
+        setSmallLuggage(0);
+        setAutoAccept(true);
+        setFlexibility(0.25);
+        setPickupRadius(1000);
+        setDropoffRadius(1000);
+        setPickupRules('');
+        setCancellationPolicy('');
+        setCutoffEnabled(false);
+        setCutoffHours('');
+        setNotes('');
+        setSaveTemplate(false);
+        setSaveTripTemplate(false);
+        setLinkTemplates(false);
+        setRuleTemplateName('');
+        setTripTemplateName('');
+        setSelectedTemplate(null);
+        setSelectedTripTemplate(null);
+        setPostedLink('');
+        setFieldSources({});
+        setFieldSourceInfos({});
+        // Also clear draft from local storage to be safe
+        localStorage.removeItem('trip_draft');
+    };
+
+    // Auto-Redirect Timer
+    const [redirectCountdown, setRedirectCountdown] = useState(10);
+
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (active === 5 && postedLink) {
+            setRedirectCountdown(10);
+            interval = setInterval(() => {
+                setRedirectCountdown((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(interval);
+                        router.push(postedLink);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [active, postedLink, router]);
+
     // Save Draft Effect (Debounced)
     useEffect(() => {
+        // DO NOT SAVE if we are on the completion step (active === 5)
+        if (active === 5) return;
+
         const timeout = setTimeout(() => {
             let encodedStartTime = null;
             if (startTime) {
@@ -452,11 +628,11 @@ export function TripInputBar() {
     const nextStep = () => {
         // Step 1 Validation
         if (active === 0) {
-            if (!isStartSelected || !startPlaceId) {
+            if (!isStartSelected || (!startPlaceId && !startCoords)) {
                 notifications.show({ title: 'Invalid Start', message: 'Please select a valid start location from the dropdown menu.', color: 'red' });
                 return;
             }
-            if (!isEndSelected || !endPlaceId) {
+            if (!isEndSelected || (!endPlaceId && !endCoords)) {
                 notifications.show({ title: 'Invalid Destination', message: 'Please select a valid destination from the dropdown menu.', color: 'red' });
                 return;
             }
@@ -480,6 +656,14 @@ export function TripInputBar() {
 
         // Step 3 Validation (Vehicle)
         if (active === 2) {
+            // Step 3: Vehicle
+            // Allow processing if "No Vehicle" is selected
+            if (selectedCarId === 'none') {
+                setActive(current => current + 1);
+                return;
+            }
+
+            let carCapacity = 0;
             if (selectedCarId === 'new') {
                 const isAnyFieldFilled = carMake.trim() || carModel.trim() || carColor.trim() || carYear.trim() || carPlate.trim() || carBigLuggage !== '' || carSmallLuggage !== '' || carSeats !== '';
 
@@ -488,7 +672,24 @@ export function TripInputBar() {
                         notifications.show({ title: 'Car Seats Required', message: 'If you are adding a vehicle, please specify the number of seats.', color: 'red' });
                         return;
                     }
+                    carCapacity = Number(carSeats);
                 }
+            } else {
+                // Existing Car
+                const car = savedCars.find(c => c.id === selectedCarId);
+                if (car && car.seats) {
+                    carCapacity = car.seats;
+                }
+            }
+
+            // Validate Seats vs Car Capacity
+            if (carCapacity > 0 && Number(seats) > carCapacity) {
+                notifications.show({
+                    title: 'Capacity Exceeded',
+                    message: `Trip seats (${seats}) cannot be more than the car's capacity (${carCapacity}).`,
+                    color: 'red'
+                });
+                return;
             }
         }
 
@@ -501,6 +702,40 @@ export function TripInputBar() {
             } */
             // Payment Handle is now OPTIONAL
 
+            // Validate Luggage Limits against Car Capacity
+            if (selectedCarId !== 'none') {
+                let carBigCap: number | null = null;
+                let carSmallCap: number | null = null;
+
+                if (selectedCarId === 'new') {
+                    if (carBigLuggage !== '' && carBigLuggage !== undefined) carBigCap = Number(carBigLuggage);
+                    if (carSmallLuggage !== '' && carSmallLuggage !== undefined) carSmallCap = Number(carSmallLuggage);
+                } else {
+                    const car = savedCars.find(c => c.id === selectedCarId);
+                    if (car) {
+                        if (car.big_luggage !== undefined && car.big_luggage !== null) carBigCap = car.big_luggage;
+                        if (car.small_luggage !== undefined && car.small_luggage !== null) carSmallCap = car.small_luggage;
+                    }
+                }
+
+                if (carBigCap !== null && Number(bigLuggage || 0) > carBigCap) {
+                    notifications.show({
+                        title: 'Luggage Check',
+                        message: `Big luggage limit (${bigLuggage || 0}) exceeds car capacity (${carBigCap}).`,
+                        color: 'red'
+                    });
+                    return;
+                }
+                if (carSmallCap !== null && Number(smallLuggage || 0) > carSmallCap) {
+                    notifications.show({
+                        title: 'Luggage Check',
+                        message: `Small luggage limit (${smallLuggage || 0}) exceeds car capacity (${carSmallCap}).`,
+                        color: 'red'
+                    });
+                    return;
+                }
+            }
+
             if (cutoffEnabled) {
                 if (cutoffHours === '' || cutoffHours <= 0) {
                     notifications.show({ title: 'Invalid Cutoff Time', message: 'Please enter a valid number of hours (must be > 0).', color: 'red' });
@@ -509,12 +744,22 @@ export function TripInputBar() {
             }
         }
 
-        setActive((current) => (current < 4 ? current + 1 : active));
+        setActive((current) => (current < 5 ? current + 1 : active));
     };
 
     const prevStep = () => setActive((current) => (current > 0 ? current - 1 : current));
 
     const handleFinalSubmit = async () => {
+        // Validation: Template Name if Saving (Rule or Trip)
+        if (saveTemplate && !ruleTemplateName.trim()) {
+            notifications.show({ title: 'Template Name Required', message: 'Please provide a name for your Rule Template.', color: 'red' });
+            return;
+        }
+        if (saveTripTemplate && !tripTemplateName.trim()) {
+            notifications.show({ title: 'Template Name Required', message: 'Please provide a name for your Trip Template.', color: 'red' });
+            return;
+        }
+
         // 1. Handle Unauthenticated User
         if (!user) {
             // Draft is already saved by the useEffect, but we can ensure it's up to date if we wanted.
@@ -524,8 +769,20 @@ export function TripInputBar() {
         }
 
         const payload: any = {
-            start: { text: startLocation, placeId: startPlaceId, sessionToken: startSessionToken.current },
-            end: { text: endLocation, placeId: endPlaceId, sessionToken: endSessionToken.current },
+            start: {
+                text: startLocation,
+                placeId: startPlaceId,
+                lat: startCoords?.lat,
+                lng: startCoords?.lng,
+                sessionToken: startSessionToken.current
+            },
+            end: {
+                text: endLocation,
+                placeId: endPlaceId,
+                lat: endCoords?.lat,
+                lng: endCoords?.lng,
+                sessionToken: endSessionToken.current
+            },
             departureTime: startTime,
             price: Number(price),
             seats: Number(seats),
@@ -540,7 +797,12 @@ export function TripInputBar() {
             pickupRules,
             cancellationPolicy,
             cutoffTime: (cutoffEnabled && cutoffHours !== '') ? `${cutoffHours} hours` : null,
-            notes
+            notes,
+            saveTemplate,
+            saveTripTemplate,
+            linkTemplates,
+            ruleTemplateName,
+            tripTemplateName
         };
 
         // Attach Car Info
@@ -588,7 +850,13 @@ export function TripInputBar() {
             });
             const data = await res.json();
 
-            if (!res.ok) throw new Error(data.error || 'Failed to create trip');
+            if (!res.ok) {
+                if (data.code === 'PROFILE_INCOMPLETE') {
+                    setProfileModalOpen(true);
+                    return;
+                }
+                throw new Error(data.error || 'Failed to create trip');
+            }
 
             // CLEAR DRAFT ON SUCCESS
             localStorage.removeItem('trip_draft');
@@ -603,7 +871,9 @@ export function TripInputBar() {
                 autoClose: 2000,
             });
 
-            setTimeout(() => window.location.reload(), 1500);
+            setPostedLink(getLocalizedHref(params, `/rides/${data.tripId}`));
+
+            nextStep();
 
         } catch (error: any) {
             notifications.update({
@@ -619,19 +889,97 @@ export function TripInputBar() {
 
     return (
         <Paper p="md" radius="md" shadow="sm" withBorder w="100%">
-            <Stepper active={active} onStepClick={setActive} allowNextStepsSelect={false}>
+            <Stepper
+                active={active}
+                onStepClick={(index) => active !== 5 && setActive(index)}
+                allowNextStepsSelect={false}
+            >
 
                 {/* STEP 1: Route & Date */}
                 <Stepper.Step label="Route" description="Where & When">
                     <Stack gap="md" mt="lg">
+                        {tripTemplates.length > 0 && (
+                            <Select
+                                label="Load from Template"
+                                placeholder="Select a saved trip..."
+                                data={tripTemplates.map(t => ({ value: t.id, label: t.name || 'Untitled Trip' }))}
+                                value={selectedTripTemplate}
+                                onChange={(val) => {
+                                    setSelectedTripTemplate(val);
+                                    if (val) {
+                                        const t = tripTemplates.find(x => x.id === val);
+                                        if (t) {
+                                            const tName = t.name || 'Trip Template';
+                                            // Prefill Logic
+                                            setStartLocation(t.from_text);
+                                            setStartCoords({ lat: t.origin_lat, lng: t.origin_lng });
+                                            setIsStartSelected(true);
+                                            setStartPlaceId(null);
+
+                                            setEndLocation(t.to_text);
+                                            setEndCoords({ lat: t.dest_lat, lng: t.dest_lng });
+                                            setIsEndSelected(true);
+                                            setEndPlaceId(null);
+
+                                            setPrice(Number(t.price));
+                                            setSeats(Number(t.total_seats));
+                                            setNotes(t.notes);
+
+                                            setLoadingStart(false);
+                                            setLoadingEnd(false);
+
+                                            if (t.car) setSelectedCarId(t.car);
+
+                                            // Rule Prefill if exists
+                                            if (t.rule_details) {
+                                                const r = t.rule_details;
+                                                setBigLuggage(r.big_luggage_lim ?? '');
+                                                setSmallLuggage(r.small_luggage_lim ?? '');
+                                                setPaymentMethods(r.payment_methods || []);
+                                                setPaymentHandle(r.payment_handle || '');
+                                                setAutoAccept(r.auto_accept);
+                                                if (r.departure_time_flexibility) {
+                                                    const f = r.departure_time_flexibility;
+                                                    if (typeof f === 'object') {
+                                                        const h = f.hours || 0;
+                                                        const m = f.minutes || 0;
+                                                        setFlexibility(h + m / 60);
+                                                    } else {
+                                                        setFlexibility(0.25);
+                                                    }
+                                                } else {
+                                                    setFlexibility(0.25);
+                                                }
+                                                setPickupRadius(r.pickup_radius_meters || 1000);
+                                                setDropoffRadius(r.drop_off_radius_meters || 1000);
+                                                setPickupRules(r.pickup_rules || '');
+                                                setCancellationPolicy(r.cancellation_policy || '');
+                                                setCutoffHours(r.cutoff_time ? parseInt(r.cutoff_time) : '');
+
+                                                setFieldSourceTemplate([
+                                                    'bigLuggage', 'smallLuggage', 'paymentMethods', 'paymentHandle', 'autoAccept',
+                                                    'flexibility', 'pickupRadius', 'dropoffRadius', 'pickupRules', 'cancellationPolicy', 'cutoffHours'
+                                                ], 'Trip', tName);
+                                            }
+
+                                            setFieldSourceTemplate(['startLocation', 'endLocation', 'price', 'seats', 'notes', 'selectedCarId'], 'Trip', tName);
+                                        }
+                                    }
+                                }}
+                            />
+                        )}
+
                         <Title order={4}>Trip Route</Title>
                         <Autocomplete
-                            label="From"
+                            label={<Group gap="xs">From {renderSourceBadge('startLocation')}</Group>}
                             placeholder="Starting Location"
                             leftSection={<IconMapPin size={16} />}
                             data={startSuggestions}
                             value={startLocation}
-                            onChange={handleStartChange}
+                            onChange={(val) => {
+                                handleStartChange(val);
+                                setFieldSourceManual(['startLocation']);
+                            }}
                             onOptionSubmit={(val) => {
                                 setStartLocation(val);
                                 setIsStartSelected(true);
@@ -643,12 +991,15 @@ export function TripInputBar() {
                         />
 
                         <Autocomplete
-                            label="To"
+                            label={<Group gap="xs">To {renderSourceBadge('endLocation')}</Group>}
                             placeholder="Destination"
                             leftSection={<IconMapPin size={16} />}
                             data={endSuggestions}
                             value={endLocation}
-                            onChange={handleEndChange}
+                            onChange={(val) => {
+                                handleEndChange(val);
+                                setFieldSourceManual(['endLocation']);
+                            }}
                             onOptionSubmit={(val) => {
                                 setEndLocation(val);
                                 setIsEndSelected(true);
@@ -664,7 +1015,13 @@ export function TripInputBar() {
                             placeholder="Pick date & time"
                             leftSection={<IconCalendar size={16} />}
                             value={startTime}
-                            onChange={(val) => setStartTime(val as Date | null)}
+                            onChange={(val) => {
+                                setStartTime(val as Date | null);
+                                // updateFieldSource? Trip template doesn't usually save specific date/time unless repeated?
+                                // Schema has `departure_time`?
+                                // trip_templates table has NO departure_time. Just generic info.
+                                // So we probably don't prefill time from template.
+                            }}
                         />
 
                         <Group justify="flex-end" mt="md">
@@ -678,21 +1035,27 @@ export function TripInputBar() {
                     <Stack gap="md" mt="lg">
                         <Title order={4}>Trip Details</Title>
                         <NumberInput
-                            label="Price per Person ($)"
+                            label={<Group gap="xs">Price per Person ($) {renderSourceBadge('price')}</Group>}
                             placeholder="25.00"
                             prefix="$ "
                             decimalScale={2}
                             fixedDecimalScale
                             value={price}
-                            onChange={(val) => setPrice(val === '' ? '' : Number(val))}
+                            onChange={(val) => {
+                                setPrice(val === '' ? '' : Number(val));
+                                setFieldSourceManual(['price']);
+                            }}
                             min={0}
                             required
                         />
                         <NumberInput
-                            label="Total Seats Available"
+                            label={<Group gap="xs">Total Seats Available {renderSourceBadge('seats')}</Group>}
                             description="How many passengers can you take?"
                             value={seats}
-                            onChange={(val) => setSeats(val === '' ? '' : Number(val))}
+                            onChange={(val) => {
+                                setSeats(val === '' ? '' : Number(val));
+                                setFieldSourceManual(['seats']);
+                            }}
                             min={1}
                             max={20}
                             required
@@ -713,8 +1076,11 @@ export function TripInputBar() {
                         {loadingCars ? <MantineLoader size="sm" /> : (
                             <Radio.Group
                                 value={selectedCarId}
-                                onChange={setSelectedCarId}
-                                label="Select a Saved Vehicle"
+                                onChange={(val) => {
+                                    setSelectedCarId(val);
+                                    setFieldSourceManual(['selectedCarId']);
+                                }}
+                                label={<Group gap="xs">Select a Saved Vehicle {renderSourceBadge('selectedCarId')}</Group>}
                                 description="Or choose to add a new one"
                             >
                                 <Stack mt="xs">
@@ -732,7 +1098,7 @@ export function TripInputBar() {
                                                 label={
                                                     <Group>
                                                         <Text fw={500}>{car.year} {car.make} {car.model}</Text>
-                                                        <Badge color={car.color?.toLowerCase() || 'gray'} variant="light">{car.color}</Badge>
+                                                        <Badge color={'black'} variant="light">{car.color}</Badge>
                                                         {car.plate && <Text size="xs" c="dimmed">{car.plate}</Text>}
                                                     </Group>
                                                 }
@@ -754,7 +1120,7 @@ export function TripInputBar() {
                             <Box mt="md">
                                 <Title order={6} mb="sm">Vehicle Info (Optional)</Title>
                                 <Stack gap="sm">
-                                    <Group grow>
+                                    <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                                         <TextInput
                                             label="Make"
                                             placeholder="Optional (e.g. Toyota)"
@@ -767,8 +1133,8 @@ export function TripInputBar() {
                                             value={carModel}
                                             onChange={(e) => setCarModel(e.currentTarget.value)}
                                         />
-                                    </Group>
-                                    <Group grow>
+                                    </SimpleGrid>
+                                    <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                                         <TextInput
                                             label="Color"
                                             placeholder="Optional (e.g. White)"
@@ -781,14 +1147,14 @@ export function TripInputBar() {
                                             value={carYear}
                                             onChange={(e) => setCarYear(e.currentTarget.value)}
                                         />
-                                    </Group>
+                                    </SimpleGrid>
                                     <TextInput
                                         label="License Plate"
                                         placeholder="Optional"
                                         value={carPlate}
                                         onChange={(e) => setCarPlate(e.currentTarget.value)}
                                     />
-                                    <Group grow>
+                                    <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                                         <NumberInput
                                             label="Big Luggage Cap."
                                             placeholder="Optional"
@@ -803,7 +1169,7 @@ export function TripInputBar() {
                                             onChange={(val) => setCarSmallLuggage(val === '' ? '' : Number(val))}
                                             min={0}
                                         />
-                                    </Group>
+                                    </SimpleGrid>
                                     <NumberInput
                                         label="Number of Seats (Car Capacity)"
                                         description="Total seats in the car (inc. driver)"
@@ -828,32 +1194,101 @@ export function TripInputBar() {
                 <Stepper.Step label="Logistics" description="Payment & Luggage">
                     <Stack gap="md" mt="lg">
                         <Title order={4}>Logistics</Title>
-                        <MultiSelect
-                            label="Payment Methods"
+
+                        {/* Load Template Section */}
+                        {templates.length > 0 && (
+                            <Paper withBorder p="sm" bg="gray.0">
+                                <Select
+                                    label="Load Saved Template"
+                                    placeholder="Select a rule template to prefill"
+                                    data={templates.map(t => ({ value: t.id, label: t.name || 'Unnamed Template' }))}
+                                    value={selectedTemplate}
+                                    onChange={(val) => {
+                                        setSelectedTemplate(val);
+                                        const t = templates.find(temp => temp.id === val);
+                                        if (t) {
+                                            if (t.payment_methods) setPaymentMethods(t.payment_methods);
+                                            if (t.payment_handle) setPaymentHandle(t.payment_handle);
+                                            if (t.pickup_rules) setPickupRules(t.pickup_rules);
+                                            if (t.cancellation_policy) setCancellationPolicy(t.cancellation_policy);
+                                            if (t.auto_accept !== undefined) setAutoAccept(t.auto_accept);
+                                            if (t.big_luggage_lim !== null) setBigLuggage(t.big_luggage_lim);
+                                            if (t.small_luggage_lim !== null) setSmallLuggage(t.small_luggage_lim);
+                                            if (t.pickup_radius_meters !== null) setPickupRadius(t.pickup_radius_meters);
+                                            if (t.drop_off_radius_meters !== null) setDropoffRadius(t.drop_off_radius_meters);
+
+                                            // Cutoff
+                                            if (t.cutoff_time) {
+                                                if (t.cutoff_time.hours) {
+                                                    setCutoffEnabled(true);
+                                                    setCutoffHours(t.cutoff_time.hours);
+                                                }
+                                            }
+
+                                            // Flexibility
+                                            if (t.departure_time_flexibility) {
+                                                const f = t.departure_time_flexibility;
+                                                if (typeof f === 'object') {
+                                                    const h = f.hours || 0;
+                                                    const m = f.minutes || 0;
+                                                    setFlexibility(h + m / 60);
+                                                } else {
+                                                    setFlexibility(0.25);
+                                                }
+
+                                                setFieldSourceTemplate([
+                                                    'paymentMethods', 'paymentHandle', 'pickupRules', 'cancellationPolicy', 'autoAccept',
+                                                    'bigLuggage', 'smallLuggage', 'pickupRadius', 'dropoffRadius', 'flexibility', 'cutoffHours'
+                                                ], 'Rule', t.name || 'Rule Template');
+
+                                                notifications.show({ title: 'Template Loaded', message: 'Rules have been populated from template.', color: 'green' });
+                                            }
+                                        }
+                                    }}
+                                    clearable
+                                />
+                            </Paper>
+                        )}
+
+                        <TagsInput
+                            label={<Group gap="xs">Payment Methods {renderSourceBadge('paymentMethods')}</Group>}
                             placeholder="Select accepted methods (Optional)"
                             data={['Cash', 'Venmo', 'Zelle', 'WeChat', 'CashApp']}
                             value={paymentMethods}
-                            onChange={setPaymentMethods}
+                            onChange={(val) => {
+                                setPaymentMethods(val);
+                                setFieldSourceManual(['paymentMethods']);
+                            }}
+                            clearable
                         />
                         <TextInput
-                            label="Payment Handle / ID (Optional)"
+                            label={<Group gap="xs">Payment Handle / ID {renderSourceBadge('paymentHandle')}</Group>}
                             description="Who should riders pay? (e.g. @username)"
                             placeholder="Venmo: @user, WeChat: user123"
                             value={paymentHandle}
-                            onChange={(e) => setPaymentHandle(e.currentTarget.value)}
+                            onChange={(e) => {
+                                setPaymentHandle(e.currentTarget.value);
+                                setFieldSourceManual(['paymentHandle']);
+                            }}
                         />
                         <Textarea
-                            label="Pickup Rules"
+                            label={<Group gap="xs">Pickup Rules {renderSourceBadge('pickupRules')}</Group>}
                             placeholder="e.g. Wait at the bus stop, look for a red car"
                             value={pickupRules}
-                            onChange={(e) => setPickupRules(e.currentTarget.value)}
+                            onChange={(e) => {
+                                setPickupRules(e.currentTarget.value);
+                                setFieldSourceManual(['pickupRules']);
+                            }}
                             minRows={2}
                         />
                         <Textarea
-                            label="Cancellation Policy"
+                            label={<Group gap="xs">Cancellation Policy {renderSourceBadge('cancellationPolicy')}</Group>}
                             placeholder="e.g. Free cancellation up to 24h before departure"
                             value={cancellationPolicy}
-                            onChange={(e) => setCancellationPolicy(e.currentTarget.value)}
+                            onChange={(e) => {
+                                setCancellationPolicy(e.currentTarget.value);
+                                setFieldSourceManual(['cancellationPolicy']);
+                            }}
                             minRows={2}
                         />
 
@@ -866,33 +1301,42 @@ export function TripInputBar() {
                         />
                         {cutoffEnabled && (
                             <NumberInput
-                                label="Hours before departure"
+                                label={<Group gap="xs">Hours before departure {renderSourceBadge('cutoffHours')}</Group>}
                                 description="e.g. 1.5 for 1 hour 30 mins"
                                 placeholder="1"
                                 value={cutoffHours}
-                                onChange={(val) => setCutoffHours(val === '' ? '' : Number(val))}
+                                onChange={(val) => {
+                                    setCutoffHours(val === '' ? '' : Number(val));
+                                    setFieldSourceManual(['cutoffHours']);
+                                }}
                                 min={0.1}
                                 step={0.5}
                                 decimalScale={2}
                                 required
                             />
                         )}
-                        <Group grow>
+                        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                             <NumberInput
-                                label="Big Luggage Max"
-                                description="Large suitcases"
+                                label={<Group gap="xs">Big Luggage Cap. {renderSourceBadge('bigLuggage')}</Group>}
+                                placeholder="Large suitcases"
                                 value={bigLuggage}
-                                onChange={(val) => setBigLuggage(val === '' ? '' : Number(val))}
+                                onChange={(val) => {
+                                    setBigLuggage(val === '' ? '' : Number(val));
+                                    setFieldSourceManual(['bigLuggage']);
+                                }}
                                 min={0}
                             />
                             <NumberInput
-                                label="Small Luggage Max"
-                                description="Carry-ons / Backpacks"
+                                label={<Group gap="xs">Small Luggage Cap. {renderSourceBadge('smallLuggage')}</Group>}
+                                placeholder="Carry-ons / Backpacks"
                                 value={smallLuggage}
-                                onChange={(val) => setSmallLuggage(val === '' ? '' : Number(val))}
+                                onChange={(val) => {
+                                    setSmallLuggage(val === '' ? '' : Number(val));
+                                    setFieldSourceManual(['smallLuggage']);
+                                }}
                                 min={0}
                             />
-                        </Group>
+                        </SimpleGrid>
                         <Group justify="space-between" mt="md">
                             <Button variant="default" onClick={prevStep}>Back</Button>
                             <Button onClick={nextStep}>Next: Settings</Button>
@@ -904,51 +1348,111 @@ export function TripInputBar() {
                 <Stepper.Step label="Settings" description="Advanced Rules">
                     <Stack gap="md" mt="lg">
                         <Title order={4}>Advanced Settings</Title>
-                        <Select
-                            label="Departure Flexibility"
+                        <NumberInput
+                            label={<Group gap="xs">Departure Flexibility (Hours) {renderSourceBadge('flexibility')}</Group>}
                             description="How long can you wait?"
-                            data={['None', '15 minutes', '30 minutes', '1 hour']}
                             value={flexibility}
-                            onChange={(val) => setFlexibility(val || '15 minutes')}
+                            onChange={(val) => {
+                                setFlexibility(val === '' ? '' : Number(val));
+                                setFieldSourceManual(['flexibility']);
+                            }}
+                            min={0}
+                            step={0.25}
                         />
-                        <Group grow>
+                        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                             <NumberInput
-                                label="Pickup Radius (m)"
+                                label={<Group gap="xs">Pickup Radius (m) {renderSourceBadge('pickupRadius')}</Group>}
                                 value={pickupRadius}
-                                onChange={(val) => setPickupRadius(val === '' ? '' : Number(val))}
+                                onChange={(val) => {
+                                    setPickupRadius(val === '' ? '' : Number(val));
+                                    setFieldSourceManual(['pickupRadius']);
+                                }}
                                 min={0}
                                 step={100}
                             />
                             <NumberInput
-                                label="Dropoff Radius (m)"
+                                label={<Group gap="xs">Dropoff Radius (m) {renderSourceBadge('dropoffRadius')}</Group>}
                                 value={dropoffRadius}
-                                onChange={(val) => setDropoffRadius(val === '' ? '' : Number(val))}
+                                onChange={(val) => {
+                                    setDropoffRadius(val === '' ? '' : Number(val));
+                                    setFieldSourceManual(['dropoffRadius']);
+                                }}
                                 min={0}
                                 step={100}
                             />
-                        </Group>
+                        </SimpleGrid>
                         <Accordion variant="separated">
                             <Accordion.Item value="settings">
                                 <Accordion.Control>Advanced Rules</Accordion.Control>
                                 <Accordion.Panel>
                                     <Stack gap="md">
                                         <Switch
-                                            label="Auto Accept Bookings"
+                                            label={<Group gap="xs">Auto Accept Bookings {renderSourceBadge('autoAccept')}</Group>}
                                             description="Automatically approve requests that meet your criteria"
                                             checked={autoAccept}
-                                            onChange={(e) => setAutoAccept(e.currentTarget.checked)}
+                                            onChange={(e) => {
+                                                setAutoAccept(e.currentTarget.checked);
+                                                setFieldSourceManual(['autoAccept']);
+                                            }}
                                         />
                                     </Stack>
                                 </Accordion.Panel>
                             </Accordion.Item>
                         </Accordion>
                         <Textarea
-                            label="Trip Notes"
+                            label={<Group gap="xs">Trip Notes {renderSourceBadge('notes')}</Group>}
                             placeholder="Any specific instructions? e.g. 'Meeting at the main entrance', 'No pets', etc."
                             minRows={3}
                             value={notes}
-                            onChange={(e) => setNotes(e.currentTarget.value)}
+                            onChange={(e) => {
+                                setNotes(e.currentTarget.value);
+                                setFieldSourceManual(['notes']);
+                            }}
                         />
+
+                        <Divider />
+
+                        <Checkbox
+                            label="Save logistics and rules (Rule Template)"
+                            checked={saveTemplate}
+                            onChange={(e) => setSaveTemplate(e.currentTarget.checked)}
+                        />
+                        <Checkbox
+                            label="Save entire trip details (Trip Template)"
+                            checked={saveTripTemplate}
+                            onChange={(e) => setSaveTripTemplate(e.currentTarget.checked)}
+                        />
+
+                        {(saveTemplate && saveTripTemplate) && (
+                            <Checkbox
+                                label="Link Rule Template to Trip Template"
+                                description="Associate this rule set with the trip template for automatic loading."
+                                checked={linkTemplates}
+                                onChange={(e) => setLinkTemplates(e.currentTarget.checked)}
+                                ml="xl"
+                            />
+                        )}
+
+                        {saveTemplate && (
+                            <TextInput
+                                label="Rule Template Name"
+                                placeholder="e.g. Standard Rules"
+                                value={ruleTemplateName}
+                                onChange={(e) => setRuleTemplateName(e.currentTarget.value)}
+                                required
+                            />
+                        )}
+
+                        {saveTripTemplate && (
+                            <TextInput
+                                label="Trip Template Name"
+                                placeholder="e.g. Daily Commute"
+                                value={tripTemplateName}
+                                onChange={(e) => setTripTemplateName(e.currentTarget.value)}
+                                required
+                            />
+                        )}
+
                         <Group justify="space-between" mt="md">
                             <Button variant="default" onClick={prevStep}>Back</Button>
                             <Button color="blue" onClick={handleFinalSubmit}>Post Trip</Button>
@@ -960,7 +1464,11 @@ export function TripInputBar() {
                     <Stack align="center" mt="lg" gap="md">
                         <Title order={3}>Trip Posted!</Title>
                         <Text>Your trip is now live and bookable.</Text>
-                        <Button onClick={() => window.location.reload()}>Post Another</Button>
+                        <Text size="sm" c="dimmed">Redirecting to your post in {redirectCountdown}s...</Text>
+                        <Group>
+                            <Button variant="outline" onClick={resetForm}>Start New Draft</Button>
+                            <Button onClick={() => { localStorage.removeItem('trip_draft'); router.push(postedLink) }}>View Post</Button>
+                        </Group>
                     </Stack>
                 </Stepper.Completed>
             </Stepper>
@@ -984,6 +1492,22 @@ export function TripInputBar() {
                         </Button>
                     </Group>
 
+                </Stack>
+            </Modal>
+
+            <Modal opened={profileModalOpen} onClose={() => setProfileModalOpen(false)} title="Complete Your Profile" centered>
+                <Stack gap="md">
+                    <Text>
+                        Your progress has been saved. Please complete your profile to publish your trip.
+                    </Text>
+                    <Group justify="flex-end">
+                        <Button variant="default" onClick={() => setProfileModalOpen(false)}>Cancel</Button>
+                        <Button onClick={() => {
+                            router.push('/complete-profile?returnUrl=/newRide');
+                        }}>
+                            Go to Profile
+                        </Button>
+                    </Group>
                 </Stack>
             </Modal>
         </Paper>

@@ -1,3 +1,10 @@
+drop schema public cascade;
+
+create schema public;
+
+
+
+
 -- Needed for gen_random_uuid()
 create extension if not exists pgcrypto;
 
@@ -125,7 +132,7 @@ create table trips (
 
   departure_time timestamptz not null,
   total_seats int not null check (total_seats > 0),
-  seats_left int not null check (seats_left >= 0 and seats_left <= total_seats),
+  seats_taken int not null default 0 check (seats_taken >= 0 and seats_taken <= total_seats),
 
   status trip_status not null default 'bookable',
   created_at timestamptz not null default now(),
@@ -265,6 +272,7 @@ create table car_snapshots (
 create table rule_templates (
   id uuid primary key default gen_random_uuid(),
   driver text references users(id) not null,
+  name text not null,
 
   big_luggage_lim int,
   small_luggage_lim int,
@@ -275,7 +283,8 @@ create table rule_templates (
   payment_methods text[],
   cancellation_policy text,
   auto_accept bool,
-  cutoff_time interval
+  cutoff_time interval,
+  payment_handle text
 );
 
 create table trip_templates (
@@ -283,8 +292,10 @@ create table trip_templates (
   driver text references users(id) not null,
   car uuid references cars(id),
   rule uuid references rule_templates(id),
+  price decimal(8, 2),
+  name text not null,
 
-  notes text,
+  notes text not null,
   from_text text,
   to_text text,
   origin_geog geography(Point, 4326),

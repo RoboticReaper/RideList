@@ -1,0 +1,50 @@
+
+[2025-12-28T10:17:09.173Z] Error: column "total_seats" specified more than once
+Stack: error: column "total_seats" specified more than once
+    at /Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/pg/lib/client.js:545:17
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async POST (/Users/baorenliu/Documents/Programming/RideList/frontend/.next/dev/server/chunks/[root-of-the-server]__8239c7e4._.js:413:25)
+    at async AppRouteRouteModule.do (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:37789)
+    at async AppRouteRouteModule.handle (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:45045)
+    at async responseGenerator (/Users/baorenliu/Documents/Programming/RideList/frontend/.next/dev/server/chunks/node_modules_0e91f8ac._.js:17095:38)
+    at async AppRouteRouteModule.handleResponse (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:1:187851)
+    at async handleResponse (/Users/baorenliu/Documents/Programming/RideList/frontend/.next/dev/server/chunks/node_modules_0e91f8ac._.js:17157:32)
+    at async handler (/Users/baorenliu/Documents/Programming/RideList/frontend/.next/dev/server/chunks/node_modules_0e91f8ac._.js:17210:13)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/base-server.js:1413:9)
+    at async DevServer.renderPageComponent (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/base-server.js:1465:24)
+    at async DevServer.renderToResponseImpl (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/base-server.js:1515:32)
+    at async DevServer.pipeImpl (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/base-server.js:1021:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/next-server.js:394:17)
+    at async DevServer.handleRequestImpl (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/base-server.js:912:17)
+    at async /Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/dev/next-dev-server.js:382:20
+    at async Span.traceAsyncFn (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/trace/trace.js:157:20)
+    at async DevServer.handleRequest (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/dev/next-dev-server.js:378:24)
+    at async invokeRender (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/lib/router-server.js:240:21)
+    at async handleRequest (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/lib/router-server.js:436:24)
+    at async requestHandlerImpl (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/lib/router-server.js:484:13)
+    at async Server.requestListener (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/lib/start-server.js:226:13)
+
+[2025-12-28T10:17:17.132Z] Error: column "total_seats" specified more than once
+Stack: error: column "total_seats" specified more than once
+    at /Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/pg/lib/client.js:545:17
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async POST (/Users/baorenliu/Documents/Programming/RideList/frontend/.next/dev/server/chunks/[root-of-the-server]__8239c7e4._.js:413:25)
+    at async AppRouteRouteModule.do (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:37789)
+    at async AppRouteRouteModule.handle (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:45045)
+    at async responseGenerator (/Users/baorenliu/Documents/Programming/RideList/frontend/.next/dev/server/chunks/node_modules_0e91f8ac._.js:17095:38)
+    at async AppRouteRouteModule.handleResponse (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:1:187851)
+    at async handleResponse (/Users/baorenliu/Documents/Programming/RideList/frontend/.next/dev/server/chunks/node_modules_0e91f8ac._.js:17157:32)
+    at async handler (/Users/baorenliu/Documents/Programming/RideList/frontend/.next/dev/server/chunks/node_modules_0e91f8ac._.js:17210:13)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/base-server.js:1413:9)
+    at async DevServer.renderPageComponent (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/base-server.js:1465:24)
+    at async DevServer.renderToResponseImpl (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/base-server.js:1515:32)
+    at async DevServer.pipeImpl (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/base-server.js:1021:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/next-server.js:394:17)
+    at async DevServer.handleRequestImpl (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/base-server.js:912:17)
+    at async /Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/dev/next-dev-server.js:382:20
+    at async Span.traceAsyncFn (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/trace/trace.js:157:20)
+    at async DevServer.handleRequest (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/dev/next-dev-server.js:378:24)
+    at async invokeRender (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/lib/router-server.js:240:21)
+    at async handleRequest (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/lib/router-server.js:436:24)
+    at async requestHandlerImpl (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/lib/router-server.js:484:13)
+    at async Server.requestListener (/Users/baorenliu/Documents/Programming/RideList/frontend/node_modules/next/dist/server/lib/start-server.js:226:13)

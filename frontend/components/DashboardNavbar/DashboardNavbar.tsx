@@ -12,7 +12,8 @@ import {
     IconCar,
     IconLayoutDashboard,
     IconSwitchHorizontal,
-    IconSettings
+    IconSettings,
+    IconMapPin
 } from '@tabler/icons-react';
 import { Code, Group } from '@mantine/core';
 import classes from './DashboardNavbar.module.css';
@@ -26,6 +27,11 @@ export function DashboardNavbar({ drawerOpened, toggleDrawer, closeDrawer }: { d
 
     const data = [
         { link: '/dashboard', label: 'Dashboard', icon: IconLayoutDashboard },
+        ...(role === 'driver' ? [
+            { link: '/trip-templates', label: 'Trip Templates', icon: IconMapPin },
+            { link: '/rule-templates', label: 'Rule Templates', icon: IconReceipt2 },
+            { link: '/cars', label: 'My Cars', icon: IconCar },
+        ] : []),
         { link: '/history', label: 'History', icon: IconHistory },
         { link: '/roleSettings', label: 'Role-based Settings', icon: IconSettings },
     ];
