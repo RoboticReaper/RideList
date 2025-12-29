@@ -93,7 +93,18 @@ export function EditTripView({ trip }: EditTripViewProps) {
             const h = (interval.hours || 0) + (interval.minutes || 0) / 60;
             return h > 0 ? h : '';
         }
-        return '';
+    };
+
+    // Parse pay window interval to minutes (number)
+    const parsePayWindowToMinutes = (interval: any) => {
+        if (!interval) return 30; // default
+        if (typeof interval === 'object') {
+            const m = (interval.hours || 0) * 60 + (interval.minutes || 0);
+            return m > 0 ? m : 30;
+        }
+        // If string "30 minutes"
+        const p = parseInt(String(interval));
+        return isNaN(p) ? 30 : p;
     };
 
     const form = useForm({
@@ -124,6 +135,7 @@ export function EditTripView({ trip }: EditTripViewProps) {
             flexibility: parseIntervalToHours(trip.rules.time_flexibility),
             autoAccept: trip.rules.auto_accept,
             cutoffTime: parseCutoffToHours(trip.rules.cutoff_time), // number of hours
+            payWindow: parsePayWindowToMinutes(trip.rules.pay_window),
         },
     });
 
@@ -369,6 +381,12 @@ export function EditTripView({ trip }: EditTripViewProps) {
                 payload.cutoffTime = null;
             }
 
+            if (values.payWindow !== '' && values.payWindow !== null) {
+                payload.payWindow = `${values.payWindow} minutes`;
+            } else {
+                payload.payWindow = '30 minutes';
+            }
+
             if (payload.car === 'none') {
                 delete payload.car;
             }
@@ -569,6 +587,14 @@ export function EditTripView({ trip }: EditTripViewProps) {
                 <Switch
                     label="Auto-accept Bookings"
                     {...form.getInputProps('autoAccept', { type: 'checkbox' })}
+                />
+
+                <NumberInput
+                    label="Pay Window (Minutes)"
+                    description="Time for rider to pay after approval"
+                    min={5}
+                    step={5}
+                    {...form.getInputProps('payWindow')}
                 />
 
                 <Button type="submit" loading={loading} fullWidth mt="md">

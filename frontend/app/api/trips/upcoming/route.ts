@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
+import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
 
 export async function GET(req: Request) {
     const client = await pool.connect();
@@ -51,8 +52,60 @@ export async function GET(req: Request) {
         query += ` ORDER BY t.departure_time ASC LIMIT $${paramIndex}`;
         params.push(limit);
 
+        // Pre-fetch check: Find trips that match criteria to clean up their bookings
+        // Logic: 
+        // 1. We are about to fetch trips for this driver.
+        // 2. We want to ensure 'seats_taken' is accurate.
+        // 3. We can't easily know EXACTLY which trips the main query will return without running it (due to pagination/sorting).
+        // 4. STRATEGY: Run the main query. Get trips. Check their bookings. IF any changed, Re-run query (or update locally).
+        // Since we need 'seats_taken' to be correct, and checkAndProcessPayWindowTimeout updates 'seats_taken', re-running or local update is needed.
+        // Re-running is safest for consistency but doubles DB load. 
+        // Local update of 'seats_taken' is complex because we need to know HOW MANY bookings timed out for each trip.
+        // Let's do: Fetch -> Check -> Update Local
+
         const res = await client.query(query, params);
-        const trips = res.rows;
+        let trips = res.rows;
+
+        const tripIds = trips.map((t: any) => t.id);
+
+        if (tripIds.length > 0) {
+            const timeouts = await client.query(
+                "SELECT id, trip FROM bookings WHERE trip = ANY($1) AND status = 'joined_with_pay_window'",
+                [tripIds]
+            );
+
+            const tripsToRefresh = new Set<string>();
+
+            for (const row of timeouts.rows) {
+                const newStatus = await checkAndProcessPayWindowTimeout(client, row.id);
+                if (newStatus === 'pay_timeout') {
+                    tripsToRefresh.add(row.trip);
+                }
+            }
+
+            // If any trips were affected, we should update their seats_taken in our local list
+            // or re-fetch. Re-fetching specific trips might be easier.
+            if (tripsToRefresh.size > 0) {
+                // Optimization: Just update local seats_taken if we know count.
+                // But we don't know exactly how many seats were released (seats_booked varies).
+                // So let's re-fetch the affected trips seats_taken.
+                const refreshRes = await client.query(
+                    "SELECT id, seats_taken FROM trips WHERE id = ANY($1)",
+                    [Array.from(tripsToRefresh)]
+                );
+
+                // Update local map
+                const freshData = new Map();
+                refreshRes.rows.forEach((r: any) => freshData.set(r.id, r.seats_taken));
+
+                trips = trips.map((t: any) => {
+                    if (freshData.has(t.id)) {
+                        return { ...t, seats_taken: freshData.get(t.id) };
+                    }
+                    return t;
+                });
+            }
+        }
 
         let nextCursor = null;
         if (trips.length === limit) {

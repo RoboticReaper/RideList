@@ -55,7 +55,8 @@ export async function POST(req: Request) {
             cancellation_policy,
             auto_accept,
             cutoff_time,
-            payment_handle
+            payment_handle,
+            pay_window
         } = body;
 
         if (!name) {
@@ -66,14 +67,17 @@ export async function POST(req: Request) {
             `INSERT INTO rule_templates (
                 driver, name, big_luggage_lim, small_luggage_lim, pickup_rules,
                 pickup_radius_meters, drop_off_radius_meters, departure_time_flexibility,
-                payment_methods, cancellation_policy, auto_accept, cutoff_time, payment_handle
+                payment_methods, cancellation_policy, auto_accept, cutoff_time, payment_handle,
+                pay_window
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+                $14
             ) RETURNING *`,
             [
                 user.uid, name, big_luggage_lim, small_luggage_lim, pickup_rules,
                 pickup_radius_meters, drop_off_radius_meters, departure_time_flexibility,
-                payment_methods, cancellation_policy, auto_accept, cutoff_time, payment_handle
+                payment_methods, cancellation_policy, auto_accept, cutoff_time, payment_handle,
+                pay_window
             ]
         );
 

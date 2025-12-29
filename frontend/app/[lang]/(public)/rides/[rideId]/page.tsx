@@ -1,14 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import {
-    Container, Title, Text, Card, Group, Badge, Stack, Grid, LoadingOverlay, Alert, Divider, Avatar, ThemeIcon, Progress, Tooltip, SimpleGrid, Paper, Button, Popover, Transition
+    Container, Title, Text, Card, Group, Badge, Stack, Grid, LoadingOverlay, Alert, Divider, Avatar, ThemeIcon, Progress, Tooltip, SimpleGrid, Paper, Button, Popover, Transition, NumberInput
 } from '@mantine/core';
+import { TimeInput } from '@mantine/dates';
+import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/components/firebase/AuthContext';
-import { useMediaQuery, useIntersection } from '@mantine/hooks';
+import { useMediaQuery, useIntersection, useInterval } from '@mantine/hooks';
 import {
-    IconMapPin, IconCalendar, IconArmchair, IconCoin, IconInfoCircle, IconLuggage, IconClock, IconCar, IconStar, IconCheck, IconUser, IconAlertCircle, IconDashboard
+    IconMapPin, IconCalendar, IconArmchair, IconCoin, IconInfoCircle, IconLuggage, IconClock, IconCar, IconStar, IconCheck, IconUser, IconAlertCircle, IconDashboard, IconPhone
 } from '@tabler/icons-react';
 import { LocalizedLink } from '@/components/LocalizedLink';
 import dayjs from 'dayjs';
@@ -38,6 +40,7 @@ interface RideDetails {
         model: string;
         color: string;
         year: string;
+        plate: string | null;
     } | null;
     driver: {
         id: string;
@@ -47,6 +50,7 @@ interface RideDetails {
         member_since: string;
         rating: number | null;
         completed_trips: number;
+        phone: string | null;
     };
     rules: {
         luggage: {
@@ -67,10 +71,12 @@ interface RideDetails {
         cancellation_policy: string | null;
         cutoff_time: any;
     };
+    user_booking_status: string | null;
 }
 
 export default function RidePage() {
     const params = useParams();
+    const router = useRouter();
     const rideId = params.rideId as string;
     const { user, handleProtectedAction } = useAuth();
     const [ride, setRide] = useState<RideDetails | null>(null);
@@ -82,39 +88,196 @@ export default function RidePage() {
         threshold: 0,
     });
 
-    useEffect(() => {
+    // Booking State
+    const [bookingOpen, setBookingOpen] = useState(false);
+    const [bookingSubmitting, setBookingSubmitting] = useState(false);
+    const [bookingData, setBookingData] = useState({
+        seats: 1,
+        bigLuggage: 0,
+        smallLuggage: 0,
+        pickupTime: '',
+    });
+
+    const fetchRide = async () => {
         if (!rideId) return;
-
-        const fetchRide = async () => {
-            try {
-                const token = await user?.getIdToken();
-                const res = await fetch(`/api/trips/${rideId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                if (!res.ok) {
-                    const errData = await res.json().catch(() => ({}));
-                    throw new Error(errData.error || 'Failed to fetch ride');
-                }
-                const data = await res.json();
-                setRide(data);
-            } catch (err: any) {
-                console.error(err);
-                setError(err.message);
-            } finally {
-                setLoading(false);
+        try {
+            const token = user ? await user.getIdToken() : null;
+            const headers: HeadersInit = {};
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
             }
-        };
 
+            const res = await fetch(`/api/trips/${rideId}`, {
+                headers
+            });
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || 'Failed to fetch ride');
+            }
+            const data = await res.json();
+            setRide(data);
+        } catch (err: any) {
+            console.error(err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const interval = useInterval(fetchRide, 120000);
+
+    useEffect(() => {
         fetchRide();
-    }, [rideId]);
+        interval.start();
+        return interval.stop;
+    }, [rideId, user]); // Refetch if user changes (auth loads)
+
+    const memberSinceYear = ride ? dayjs(ride.driver.member_since).format('YYYY') : '';
+
+    const isDriver = user && ride?.driver?.id === user.uid;
+
+    const prefilledRef = useRef(false);
+
+    useEffect(() => {
+        if (!user || !ride || isDriver) return;
+
+        const maxBig = ride.rules.luggage.big;
+        const maxSmall = ride.rules.luggage.small;
+
+        if (!prefilledRef.current) {
+            const fetchProfile = async () => {
+                try {
+                    const token = await user.getIdToken();
+                    const res = await fetch(`/api/user/${user.uid}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        const profile = await res.json();
+                        const defaults = profile.rider_profile || {};
+
+                        setBookingData(prev => ({
+                            ...prev,
+                            bigLuggage: Math.min(defaults.default_big_luggage || 0, maxBig),
+                            smallLuggage: Math.min(defaults.default_small_luggage || 0, maxSmall),
+                            pickupTime: dayjs(ride.departure_time).format('HH:mm')
+                        }));
+                        prefilledRef.current = true;
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch profile defaults", e);
+                }
+            };
+            fetchProfile();
+        } else {
+            // Re-clamp in case rules changed
+            setBookingData(prev => ({
+                ...prev,
+                bigLuggage: Math.min(prev.bigLuggage, maxBig),
+                smallLuggage: Math.min(prev.smallLuggage, maxSmall),
+            }));
+        }
+    }, [user, ride, isDriver]);
+
+    const handleBook = async () => {
+        if (!user) {
+            handleProtectedAction();
+            return;
+        }
+        if (isDriver) {
+            notifications.show({
+                title: 'Error',
+                message: 'You cannot book your own trip.',
+                color: 'red'
+            });
+            return;
+        }
+
+        setBookingSubmitting(true);
+        try {
+            // Construct preferred pickup time date object if time is set
+            let preferredIso = null;
+            if (bookingData.pickupTime) {
+                const [h, m] = bookingData.pickupTime.split(':').map(Number);
+                const dep = dayjs(ride?.departure_time);
+                // Assume same day as departure for simplicity, or nearest future match
+                // Ideally we use the departure date and set the time
+                const pref = dep.hour(h).minute(m);
+                preferredIso = pref.toISOString();
+            }
+
+            const token = await user.getIdToken();
+            const res = await fetch(`/api/trips/${rideId}/bookings`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    seats_booked: bookingData.seats,
+                    big_luggage: bookingData.bigLuggage,
+                    small_luggage: bookingData.smallLuggage,
+                    preferred_pickup_time: preferredIso
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to book');
+            }
+
+            notifications.show({
+                title: 'Success',
+                message: data.status === 'ordered_with_pay_window' ? 'Booking initiated! Proceeding to payment...' : 'Booking request sent! Waiting for approval.', // prompt said 'joined with pay window', handling generalized success msg
+                color: 'green'
+            });
+
+            // If status is 'joined_with_pay_window', we might want to show a modal or redirect.
+            // For now, just close popover and maybe refresh or update local state
+            setBookingOpen(false);
+            // Ideally trigger a re-fetch or optimistically update
+            // For this task, we'll just alert success as per prompt "display error ... otherwise form". 
+            // The prompt didn't specify post-success navigation, but "pay window" implies something.
+            // I'll show a persistent notification or alert for pay window if that status comes back.
+            if (data.status === 'joined_with_pay_window') {
+                notifications.show({
+                    title: 'Booking Accepted',
+                    message: 'Please arrange payment with the driver.',
+                    color: 'blue',
+                    autoClose: false
+                });
+            }
+
+            // Update local state to reflect booking immediately
+            setRide((prev) => {
+                if (!prev) return null;
+                const newTaken = data.status === 'joined_with_pay_window'
+                    ? prev.seats.taken + bookingData.seats
+                    : prev.seats.taken;
+
+                return {
+                    ...prev,
+                    user_booking_status: data.status,
+                    seats: {
+                        ...prev.seats,
+                        taken: newTaken
+                    }
+                };
+            });
+
+        } catch (err: any) {
+            notifications.show({
+                title: 'Error',
+                message: err.message,
+                color: 'red'
+            });
+        } finally {
+            setBookingSubmitting(false);
+        }
+    };
 
     if (loading) return <LoadingOverlay visible />;
     if (error) return <Container py="xl"><Alert color="red" title="Error" icon={<IconInfoCircle />}>{error}</Alert></Container>;
     if (!ride) return <Container py="xl"><Alert color="yellow" title="Not Found" icon={<IconInfoCircle />}>Ride not found</Alert></Container>;
-
-    const memberSinceYear = dayjs(ride.driver.member_since).format('YYYY');
 
     return (
         <Container size="md" py="xl" w="100%">
@@ -134,16 +297,7 @@ export default function RidePage() {
                             {ride.from_text} <Text span c="dimmed" inherit>→</Text> {ride.to_text}
                         </Title>
 
-                        {user && user.uid === ride.driver.id && (
-                            <Button
-                                component={LocalizedLink}
-                                href={`/dashboard/${rideId}`}
-                                leftSection={<IconDashboard size={16} />}
-                                variant="light"
-                            >
-                                Manage Trip
-                            </Button>
-                        )}
+
                     </Group>
 
                     <Group mt="xs" gap="lg">
@@ -157,16 +311,20 @@ export default function RidePage() {
                                 {dayjs(ride.departure_time).format('h:mm A')}
                                 {ride.rules.time_flexibility && (
                                     <Text span size="sm" c="dimmed" ml={4}>
-                                        (+/- {(() => {
+                                        {(() => {
                                             const f = ride.rules.time_flexibility;
                                             if (typeof f === 'object' && f !== null) {
                                                 const h = f.hours || 0;
                                                 const m = f.minutes || 0;
-                                                const total = h + m / 60;
-                                                return total > 0 ? `${total} hours` : 'Flexible';
+                                                if (h === 0 && m === 0) return '(Exact time)';
+
+                                                const parts = [];
+                                                if (h > 0) parts.push(`${h} hr${h > 1 ? 's' : ''}`);
+                                                if (m > 0) parts.push(`${m} min${m > 1 ? 's' : ''}`);
+                                                return `(+/- ${parts.join(' ')})`;
                                             }
-                                            return '0.25 hours';
-                                        })()})
+                                            return '';
+                                        })()}
                                     </Text>
                                 )}
                             </Text>
@@ -185,24 +343,122 @@ export default function RidePage() {
                                     <div>
                                         <Text size="3rem" fw={800} lh={1} c="blue">${ride.price}</Text>
                                         <Text size="sm" c="dimmed">per seat</Text>
-                                        <Button
-                                            ref={ref}
-                                            mt="sm"
-                                            size="sm"
-                                            variant="filled"
-                                            color={ride.status === 'bookable' ? 'blue' : 'gray'}
-                                            disabled={ride.status !== 'bookable'}
-                                            onClick={() => {
-                                                if (user) {
-                                                    // Handle Booking Logic (TODO)
-                                                    alert('Booking flow to be implemented');
-                                                } else {
-                                                    handleProtectedAction();
-                                                }
-                                            }}
+                                        {ride.user_booking_status && (
+                                            <Text size="sm" fw={700} c="blue" mt={4}>
+                                                Status: {ride.user_booking_status.replace(/_/g, ' ').toUpperCase()}
+                                            </Text>
+                                        )}
+                                        <Popover
+                                            opened={bookingOpen}
+                                            onChange={setBookingOpen}
+                                            width={300}
+                                            position="bottom"
+                                            withArrow
+                                            shadow="md"
+                                            trapFocus
                                         >
-                                            {user ? 'Book Now' : 'Login to Book'}
-                                        </Button>
+                                            <Popover.Target>
+                                                <Button
+                                                    ref={ref}
+                                                    mt="sm"
+                                                    size="sm"
+                                                    variant="light"
+                                                    color={isDriver ? 'blue' : (ride.status === 'bookable' || !!ride.user_booking_status) ? 'blue' : 'gray'}
+                                                    disabled={!isDriver && (ride.user_booking_status === 'cancelled' || (!ride.user_booking_status && ride.status !== 'bookable'))}
+                                                    onClick={() => {
+                                                        if (!user) {
+                                                            handleProtectedAction();
+                                                            return;
+                                                        }
+                                                        if (isDriver) {
+                                                            router.push(`/dashboard/${rideId}`);
+                                                            return;
+                                                        }
+                                                        const status = ride.user_booking_status;
+
+                                                        // Active statuses: waiting_approval, joined_with_pay_window, confirmed, pending_payment...
+                                                        // Inactive statuses: removed, rejected, pay_timeout, left_paid, left_unpaid, cancelled.
+                                                        // logic: if active, goto dashboard. if inactive (except cancelled), open booking.
+
+                                                        const isInactive = ['removed', 'pay_timeout', 'left_paid', 'left_unpaid', 'cancelled'].includes(status || '');
+
+                                                        if (status && !isInactive) {
+                                                            router.push(`/dashboard/${rideId}`);
+                                                            return;
+                                                        }
+                                                        setBookingOpen((o) => !o);
+                                                    }}
+                                                >
+                                                    {user ? (
+                                                        isDriver ? 'Manage Trip' :
+                                                            (ride.user_booking_status === 'cancelled') ? 'Booking Cancelled' :
+                                                                ((ride.user_booking_status && !['removed', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) ? 'Manage in Dashboard' : 'Book Now')
+                                                    ) : 'Login to Book'}
+
+                                                </Button>
+                                            </Popover.Target>
+                                            <Popover.Dropdown>
+                                                <Stack gap="sm">
+                                                    <Text fw={600} size="sm">Booking Details</Text>
+
+                                                    <NumberInput
+                                                        label="Seats"
+                                                        description={`Max ${ride.seats.total - ride.seats.taken}`}
+                                                        min={1}
+                                                        max={ride.seats.total - ride.seats.taken}
+                                                        value={bookingData.seats}
+                                                        onChange={(v) => setBookingData({ ...bookingData, seats: Number(v) })}
+                                                        required
+                                                    />
+
+                                                    <Group grow>
+                                                        <NumberInput
+                                                            label="Big Luggage"
+                                                            min={0}
+                                                            max={(ride.rules.luggage.big * bookingData.seats)}
+                                                            value={bookingData.bigLuggage}
+                                                            onChange={(v) => setBookingData({ ...bookingData, bigLuggage: Number(v) })}
+                                                        />
+                                                        <NumberInput
+                                                            label="Small Luggage"
+                                                            min={0}
+                                                            max={(ride.rules.luggage.small * bookingData.seats)}
+                                                            value={bookingData.smallLuggage}
+                                                            onChange={(v) => setBookingData({ ...bookingData, smallLuggage: Number(v) })}
+                                                        />
+                                                    </Group>
+
+                                                    <TimeInput
+                                                        label="Preferred Pickup Time"
+                                                        description={(() => {
+                                                            const f = ride.rules.time_flexibility;
+                                                            if (typeof f === 'object' && f !== null) {
+                                                                const h = f.hours || 0;
+                                                                const m = f.minutes || 0;
+                                                                if (h === 0 && m === 0) return 'Exact time only';
+
+                                                                const parts = [];
+                                                                if (h > 0) parts.push(`${h} hr${h > 1 ? 's' : ''}`);
+                                                                if (m > 0) parts.push(`${m} min${m > 1 ? 's' : ''}`);
+                                                                return `Flexibility: +/- ${parts.join(' ')}`;
+                                                            }
+                                                            return 'Optional';
+                                                        })()}
+                                                        leftSection={<IconClock size={16} />}
+                                                        value={bookingData.pickupTime}
+                                                        onChange={(e) => setBookingData({ ...bookingData, pickupTime: e.currentTarget.value })}
+                                                    />
+
+                                                    <Button
+                                                        fullWidth
+                                                        onClick={handleBook}
+                                                        loading={bookingSubmitting}
+                                                    >
+                                                        Confirm Booking
+                                                    </Button>
+                                                </Stack>
+                                            </Popover.Dropdown>
+                                        </Popover>
                                     </div>
                                     <div style={{ width: isSmallScreen ? '100%' : 140, marginTop: isSmallScreen ? 'var(--mantine-spacing-md)' : 0 }}>
                                         <Text size="sm" fw={500} mb={4} ta={isSmallScreen ? "left" : "right"}>
@@ -248,6 +504,12 @@ export default function RidePage() {
                                             )}
                                         </Group>
                                         <Text size="sm" c="dimmed">Member since {memberSinceYear}</Text>
+                                        {ride.driver.phone && (
+                                            <Group gap="xs" mt={4}>
+                                                <IconPhone size={16} color="gray" />
+                                                <Text size="sm">{ride.driver.phone}</Text>
+                                            </Group>
+                                        )}
 
                                         <Group mt="sm" gap="xl">
                                             <div>
@@ -277,6 +539,9 @@ export default function RidePage() {
                                         <div>
                                             <Text fw={600} size="lg">{ride.car.year} {ride.car.make} {ride.car.model}</Text>
                                             <Badge color="gray" variant="outline">{ride.car.color}</Badge>
+                                            {ride.car.plate && (
+                                                <Badge color="blue" variant="light" ml="xs">{ride.car.plate}</Badge>
+                                            )}
                                         </div>
                                     </Group>
                                     <Paper withBorder p="xs" radius="md" bg="gray.0" mt="md">
@@ -401,21 +666,47 @@ export default function RidePage() {
                                     <div>
                                         <Text size="xl" fw={800} lh={1} c="blue">${ride.price}</Text>
                                         <Text size="xs" c="dimmed">per seat</Text>
+                                        {ride.user_booking_status && (
+                                            <Text size="xs" fw={700} c="blue" mt={2}>
+                                                Status: {ride.user_booking_status.replace(/_/g, ' ').toUpperCase()}
+                                            </Text>
+                                        )}
                                     </div>
                                     <Button
                                         size="md"
                                         variant="filled"
-                                        color={ride.status === 'bookable' ? 'blue' : 'gray'}
-                                        disabled={ride.status !== 'bookable'}
+                                        color={
+                                            isDriver ? 'gray' :
+                                                ride.user_booking_status ? 'blue' :
+                                                    ride.status === 'bookable' ? 'blue' : 'gray'
+                                        }
+                                        disabled={!isDriver && (ride.user_booking_status === 'cancelled' || (!ride.user_booking_status && ride.status !== 'bookable'))}
                                         onClick={() => {
-                                            if (user) {
-                                                alert('Booking flow to be implemented');
-                                            } else {
+                                            if (!user) {
                                                 handleProtectedAction();
+                                                return;
                                             }
+                                            if (isDriver) {
+                                                router.push(`/dashboard/${rideId}`);
+                                                return;
+                                            }
+                                            const status = ride.user_booking_status;
+                                            const isInactive = ['removed', 'pay_timeout', 'left_paid', 'left_unpaid', 'cancelled'].includes(status || '');
+
+                                            if (status && !isInactive) {
+                                                router.push(`/dashboard/${rideId}`);
+                                                return;
+                                            }
+                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                            setBookingOpen(true);
                                         }}
                                     >
-                                        {user ? 'Book Now' : 'Login to Book'}
+                                        {user ? (
+                                            isDriver ? 'Manage Trip' :
+                                                (ride.user_booking_status === 'cancelled') ? 'Booking Cancelled' :
+                                                    ((ride.user_booking_status && !['removed', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) ? 'Manage in Dashboard' : 'Book Now')
+                                        ) : 'Login to Book'}
+
                                     </Button>
                                 </Group>
                             </Container>

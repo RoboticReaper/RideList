@@ -1,0 +1,108 @@
+import { NextResponse } from 'next/server';
+import { pool } from '@/app/api/lib/db';
+import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
+import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
+
+export async function POST(
+    req: Request,
+    { params }: { params: Promise<{ bookingId: string }> }
+) {
+    const { bookingId } = await params;
+    const client = await pool.connect();
+
+    try {
+        const user = await verifyUserFromRequest(
+            req.headers.get('authorization') ?? undefined
+        );
+
+        if (!user || !user.uid) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        await client.query('BEGIN');
+
+        // Lazy Timeout Check
+        await checkAndProcessPayWindowTimeout(client, bookingId);
+
+        // Check booking ownership and current status
+        const bookingQuery = `
+            SELECT id, rider, trip, status, seats_booked
+            FROM bookings
+            WHERE id = $1
+            FOR UPDATE
+        `;
+        const bookingRes = await client.query(bookingQuery, [bookingId]);
+
+        if (bookingRes.rowCount === 0) {
+            await client.query('ROLLBACK');
+            return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+        }
+
+        const booking = bookingRes.rows[0];
+
+        if (booking.rider !== user.uid) {
+            await client.query('ROLLBACK');
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
+        // Check if booking is already inactive
+        // Inactive statuses: pay_timeout, removed, left_paid, left_unpaid, cancelled.
+        const inactiveStatuses = ['pay_timeout', 'removed', 'left_paid', 'left_unpaid', 'cancelled', 'rejected'];
+        if (inactiveStatuses.includes(booking.status)) {
+            await client.query('ROLLBACK');
+            return NextResponse.json({ error: 'Booking is already inactive.' }, { status: 400 });
+        }
+
+
+        // check if user already paid
+        if (booking.paid) {
+            // Update booking status
+            const updateBookingQuery = `
+                UPDATE bookings
+                SET status = 'left_paid'
+                WHERE id = $1
+            `;
+            await client.query(updateBookingQuery, [bookingId]);
+
+            // Log booking status history
+            const statusHistoryQuery = `
+                INSERT INTO booking_status_history (booking_id, actor_id, old_status, new_status)
+                VALUES ($1, $2, $3, $4)
+            `;
+            await client.query(statusHistoryQuery, [bookingId, user.uid, booking.status, 'left_paid']);
+
+        } else {
+            // Update booking status
+            const updateBookingQuery = `
+                UPDATE bookings
+                SET status = 'left_unpaid'
+                WHERE id = $1
+            `;
+            await client.query(updateBookingQuery, [bookingId]);
+
+            // Log booking status history
+            const statusHistoryQuery = `
+                INSERT INTO booking_status_history (booking_id, actor_id, old_status, new_status)
+                VALUES ($1, $2, $3, $4)
+            `;
+            await client.query(statusHistoryQuery, [bookingId, user.uid, booking.status, 'left_unpaid']);
+        }
+
+
+
+
+        await client.query('COMMIT');
+
+        return NextResponse.json({ success: true });
+
+    } catch (error: any) {
+        await client.query('ROLLBACK');
+        console.error("Cancel Booking Error:", error);
+        return NextResponse.json(
+            { error: error.message || 'Internal Server Error' },
+            { status: 500 }
+        );
+    } finally {
+        client.release();
+    }
+}

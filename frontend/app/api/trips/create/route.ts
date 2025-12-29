@@ -71,6 +71,7 @@ export async function POST(req: Request) {
             pickupRules,
             cancellationPolicy,
             cutoffTime,
+            payWindow,
             notes,
             saveTemplate,
             saveTripTemplate,
@@ -301,9 +302,11 @@ export async function POST(req: Request) {
                 drop_off_radius_meters,
                 pickup_rules,
                 cancellation_policy,
-                cutoff_time
+                cutoff_time,
+                pay_window
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+                $13
             )`,
             [
                 tripId,
@@ -317,7 +320,8 @@ export async function POST(req: Request) {
                 dropoffRadius,
                 pickupRules || null,
                 cancellationPolicy || null,
-                cutoffTime || null
+                cutoffTime || null,
+                payWindow || '30 minutes'
             ]
         );
 
@@ -351,9 +355,11 @@ export async function POST(req: Request) {
                         drop_off_radius_meters,
                         pickup_rules,
                         cancellation_policy,
-                        cutoff_time
+                        cutoff_time,
+                        pay_window
                     ) VALUES (
-                        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+                        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+                        $14
                     ) RETURNING id`,
                     [
                         user.uid,
@@ -368,7 +374,8 @@ export async function POST(req: Request) {
                         dropoffRadius,
                         pickupRules || null,
                         cancellationPolicy || null,
-                        cutoffTime || null
+                        cutoffTime || null,
+                        payWindow || '30 minutes'
                     ]
                 );
                 ruleTemplateId = ruleTemplateRes.rows[0].id;

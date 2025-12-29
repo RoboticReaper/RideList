@@ -39,6 +39,10 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
         initialData?.cutoff_time ? parseInt(initialData.cutoff_time) : ''
     );
 
+    const [payWindow, setPayWindow] = useState<number | ''>(
+        initialData?.pay_window ? parseInt(initialData.pay_window) : 30
+    );
+
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async () => {
@@ -62,7 +66,8 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
                 payment_handle: paymentHandle,
                 big_luggage_lim: bigLuggage === '' ? null : bigLuggage,
                 small_luggage_lim: smallLuggage === '' ? null : smallLuggage,
-                cutoff_time: (cutoffEnabled && cutoffHours !== '') ? `${cutoffHours} hours` : null
+                cutoff_time: (cutoffEnabled && cutoffHours !== '') ? `${cutoffHours} hours` : null,
+                pay_window: (payWindow !== '' && payWindow !== undefined) ? `${payWindow} minutes` : null
             };
 
             const url = isNew ? '/api/user/rule-templates' : `/api/user/rule-templates/${templateId}`;
@@ -148,6 +153,15 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
                         description="Automatically confirm bookings that meet your criteria"
                         checked={autoAccept}
                         onChange={(e) => setAutoAccept(e.currentTarget.checked)}
+                    />
+
+                    <NumberInput
+                        label="Pay Window (Minutes)"
+                        description="Time for rider to pay after joining"
+                        value={payWindow}
+                        onChange={(val) => setPayWindow(val === '' ? '' : Number(val))}
+                        min={5}
+                        step={5}
                     />
 
                     <Divider />

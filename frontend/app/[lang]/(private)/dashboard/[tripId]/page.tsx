@@ -6,6 +6,7 @@ import { IconUsers, IconEdit, IconArrowLeft, IconExternalLink } from '@tabler/ic
 import { useRouter } from 'next/navigation';
 import { ManageTripView } from './components/ManageTripView';
 import { EditTripView } from './components/EditTripView';
+import { RiderTripView } from './components/RiderTripView';
 import { LocalizedLink } from '@/components/LocalizedLink';
 
 export default function TripManagementPage({ params }: { params: Promise<{ tripId: string }> }) {
@@ -32,9 +33,9 @@ export default function TripManagementPage({ params }: { params: Promise<{ tripI
                 const data = await res.json();
 
                 if (!data.isDriver) {
-                    // Redirect non-drivers to public ride page
-                    router.push(`/rides/${tripId}`);
-                    return;
+                    // Non-drivers see the Rider View instead of redirecting
+                    // router.push(`/rides/${tripId}`); 
+                    // return;
                 }
 
                 setTrip(data);
@@ -57,6 +58,25 @@ export default function TripManagementPage({ params }: { params: Promise<{ tripI
     );
 
     if (!trip) return null;
+
+    if (!trip.isDriver) {
+        return (
+            <Container size="xl">
+                <Group mb="lg">
+                    <Button component={LocalizedLink} href="/dashboard" variant="subtle" leftSection={<IconArrowLeft size={16} />}>
+                        Back to Dashboard
+                    </Button>
+                    <Button component={LocalizedLink} href={`/rides/${tripId}`} variant="outline" leftSection={<IconExternalLink size={16} />}>
+                        View Public Posting
+                    </Button>
+                </Group>
+                <Title order={2} mb="xl">
+                    {trip.from_text.split(',')[0]} &rarr; {trip.to_text.split(',')[0]}
+                </Title>
+                <RiderTripView trip={trip} />
+            </Container>
+        );
+    }
 
     return (
         <Container size="xl">

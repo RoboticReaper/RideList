@@ -21,6 +21,10 @@ import { useAuth } from '../firebase/AuthContext';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { getLocalizedHref } from '../LocalizedLink';
 import { signInWithUIUC } from '../firebase/AuthContext';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
+import { app } from '../firebase/firebase';
+
 
 export function AuthForm(props: PaperProps) {
   const [checked, setChecked] = useState(false)
@@ -30,6 +34,7 @@ export function AuthForm(props: PaperProps) {
   const params = useParams();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get('returnUrl');
+  const auth = getAuth(app);
 
   const msLogin = () => {
     if (!checked) {
@@ -72,6 +77,23 @@ export function AuthForm(props: PaperProps) {
       <Text size="xs" mb="md">
         Only UIUC accounts (@illinois.edu) are currently allowed for student verification.
       </Text>
+
+      <Button
+        radius="xl"
+        onClick={() => {
+          signInWithEmailAndPassword(auth, "liubaoren2006@gmail.com", "asdfasdf").then((success) => {
+            if (success) {
+              if (returnUrl) {
+                router.push(getLocalizedHref(params, returnUrl));
+              } else {
+                router.push(getLocalizedHref(params, "/dashboard"));
+              }
+            }
+          })
+        }}
+      >
+        Tester login
+      </Button>
 
       <Input.Wrapper label="Agreements" withAsterisk error={error}>
         <Checkbox

@@ -1,7 +1,7 @@
-
 import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
+import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
 
 export async function GET(
     req: Request,
@@ -11,6 +11,24 @@ export async function GET(
     const client = await pool.connect();
 
     try {
+        let user = null;
+        let userId = null;
+        try {
+            user = await verifyUserFromRequest(req.headers.get('authorization') ?? undefined);
+            userId = user?.uid || null;
+        } catch (e) {
+            // Continue as guest
+        }
+
+        // Lazy Cleanup of Timed Out Bookings
+        const timeouts = await client.query(
+            "SELECT id FROM bookings WHERE trip = $1 AND status = 'joined_with_pay_window'",
+            [rideId]
+        );
+        for (const row of timeouts.rows) {
+            await checkAndProcessPayWindowTimeout(client, row.id);
+        }
+
         const query = `
       SELECT 
         -- Trip Info
@@ -40,6 +58,7 @@ export async function GET(
         tr.payment_handle,
         tr.auto_accept,
         tr.cutoff_time,
+        tr.pay_window,
         
         -- Car Info
         c.id as car_id,
@@ -54,19 +73,39 @@ export async function GET(
         pg.name as driver_name,
         pg.verified as driver_verified,
         pg.photo_url as driver_photo_url,
+        pg.phone as driver_phone,
         pg.created_at as driver_since,
         pd.rating_cached as driver_rating,
-        pd.completed_trips as driver_completed_trips
+        pd.completed_trips as driver_completed_trips,
+
+        -- Booking Info (User specific)
+        ub.status as user_booking_status,
+        ub.seats_booked as user_seats_booked,
+        ub.big_luggage as user_big_luggage,
+        ub.small_luggage as user_small_luggage,
+        ub.paid as user_paid,
+        ub.ready as user_ready,
+        ub.ready_at as user_ready_at,
+        ub.preferred_pickup_time as user_preferred_pickup_time,
+        br.created_at as user_removed_at
 
       FROM trips t
       LEFT JOIN trip_rules tr ON t.id = tr.id
       LEFT JOIN cars c ON t.car = c.id
       LEFT JOIN profile_global pg ON t.driver = pg.id
       LEFT JOIN profile_driver pd ON t.driver = pd.id
+      LEFT JOIN LATERAL (
+        SELECT id, status, seats_booked, big_luggage, small_luggage, paid, ready, ready_at, preferred_pickup_time
+        FROM bookings b 
+        WHERE b.trip = t.id AND b.rider = $2 
+        ORDER BY b.created_at DESC 
+        LIMIT 1
+      ) ub ON true
+      LEFT JOIN booking_removal br ON ub.id = br.bid
       WHERE t.id = $1
     `;
 
-        const result = await client.query(query, [rideId]);
+        const result = await client.query(query, [rideId, userId]);
 
         if (result.rowCount === 0) {
             return NextResponse.json({ error: 'Ride not found' }, { status: 404 });
@@ -75,12 +114,15 @@ export async function GET(
         const row = result.rows[0];
 
         // Auth check for driver view
-        const user = await verifyUserFromRequest(req.headers.get('authorization') ?? undefined);
+        // user is already verified above
         const isDriver = user && user.uid === row.driver_id;
 
         // --- Redaction Logic ---
-        // If driver, show full name. If public, redacted.
-        const displayName = isDriver ? row.driver_name : (row.driver_name ? (row.driver_name.substring(0, 3) + '***') : 'Anon');
+        // If driver or confirmed rider, show full name & phone. If public, redacted.
+        const isConfirmedRider = row.user_booking_status && ['confirmed'].includes(row.user_booking_status);
+        const hasFullAccess = isDriver || isConfirmedRider;
+
+        const displayName = hasFullAccess ? row.driver_name : (row.driver_name ? (row.driver_name.substring(0, 3) + '***') : 'Anon');
 
         const ride = {
             id: row.id,
@@ -111,7 +153,7 @@ export async function GET(
                 color: row.car_color,
                 year: row.car_year,
                 // Plate is usually private until booked, let's hide it for public unless driver
-                plate: isDriver ? row.car_plate : null
+                plate: hasFullAccess ? row.car_plate : null
             } : null,
 
             // Driver Details (Public/Redacted)
@@ -122,7 +164,8 @@ export async function GET(
                 photo_url: row.driver_photo_url,
                 member_since: row.driver_since,
                 rating: row.driver_rating ?? null,
-                completed_trips: row.driver_completed_trips ?? 0
+                completed_trips: row.driver_completed_trips ?? 0,
+                phone: hasFullAccess ? row.driver_phone : null
             },
 
             // Rules
@@ -143,8 +186,21 @@ export async function GET(
                 },
                 auto_accept: row.auto_accept,
                 cancellation_policy: row.cancellation_policy,
-                cutoff_time: row.cutoff_time
-            }
+                cutoff_time: row.cutoff_time,
+                pay_window: row.pay_window
+            },
+            user_booking: row.user_booking_status ? {
+                status: row.user_booking_status,
+                seats_booked: row.user_seats_booked,
+                big_luggage: row.user_big_luggage,
+                small_luggage: row.user_small_luggage,
+                paid: row.user_paid,
+                ready: row.user_ready,
+                ready_at: row.user_ready_at,
+                preferred_pickup_time: row.user_preferred_pickup_time,
+                removed_at: row.user_removed_at
+            } : null,
+            user_booking_status: row.user_booking_status || null
         };
 
         return NextResponse.json(ride);
@@ -199,6 +255,15 @@ export async function PATCH(
 
         // Transaction
         await client.query('BEGIN');
+
+        // Lazy Cleanup of Timed Out Bookings
+        const timeouts = await client.query(
+            "SELECT id FROM bookings WHERE trip = $1 AND status = 'joined_with_pay_window'",
+            [rideId]
+        );
+        for (const row of timeouts.rows) {
+            await checkAndProcessPayWindowTimeout(client, row.id);
+        }
 
         // Check ownership
         const tripCheck = await client.query('SELECT driver FROM trips WHERE id = $1 FOR UPDATE', [rideId]);
@@ -315,6 +380,7 @@ export async function PATCH(
             cancellationPolicy: 'cancellation_policy',
             autoAccept: 'auto_accept',
             cutoffTime: 'cutoff_time',
+            payWindow: 'pay_window',
             paymentHandle: 'payment_handle'
         };
 

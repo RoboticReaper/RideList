@@ -170,6 +170,7 @@ export function TripInputBar() {
     const [linkTemplates, setLinkTemplates] = useState(false);
     const [ruleTemplateName, setRuleTemplateName] = useState('');
     const [tripTemplateName, setTripTemplateName] = useState('');
+    const [payWindow, setPayWindow] = useState<number | ''>(30); // Default 30 mins
 
     const [templates, setTemplates] = useState<any[]>([]);
     const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -280,6 +281,7 @@ export function TripInputBar() {
         cancellationPolicy: string;
         cutoffEnabled: boolean;
         cutoffHours: number | '';
+        payWindow: number | '';
         notes: string;
         startPlaceId: string | null;
         endPlaceId: string | null;
@@ -333,6 +335,7 @@ export function TripInputBar() {
                 if (draft.cancellationPolicy) setCancellationPolicy(draft.cancellationPolicy);
                 if (draft.cutoffEnabled !== undefined) setCutoffEnabled(draft.cutoffEnabled);
                 if (draft.cutoffHours !== undefined) setCutoffHours(draft.cutoffHours);
+                if (draft.payWindow !== undefined) setPayWindow(draft.payWindow);
                 if (draft.notes) setNotes(draft.notes);
 
                 if (draft.startPlaceId) setStartPlaceId(draft.startPlaceId);
@@ -366,6 +369,7 @@ export function TripInputBar() {
                     (!!draft.pickupRules) ||
                     (!!draft.cancellationPolicy) ||
                     (draft.cutoffEnabled === true) ||
+                    (draft.payWindow !== 30 && draft.payWindow !== '' && draft.payWindow !== undefined) ||
                     (!!draft.notes);
 
                 if (isMeaningful) {
@@ -426,6 +430,7 @@ export function TripInputBar() {
         setLinkTemplates(false);
         setRuleTemplateName('');
         setTripTemplateName('');
+        setPayWindow(30);
         setSelectedTemplate(null);
         setSelectedTripTemplate(null);
         setPostedLink('');
@@ -499,6 +504,7 @@ export function TripInputBar() {
                 cancellationPolicy,
                 cutoffEnabled,
                 cutoffHours,
+                payWindow,
                 notes,
                 startPlaceId,
                 endPlaceId
@@ -513,7 +519,7 @@ export function TripInputBar() {
         carBigLuggage, carSmallLuggage, carSeats, paymentMethods, paymentHandle,
         bigLuggage, smallLuggage, autoAccept, flexibility, pickupRadius,
         dropoffRadius, pickupRules, cancellationPolicy, cutoffEnabled,
-        cutoffHours, notes, startPlaceId, endPlaceId
+        cutoffHours, payWindow, notes, startPlaceId, endPlaceId
     ]);
 
     const fetchPlaces = async (query: string, setSuggestions: (data: string[]) => void, setLoading: (l: boolean) => void, sessionToken: string) => {
@@ -797,6 +803,7 @@ export function TripInputBar() {
             pickupRules,
             cancellationPolicy,
             cutoffTime: (cutoffEnabled && cutoffHours !== '') ? `${cutoffHours} hours` : null,
+            payWindow: (payWindow !== '' && payWindow !== undefined) ? `${payWindow} minutes` : '30 minutes',
             notes,
             saveTemplate,
             saveTripTemplate,
@@ -955,10 +962,11 @@ export function TripInputBar() {
                                                 setPickupRules(r.pickup_rules || '');
                                                 setCancellationPolicy(r.cancellation_policy || '');
                                                 setCutoffHours(r.cutoff_time ? parseInt(r.cutoff_time) : '');
+                                                setPayWindow(r.pay_window ? parseInt(r.pay_window) : 30);
 
                                                 setFieldSourceTemplate([
                                                     'bigLuggage', 'smallLuggage', 'paymentMethods', 'paymentHandle', 'autoAccept',
-                                                    'flexibility', 'pickupRadius', 'dropoffRadius', 'pickupRules', 'cancellationPolicy', 'cutoffHours'
+                                                    'flexibility', 'pickupRadius', 'dropoffRadius', 'pickupRules', 'cancellationPolicy', 'cutoffHours', 'payWindow'
                                                 ], 'Trip', tName);
                                             }
 
@@ -1225,6 +1233,12 @@ export function TripInputBar() {
                                                 }
                                             }
 
+                                            // Pay Window
+                                            if (t.pay_window) {
+                                                const pw = parseInt(t.pay_window);
+                                                if (!isNaN(pw)) setPayWindow(pw);
+                                            }
+
                                             // Flexibility
                                             if (t.departure_time_flexibility) {
                                                 const f = t.departure_time_flexibility;
@@ -1238,7 +1252,7 @@ export function TripInputBar() {
 
                                                 setFieldSourceTemplate([
                                                     'paymentMethods', 'paymentHandle', 'pickupRules', 'cancellationPolicy', 'autoAccept',
-                                                    'bigLuggage', 'smallLuggage', 'pickupRadius', 'dropoffRadius', 'flexibility', 'cutoffHours'
+                                                    'bigLuggage', 'smallLuggage', 'pickupRadius', 'dropoffRadius', 'flexibility', 'cutoffHours', 'payWindow'
                                                 ], 'Rule', t.name || 'Rule Template');
 
                                                 notifications.show({ title: 'Template Loaded', message: 'Rules have been populated from template.', color: 'green' });
@@ -1394,6 +1408,17 @@ export function TripInputBar() {
                                                 setAutoAccept(e.currentTarget.checked);
                                                 setFieldSourceManual(['autoAccept']);
                                             }}
+                                        />
+                                        <NumberInput
+                                            label={<Group gap="xs">Pay Window (Minutes) {renderSourceBadge('payWindow')}</Group>}
+                                            description="Time allowed for rider to pay after approval"
+                                            value={payWindow}
+                                            onChange={(val) => {
+                                                setPayWindow(val === '' ? '' : Number(val));
+                                                setFieldSourceManual(['payWindow']);
+                                            }}
+                                            min={5}
+                                            step={5}
                                         />
                                     </Stack>
                                 </Accordion.Panel>

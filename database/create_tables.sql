@@ -157,7 +157,8 @@ create table trip_rules (
   payment_handle text,
 
   auto_accept bool not null default true,
-  cutoff_time interval  -- nullable = no cutoff, or enforce a default in app
+  cutoff_time interval,  -- nullable = no cutoff, or enforce a default in app
+  pay_window interval not null default '30 minutes'
 );
 
 create table trip_routes ( -- expensive feature. only paid users will have routes
@@ -208,6 +209,7 @@ create table bookings (
 
   ready bool not null default false,
   ready_at timestamptz,
+  preferred_pickup_time timestamptz,
 
   constraint ready_time_consistency check (
       (ready = false and ready_at is null) or (ready = true and ready_at is not null)
@@ -226,9 +228,11 @@ create table booking_rule_snapshot (
   drop_off_radius_meters int not null default 1000,
   departure_time_flexibility interval not null default interval '15 minutes',
   payment_methods text[],
+  payment_handle text,
   cancellation_policy text,
   auto_accept bool not null default true,
-  cutoff_time interval
+  cutoff_time interval,
+  pay_window interval not null
 );
 
 create table booking_status_history (
@@ -284,7 +288,8 @@ create table rule_templates (
   cancellation_policy text,
   auto_accept bool,
   cutoff_time interval,
-  payment_handle text
+  payment_handle text,
+  pay_window interval
 );
 
 create table trip_templates (
