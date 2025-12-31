@@ -121,6 +121,44 @@ export function TripInputBar() {
 
     const hasFetchedCars = useRef(false);
 
+    // Parse flexibility interval to hours (number)
+    const parseStrToHours = (interval: any) => {
+        if (!interval) return 0;
+        if (typeof interval === 'string') {
+            const times = interval.split(':')
+            let h = parseInt(times[0])
+            let m = parseInt(times[1])
+            let s = parseInt(times[2])
+            return h + m / 60 + s / 3600
+        }
+        else if (typeof interval === 'object') {
+            const h = (interval.hours || 0) + (interval.minutes || 0) / 60 + (interval.seconds || 0) / 3600;
+            return h > 0 ? h : null;
+        }
+        else {
+            return interval;
+        }
+    };
+
+    // Parse pay window interval to minutes (number)
+    const parseStrToMinutes = (interval: any) => {
+        if (!interval) return 0;
+        if (typeof interval === 'string') {
+            const times = interval.split(':')
+            let h = parseInt(times[0])
+            let m = parseInt(times[1])
+            let s = parseInt(times[2])
+            return h * 60 + m + s / 60
+        }
+        else if (typeof interval === 'object') {
+            const h = (interval.hours || 0) + (interval.minutes || 0) / 60 + (interval.seconds || 0) / 3600;
+            return h > 0 ? h : null;
+        }
+        else {
+            return interval;
+        }
+    };
+
 
     // Fetch cars when entering step 3 (active = 2) or on mount if user exists
     useEffect(() => {
@@ -171,6 +209,7 @@ export function TripInputBar() {
     const [ruleTemplateName, setRuleTemplateName] = useState('');
     const [tripTemplateName, setTripTemplateName] = useState('');
     const [payWindow, setPayWindow] = useState<number | ''>(30); // Default 30 mins
+    const [startCheckInHrs, setStartCheckInHrs] = useState<number | ''>('');
 
     const [templates, setTemplates] = useState<any[]>([]);
     const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -222,9 +261,9 @@ export function TripInputBar() {
 
     // Fetch Rule Templates (Step 4)
     useEffect(() => {
-        if (user && active === 4 && !hasFetchedTemplates.current) {
+        if (user && active === 3 && !hasFetchedTemplates.current) {
             user.getIdToken().then(token => {
-                fetch('/api/user/templates', { headers: { 'Authorization': `Bearer ${token}` } })
+                fetch('/api/user/rule-templates', { headers: { 'Authorization': `Bearer ${token}` } })
                     .then(res => res.json())
                     .then(data => {
                         if (data.templates) setTemplates(data.templates);
@@ -285,6 +324,7 @@ export function TripInputBar() {
         notes: string;
         startPlaceId: string | null;
         endPlaceId: string | null;
+        startCheckInHrs: number | '';
     }
 
     // Load Draft on Mount
@@ -337,6 +377,7 @@ export function TripInputBar() {
                 if (draft.cutoffHours !== undefined) setCutoffHours(draft.cutoffHours);
                 if (draft.payWindow !== undefined) setPayWindow(draft.payWindow);
                 if (draft.notes) setNotes(draft.notes);
+                if (draft.startCheckInHrs !== undefined) setStartCheckInHrs(draft.startCheckInHrs);
 
                 if (draft.startPlaceId) setStartPlaceId(draft.startPlaceId);
                 if (draft.endPlaceId) setEndPlaceId(draft.endPlaceId);
@@ -370,7 +411,8 @@ export function TripInputBar() {
                     (!!draft.cancellationPolicy) ||
                     (draft.cutoffEnabled === true) ||
                     (draft.payWindow !== 30 && draft.payWindow !== '' && draft.payWindow !== undefined) ||
-                    (!!draft.notes);
+                    (!!draft.notes) ||
+                    (draft.startCheckInHrs !== '' && draft.startCheckInHrs !== undefined);
 
                 if (isMeaningful) {
                     notifications.show({
@@ -431,6 +473,7 @@ export function TripInputBar() {
         setRuleTemplateName('');
         setTripTemplateName('');
         setPayWindow(30);
+        setStartCheckInHrs('');
         setSelectedTemplate(null);
         setSelectedTripTemplate(null);
         setPostedLink('');
@@ -507,7 +550,8 @@ export function TripInputBar() {
                 payWindow,
                 notes,
                 startPlaceId,
-                endPlaceId
+                endPlaceId,
+                startCheckInHrs
             };
             localStorage.setItem('trip_draft', JSON.stringify(draft));
         }, 1000); // Save after 1 second of inactivity
@@ -519,7 +563,7 @@ export function TripInputBar() {
         carBigLuggage, carSmallLuggage, carSeats, paymentMethods, paymentHandle,
         bigLuggage, smallLuggage, autoAccept, flexibility, pickupRadius,
         dropoffRadius, pickupRules, cancellationPolicy, cutoffEnabled,
-        cutoffHours, payWindow, notes, startPlaceId, endPlaceId
+        cutoffHours, payWindow, notes, startPlaceId, endPlaceId, startCheckInHrs
     ]);
 
     const fetchPlaces = async (query: string, setSuggestions: (data: string[]) => void, setLoading: (l: boolean) => void, sessionToken: string) => {
@@ -726,19 +770,19 @@ export function TripInputBar() {
 
                 if (carBigCap !== null && Number(bigLuggage || 0) > carBigCap) {
                     notifications.show({
-                        title: 'Luggage Check',
-                        message: `Big luggage limit (${bigLuggage || 0}) exceeds car capacity (${carBigCap}).`,
-                        color: 'red'
+                        title: 'Luggage Check Reminder',
+                        message: `Big luggage limit (${bigLuggage || 0}) exceeds car capacity (${carBigCap}). Go back to adjust luggage limits to prevent overloading the car.`,
+                        color: 'red',
+                        autoClose: false
                     });
-                    return;
                 }
                 if (carSmallCap !== null && Number(smallLuggage || 0) > carSmallCap) {
                     notifications.show({
-                        title: 'Luggage Check',
-                        message: `Small luggage limit (${smallLuggage || 0}) exceeds car capacity (${carSmallCap}).`,
-                        color: 'red'
+                        title: 'Luggage Check Reminder',
+                        message: `Small luggage limit (${smallLuggage || 0}) exceeds car capacity (${carSmallCap}). Go back to adjust luggage limits to prevent overloading the car.`,
+                        color: 'red',
+                        autoClose: false
                     });
-                    return;
                 }
             }
 
@@ -797,7 +841,7 @@ export function TripInputBar() {
             bigLuggage: Number(bigLuggage),
             smallLuggage: Number(smallLuggage),
             autoAccept,
-            flexibility,
+            flexibility: (flexibility !== '' && flexibility !== undefined) ? `${flexibility} hours` : null,
             pickupRadius: Number(pickupRadius),
             dropoffRadius: Number(dropoffRadius),
             pickupRules,
@@ -809,7 +853,8 @@ export function TripInputBar() {
             saveTripTemplate,
             linkTemplates,
             ruleTemplateName,
-            tripTemplateName
+            tripTemplateName,
+            startCheckInHrs: (startCheckInHrs !== '' && startCheckInHrs !== undefined) ? `${startCheckInHrs} hours` : null,
         };
 
         // Attach Car Info
@@ -918,15 +963,20 @@ export function TripInputBar() {
                                         if (t) {
                                             const tName = t.name || 'Trip Template';
                                             // Prefill Logic
-                                            setStartLocation(t.from_text);
-                                            setStartCoords({ lat: t.origin_lat, lng: t.origin_lng });
-                                            setIsStartSelected(true);
-                                            setStartPlaceId(null);
 
-                                            setEndLocation(t.to_text);
-                                            setEndCoords({ lat: t.dest_lat, lng: t.dest_lng });
-                                            setIsEndSelected(true);
-                                            setEndPlaceId(null);
+                                            if (t.from_text && t.from_text !== '') {
+                                                setStartLocation(t.from_text);
+                                                setStartCoords({ lat: t.origin_lat, lng: t.origin_lng });
+                                                setIsStartSelected(true);
+                                                setStartPlaceId(t.from_place_id);
+                                            }
+
+                                            if (t.to_text && t.to_text !== '') {
+                                                setEndLocation(t.to_text);
+                                                setEndCoords({ lat: t.dest_lat, lng: t.dest_lng });
+                                                setIsEndSelected(true);
+                                                setEndPlaceId(t.to_place_id);
+                                            }
 
                                             setPrice(Number(t.price));
                                             setSeats(Number(t.total_seats));
@@ -945,24 +995,13 @@ export function TripInputBar() {
                                                 setPaymentMethods(r.payment_methods || []);
                                                 setPaymentHandle(r.payment_handle || '');
                                                 setAutoAccept(r.auto_accept);
-                                                if (r.departure_time_flexibility) {
-                                                    const f = r.departure_time_flexibility;
-                                                    if (typeof f === 'object') {
-                                                        const h = f.hours || 0;
-                                                        const m = f.minutes || 0;
-                                                        setFlexibility(h + m / 60);
-                                                    } else {
-                                                        setFlexibility(0.25);
-                                                    }
-                                                } else {
-                                                    setFlexibility(0.25);
-                                                }
+                                                setFlexibility(r.departure_time_flexibility ? parseStrToHours(r.departure_time_flexibility) : 0.25);
                                                 setPickupRadius(r.pickup_radius_meters || 1000);
                                                 setDropoffRadius(r.drop_off_radius_meters || 1000);
                                                 setPickupRules(r.pickup_rules || '');
                                                 setCancellationPolicy(r.cancellation_policy || '');
-                                                setCutoffHours(r.cutoff_time ? parseInt(r.cutoff_time) : '');
-                                                setPayWindow(r.pay_window ? parseInt(r.pay_window) : 30);
+                                                setCutoffHours(r.cutoff_time ? parseStrToHours(r.cutoff_time) : '');
+                                                setPayWindow(r.pay_window ? parseStrToMinutes(r.pay_window) : 30);
 
                                                 setFieldSourceTemplate([
                                                     'bigLuggage', 'smallLuggage', 'paymentMethods', 'paymentHandle', 'autoAccept',
@@ -1162,6 +1201,26 @@ export function TripInputBar() {
                                         value={carPlate}
                                         onChange={(e) => setCarPlate(e.currentTarget.value)}
                                     />
+
+                                    <Divider label="Check-in" labelPosition="center" />
+
+                                    <Switch
+                                        label="Enable Check-in Feature"
+                                        description="Allow passengers to check in before the trip starts"
+                                        checked={startCheckInHrs !== ''}
+                                        onChange={(e) => setStartCheckInHrs(e.currentTarget.checked ? 3 : '')}
+                                    />
+                                    {startCheckInHrs !== '' && (
+                                        <NumberInput
+                                            label="Start Check-in (Hours before departure)"
+                                            description="How many hours before departure can passengers check in?"
+                                            value={startCheckInHrs}
+                                            onChange={(val) => setStartCheckInHrs(val === '' ? '' : Number(val))}
+                                            min={1}
+                                        />
+                                    )}
+
+                                    <Divider label="Templates" labelPosition="center" />
                                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                                         <NumberInput
                                             label="Big Luggage Cap."
@@ -1229,26 +1288,20 @@ export function TripInputBar() {
                                             if (t.cutoff_time) {
                                                 if (t.cutoff_time.hours) {
                                                     setCutoffEnabled(true);
-                                                    setCutoffHours(t.cutoff_time.hours);
+                                                    setCutoffHours(parseStrToHours(t.cutoff_time));
                                                 }
                                             }
 
                                             // Pay Window
                                             if (t.pay_window) {
-                                                const pw = parseInt(t.pay_window);
+                                                const pw = parseStrToMinutes(t.pay_window);
                                                 if (!isNaN(pw)) setPayWindow(pw);
                                             }
 
                                             // Flexibility
                                             if (t.departure_time_flexibility) {
-                                                const f = t.departure_time_flexibility;
-                                                if (typeof f === 'object') {
-                                                    const h = f.hours || 0;
-                                                    const m = f.minutes || 0;
-                                                    setFlexibility(h + m / 60);
-                                                } else {
-                                                    setFlexibility(0.25);
-                                                }
+                                                setFlexibility(parseStrToHours(t.departure_time_flexibility));
+
 
                                                 setFieldSourceTemplate([
                                                     'paymentMethods', 'paymentHandle', 'pickupRules', 'cancellationPolicy', 'autoAccept',

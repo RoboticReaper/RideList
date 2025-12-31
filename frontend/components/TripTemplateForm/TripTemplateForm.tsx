@@ -32,6 +32,10 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
         initialData?.dest_lat ? { lat: initialData.dest_lat, lng: initialData.dest_lng } : null
     );
 
+    // Location IDs
+    const [startPlaceId, setStartPlaceId] = useState<string | null>(initialData?.from_place_id || null);
+    const [endPlaceId, setEndPlaceId] = useState<string | null>(initialData?.to_place_id || null);
+
     // Car & Rule Refs
     const [selectedCar, setSelectedCar] = useState<string | null>(initialData?.car || null);
     const [selectedRule, setSelectedRule] = useState<string | null>(initialData?.rule || null);
@@ -145,31 +149,39 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
             notifications.show({ title: 'Error', message: 'Template name is required', color: 'red' });
             return;
         }
-        if (!notes.trim()) {
-            notifications.show({ title: 'Error', message: 'Driver notes are required (e.g. pick up details)', color: 'red' });
-            return;
-        }
 
         setLoading(true);
         try {
-            // Resolve Lat/Lng if possible (if using Places ID)
-            // But we don't have the Place ID selected nicely in state, we rely on text matching predictionsMap
-            // Wait, TripInputBar uses `startPlaceId` state. I didn't verify if I should add it.
-            // I'll grab from map here.
-
             let sCoords = startCoords;
             let eCoords = endCoords;
 
-            const sId = predictionsMap.current.get(startLocation);
-            if (sId) {
-                const c = await geocode(sId, startSessionToken.current);
-                if (c) sCoords = c;
+            // Determine Start Place ID
+            let finalStartId = predictionsMap.current.get(startLocation);
+            // If user didn't change location (text matches initial), keep initial ID. If text changed but not in map (e.g. slight edit), lose ID?
+            // Safer: if predictionsMap has it, use it. Else if text == initial text, use initial ID. Else null.
+            if (!finalStartId && startLocation === initialData?.from_text) {
+                finalStartId = startPlaceId || undefined;
             }
 
-            const eId = predictionsMap.current.get(endLocation);
-            if (eId) {
-                const c = await geocode(eId, endSessionToken.current);
-                if (c) eCoords = c;
+            if (finalStartId) {
+                // If we have a new ID (from map), re-geocode to be safe/sure
+                if (predictionsMap.current.has(startLocation)) {
+                    const c = await geocode(finalStartId, startSessionToken.current);
+                    if (c) sCoords = c;
+                }
+            }
+
+            // Determine End Place ID
+            let finalEndId = predictionsMap.current.get(endLocation);
+            if (!finalEndId && endLocation === initialData?.to_text) {
+                finalEndId = endPlaceId || undefined;
+            }
+
+            if (finalEndId) {
+                if (predictionsMap.current.has(endLocation)) {
+                    const c = await geocode(finalEndId, endSessionToken.current);
+                    if (c) eCoords = c;
+                }
             }
 
             const token = await user?.getIdToken();
@@ -180,6 +192,8 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
                 total_seats: seats === '' ? null : seats,
                 from_text: startLocation,
                 to_text: endLocation,
+                from_place_id: finalStartId || null,
+                to_place_id: finalEndId || null,
                 origin_lat: sCoords?.lat,
                 origin_lng: sCoords?.lng,
                 dest_lat: eCoords?.lat,
@@ -254,7 +268,6 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
                 label="Driver Notes"
                 description="Message to passengers (e.g. pickup details)"
                 placeholder="I will be driving a blue sedan..."
-                required
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
             />

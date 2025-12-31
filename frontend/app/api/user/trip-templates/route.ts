@@ -32,6 +32,7 @@ export async function GET(req: Request) {
             [user.uid]
         );
 
+
         return NextResponse.json({ templates: templatesRes.rows });
 
     } catch (error: any) {
@@ -62,6 +63,8 @@ export async function POST(req: Request) {
             total_seats,
             from_text,
             to_text,
+            from_place_id,
+            to_place_id,
             origin_lat,
             origin_lng,
             dest_lat,
@@ -70,8 +73,8 @@ export async function POST(req: Request) {
             rule_id
         } = body;
 
-        if (!name || !notes) {
-            return NextResponse.json({ error: 'Template name and driver notes are required' }, { status: 400 });
+        if (!name) {
+            return NextResponse.json({ error: 'Template name is required' }, { status: 400 });
         }
 
         // Extended Validation: Check Capacity
@@ -117,9 +120,11 @@ export async function POST(req: Request) {
         const insertRes = await client.query(
             `INSERT INTO trip_templates (
                 driver, name, notes, price, total_seats, from_text, to_text,
+                from_place_id, to_place_id,
                 origin_geog, destination_geog, car, rule
             ) VALUES (
                 $1, $2, $3, $4, $5, $6, $7,
+                $14, $15,
                 ST_SetSRID(ST_MakePoint($8, $9), 4326),
                 ST_SetSRID(ST_MakePoint($10, $11), 4326),
                 $12, $13
@@ -128,7 +133,8 @@ export async function POST(req: Request) {
                 user.uid, name, notes, price, total_seats, from_text, to_text,
                 origin_lng || null, origin_lat || null, // PostGIS uses Lon, Lat (X, Y)
                 dest_lng || null, dest_lat || null,
-                car_id || null, rule_id || null
+                car_id || null, rule_id || null,
+                from_place_id || null, to_place_id || null
             ]
         );
 

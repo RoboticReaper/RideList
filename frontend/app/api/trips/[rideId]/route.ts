@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
+import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
+import { checkAndProcessTripCutoff } from '@/app/api/lib/tripCutoff';
 
 export async function GET(
     req: Request,
@@ -29,6 +31,12 @@ export async function GET(
             await checkAndProcessPayWindowTimeout(client, row.id);
         }
 
+        // Lazy Check-in Start
+        await checkAndProcessCheckInStart(client, rideId);
+
+        // Lazy Trip Cutoff Check
+        await checkAndProcessTripCutoff(client, rideId);
+
         const query = `
       SELECT 
         -- Trip Info
@@ -43,6 +51,7 @@ export async function GET(
         t.total_seats,
         t.seats_taken,
         t.status,
+        t.start_check_in,
         t.created_at,
         t.modified_at,
         
@@ -59,6 +68,7 @@ export async function GET(
         tr.auto_accept,
         tr.cutoff_time,
         tr.pay_window,
+        tr.start_check_in_hrs_before_departure,
         
         -- Car Info
         c.id as car_id,
@@ -87,6 +97,7 @@ export async function GET(
         ub.ready as user_ready,
         ub.ready_at as user_ready_at,
         ub.preferred_pickup_time as user_preferred_pickup_time,
+        ub.id as user_booking_id,
         br.created_at as user_removed_at
 
       FROM trips t
@@ -119,8 +130,9 @@ export async function GET(
 
         // --- Redaction Logic ---
         // If driver or confirmed rider, show full name & phone. If public, redacted.
-        const isConfirmedRider = row.user_booking_status && ['confirmed'].includes(row.user_booking_status);
+        const isConfirmedRider = row.user_paid ? true : false;
         const hasFullAccess = isDriver || isConfirmedRider;
+        const hasPaymentHandleAccess = isDriver || ['confirmed', 'joined_with_pay_window', 'pending_pay_confirmation_from_driver'].includes(row.user_booking_status);
 
         const displayName = hasFullAccess ? row.driver_name : (row.driver_name ? (row.driver_name.substring(0, 3) + '***') : 'Anon');
 
@@ -152,7 +164,6 @@ export async function GET(
                 model: row.car_model,
                 color: row.car_color,
                 year: row.car_year,
-                // Plate is usually private until booked, let's hide it for public unless driver
                 plate: hasFullAccess ? row.car_plate : null
             } : null,
 
@@ -179,17 +190,20 @@ export async function GET(
                     radius: row.pickup_radius_meters,
                     dropoff_radius: row.drop_off_radius_meters
                 },
-                time_flexibility: row.departure_time_flexibility,
+                flexibility: row.departure_time_flexibility,
                 payment: {
                     methods: row.payment_methods,
-                    handle: row.payment_handle // TODO: Maybe redact this if it's sensitive?
+                    handle: row.payment_handle ? (hasPaymentHandleAccess ? row.payment_handle : row.payment_handle.substring(0, 3) + '***') : null
                 },
                 auto_accept: row.auto_accept,
                 cancellation_policy: row.cancellation_policy,
                 cutoff_time: row.cutoff_time,
-                pay_window: row.pay_window
+                pay_window: row.pay_window,
+                start_check_in_hrs: row.start_check_in_hrs_before_departure
             },
+            start_check_in: row.start_check_in,
             user_booking: row.user_booking_status ? {
+                id: row.user_booking_id,
                 status: row.user_booking_status,
                 seats_booked: row.user_seats_booked,
                 big_luggage: row.user_big_luggage,
@@ -256,6 +270,12 @@ export async function PATCH(
         // Transaction
         await client.query('BEGIN');
 
+        // Lazy Check-in Start
+        await checkAndProcessCheckInStart(client, rideId);
+
+        // Lazy Trip Cutoff Check
+        await checkAndProcessTripCutoff(client, rideId);
+
         // Lazy Cleanup of Timed Out Bookings
         const timeouts = await client.query(
             "SELECT id FROM bookings WHERE trip = $1 AND status = 'joined_with_pay_window'",
@@ -281,7 +301,8 @@ export async function PATCH(
         if (body.price !== undefined || body.total_seats !== undefined || body.notes !== undefined ||
             body.car !== undefined || body.departure_time !== undefined ||
             body.from_text !== undefined || body.to_text !== undefined ||
-            body.from_place_id !== undefined || body.to_place_id !== undefined) {
+            body.from_place_id !== undefined || body.to_place_id !== undefined || body.start_check_in !== undefined ||
+            body.status !== undefined) {
 
             const updates = [];
             const values = [];
@@ -314,6 +335,19 @@ export async function PATCH(
             if (body.departure_time !== undefined) {
                 updates.push(`departure_time = $${idx++}`);
                 values.push(body.departure_time);
+            }
+            if (body.start_check_in !== undefined) {
+                updates.push(`start_check_in = $${idx++}`);
+                values.push(body.start_check_in);
+            }
+            if (body.status !== undefined) {
+                const allowedStatuses = ['bookable', 'full', 'departed', 'done', 'cancelled'];
+                if (!allowedStatuses.includes(body.status)) {
+                    await client.query('ROLLBACK');
+                    return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+                }
+                updates.push(`status = $${idx++}`);
+                values.push(body.status);
             }
 
             // Handle Start Location (Place ID -> Geog AND Text)
@@ -381,7 +415,8 @@ export async function PATCH(
             autoAccept: 'auto_accept',
             cutoffTime: 'cutoff_time',
             payWindow: 'pay_window',
-            paymentHandle: 'payment_handle'
+            paymentHandle: 'payment_handle',
+            startCheckInHrs: 'start_check_in_hrs_before_departure'
         };
 
         let rIdx = 1;

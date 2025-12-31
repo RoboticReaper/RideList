@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
+import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
 
 // Helper to fetch Place Details from Google (New API)
 async function fetchPlaceDetails(placeId: string, sessionToken: string) {
@@ -77,7 +78,8 @@ export async function POST(req: Request) {
             saveTripTemplate,
             linkTemplates,
             ruleTemplateName,
-            tripTemplateName
+            tripTemplateName,
+            startCheckInHrs
         } = body;
 
         // Validation (Basic)
@@ -158,19 +160,20 @@ export async function POST(req: Request) {
                 }, { status: 400 });
             }
 
-            // Validate Luggage Limits (if car has limits defined)
-            if (carDetails.big_luggage !== null && (bigLuggage || 0) > carDetails.big_luggage) {
-                await client.query('ROLLBACK');
-                return NextResponse.json({
-                    error: `Big luggage limit (${bigLuggage || 0}) exceeds car capacity (${carDetails.big_luggage}).`
-                }, { status: 400 });
-            }
-            if (carDetails.small_luggage !== null && (smallLuggage || 0) > carDetails.small_luggage) {
-                await client.query('ROLLBACK');
-                return NextResponse.json({
-                    error: `Small luggage limit (${smallLuggage || 0}) exceeds car capacity (${carDetails.small_luggage}).`
-                }, { status: 400 });
-            }
+            // // Validate Luggage Limits (if car has limits defined)
+            // // This is now a soft limit, so we don't enforce it here
+            // if (carDetails.big_luggage !== null && (bigLuggage || 0) > carDetails.big_luggage) {
+            //     await client.query('ROLLBACK');
+            //     return NextResponse.json({
+            //         error: `Big luggage limit (${bigLuggage || 0}) exceeds car capacity (${carDetails.big_luggage}).`
+            //     }, { status: 400 });
+            // }
+            // if (carDetails.small_luggage !== null && (smallLuggage || 0) > carDetails.small_luggage) {
+            //     await client.query('ROLLBACK');
+            //     return NextResponse.json({
+            //         error: `Small luggage limit (${smallLuggage || 0}) exceeds car capacity (${carDetails.small_luggage}).`
+            //     }, { status: 400 });
+            // }
 
         } else if (car) {
             // Validation: New Car MUST have seats
@@ -187,18 +190,18 @@ export async function POST(req: Request) {
                 }, { status: 400 });
             }
             // Validate Luggage against New Car
-            if ((car.big_luggage !== undefined && car.big_luggage !== null) && (bigLuggage || 0) > car.big_luggage) {
-                await client.query('ROLLBACK');
-                return NextResponse.json({
-                    error: `Big luggage limit (${bigLuggage || 0}) exceeds car capacity (${car.big_luggage}).`
-                }, { status: 400 });
-            }
-            if ((car.small_luggage !== undefined && car.small_luggage !== null) && (smallLuggage || 0) > car.small_luggage) {
-                await client.query('ROLLBACK');
-                return NextResponse.json({
-                    error: `Small luggage limit (${smallLuggage || 0}) exceeds car capacity (${car.small_luggage}).`
-                }, { status: 400 });
-            }
+            // if ((car.big_luggage !== undefined && car.big_luggage !== null) && (bigLuggage || 0) > car.big_luggage) {
+            //     await client.query('ROLLBACK');
+            //     return NextResponse.json({
+            //         error: `Big luggage limit (${bigLuggage || 0}) exceeds car capacity (${car.big_luggage}).`
+            //     }, { status: 400 });
+            // }
+            // if ((car.small_luggage !== undefined && car.small_luggage !== null) && (smallLuggage || 0) > car.small_luggage) {
+            //     await client.query('ROLLBACK');
+            //     return NextResponse.json({
+            //         error: `Small luggage limit (${smallLuggage || 0}) exceeds car capacity (${car.small_luggage}).`
+            //     }, { status: 400 });
+            // }
 
             // --- CAR DEDUPLICATION Logic (Existing) ---
             // Strategy: Look for an existing, non-deleted car for this user with matching Make, Model, Color, Year, Plate.
@@ -264,12 +267,13 @@ export async function POST(req: Request) {
                 destination_geog, 
                 departure_time, 
                 total_seats,
-                status
+                status,
+                start_check_in
             ) VALUES (
                 $1, $2, $3, $4, $5, $6,
                 ST_SetSRID(ST_MakePoint($7, $8), 4326), 
                 ST_SetSRID(ST_MakePoint($9, $10), 4326), 
-                $11, $12, 'bookable'
+                $11, $12, 'bookable', false
             ) RETURNING id`,
             [
                 user.uid,
@@ -290,23 +294,24 @@ export async function POST(req: Request) {
         // --- INSERT RULES ---
         // Insert Trip Rules
         await client.query(
-            `INSERT INTO trip_rules (
-                id, 
-                big_luggage_lim, 
-                small_luggage_lim, 
-                payment_methods, 
-                payment_handle, 
-                auto_accept, 
-                departure_time_flexibility, 
-                pickup_radius_meters, 
+            `INSERT INTO trip_rules(
+                id,
+                big_luggage_lim,
+                small_luggage_lim,
+                payment_methods,
+                payment_handle,
+                auto_accept,
+                departure_time_flexibility,
+                pickup_radius_meters,
                 drop_off_radius_meters,
                 pickup_rules,
                 cancellation_policy,
                 cutoff_time,
-                pay_window
-            ) VALUES (
+                pay_window,
+                start_check_in_hrs_before_departure
+            ) VALUES(
                 $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
-                $13
+                $13, $14
             )`,
             [
                 tripId,
@@ -315,13 +320,14 @@ export async function POST(req: Request) {
                 paymentMethods || [],
                 paymentHandle || null, // Optional now
                 autoAccept,
-                flexibility,
+                flexibility || null,
                 pickupRadius,
                 dropoffRadius,
                 pickupRules || null,
                 cancellationPolicy || null,
                 cutoffTime || null,
-                payWindow || '30 minutes'
+                payWindow || '30 minutes',
+                startCheckInHrs || null
             ]
         );
 
@@ -342,25 +348,26 @@ export async function POST(req: Request) {
             // 1. Save Rule Template if requested
             if (saveTemplate) {
                 const ruleTemplateRes = await client.query(
-                    `INSERT INTO rule_templates (
-                        driver,
-                        name,
-                        big_luggage_lim,
-                        small_luggage_lim,
-                        payment_methods,
-                        payment_handle,
-                        auto_accept,
-                        departure_time_flexibility,
-                        pickup_radius_meters,
-                        drop_off_radius_meters,
-                        pickup_rules,
-                        cancellation_policy,
-                        cutoff_time,
-                        pay_window
-                    ) VALUES (
-                        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-                        $14
-                    ) RETURNING id`,
+                    `INSERT INTO rule_templates(
+                driver,
+                name,
+                big_luggage_lim,
+                small_luggage_lim,
+                payment_methods,
+                payment_handle,
+                auto_accept,
+                departure_time_flexibility,
+                pickup_radius_meters,
+                drop_off_radius_meters,
+                pickup_rules,
+                cancellation_policy,
+                cutoff_time,
+                pay_window,
+                start_check_in_hrs_before_departure
+            ) VALUES(
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+                $14, $15
+            ) RETURNING id`,
                     [
                         user.uid,
                         ruleTemplateName,
@@ -375,7 +382,8 @@ export async function POST(req: Request) {
                         pickupRules || null,
                         cancellationPolicy || null,
                         cutoffTime || null,
-                        payWindow || '30 minutes'
+                        payWindow || '30 minutes',
+                        startCheckInHrs || null
                     ]
                 );
                 ruleTemplateId = ruleTemplateRes.rows[0].id;
@@ -387,24 +395,26 @@ export async function POST(req: Request) {
                 const linkedRuleId = (linkTemplates && ruleTemplateId) ? ruleTemplateId : null;
 
                 await client.query(
-                    `INSERT INTO trip_templates (
-                        driver,
-                        car,
-                        rule,
-                        price,
-                        name,
-                        notes,
-                        from_text,
-                        to_text,
-                        origin_geog,
-                        destination_geog,
-                        total_seats
-                    ) VALUES (
-                        $1, $2, $3, $4, $5, $6, $7, $8, 
-                        ST_SetSRID(ST_MakePoint($9, $10), 4326), 
-                        ST_SetSRID(ST_MakePoint($11, $12), 4326), 
-                        $13
-                    )`,
+                    `INSERT INTO trip_templates(
+                driver,
+                car,
+                rule,
+                price,
+                name,
+                notes,
+                from_text,
+                to_text,
+                from_place_id,
+                to_place_id,
+                origin_geog,
+                destination_geog,
+                total_seats
+            ) VALUES(
+                $1, $2, $3, $4, $5, $6, $7, $8, $14, $15,
+                ST_SetSRID(ST_MakePoint($9, $10), 4326),
+                ST_SetSRID(ST_MakePoint($11, $12), 4326),
+                $13
+            )`,
                     [
                         user.uid,
                         resolvedCarId,
@@ -416,11 +426,16 @@ export async function POST(req: Request) {
                         toText,
                         startLng, startLat,
                         endLng, endLat,
-                        seats
+                        seats,
+                        start.placeId || null,
+                        end.placeId || null
                     ]
                 );
             }
         }
+
+        // Lazy Check-in Start (for immediate effect if created within window)
+        await checkAndProcessCheckInStart(client, tripId);
 
         await client.query('COMMIT');
 
@@ -432,7 +447,7 @@ export async function POST(req: Request) {
 
         // Debug Logging
         const fs = require('fs');
-        fs.appendFileSync('debug_error.txt', `\n[${new Date().toISOString()}] Error: ${error.message}\nStack: ${error.stack}\n`);
+        fs.appendFileSync('debug_error.txt', `\n[${new Date().toISOString()}]Error: ${error.message}\nStack: ${error.stack}\n`);
 
         return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
     } finally {

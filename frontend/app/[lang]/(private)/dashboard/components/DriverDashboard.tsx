@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Container, Title, Button, Stack, Text, Loader, Center } from '@mantine/core';
+import { useEffect, useState, useCallback } from 'react';
+import { Container, Title, Button, Stack, Text, Loader, Center, Group } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { TripCard } from './TripCard';
+import { IconRefresh } from '@tabler/icons-react';
 
 interface Trip {
     id: string;
@@ -25,7 +26,7 @@ export function DriverDashboard() {
     const [loadingMore, setLoadingMore] = useState(false);
     const [nextCursor, setNextCursor] = useState<string | null>(null);
 
-    const fetchTrips = async (cursor: string | null = null) => {
+    const fetchTrips = useCallback(async (cursor: string | null = null) => {
         if (!user) return;
 
         try {
@@ -55,19 +56,31 @@ export function DriverDashboard() {
             setLoading(false);
             setLoadingMore(false);
         }
-    };
+    }, [user]);
 
     useEffect(() => {
         if (user) {
             fetchTrips();
         }
-    }, [user]);
+    }, [user, fetchTrips]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchTrips();
+        }, 120000); // 2 minutes
+
+        return () => clearInterval(interval);
+    }, [fetchTrips]);
 
     const handleLoadMore = () => {
         if (nextCursor) {
             setLoadingMore(true);
             fetchTrips(nextCursor);
         }
+    };
+
+    const handleRefresh = () => {
+        fetchTrips();
     };
 
     if (loading) {
@@ -80,6 +93,18 @@ export function DriverDashboard() {
 
     return (
         <Stack gap="lg">
+            <Group>
+                <Text size="xl" fw={600}>Upcoming Drives</Text>
+                <Button
+                    variant="subtle"
+                    leftSection={<IconRefresh size={16} />}
+                    onClick={handleRefresh}
+                    size="xs"
+                >
+                    Refresh
+                </Button>
+            </Group>
+
             {trips.length === 0 ? (
                 <Text c="dimmed" ta="center">You have no upcoming trips scheduled.</Text>
             ) : (

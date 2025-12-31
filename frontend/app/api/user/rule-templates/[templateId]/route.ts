@@ -14,6 +14,7 @@ export async function GET(
         if (!user || !user.uid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
         const res = await client.query('SELECT * FROM rule_templates WHERE id = $1 AND driver = $2', [templateId, user.uid]);
+
         if (res.rowCount === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
         return NextResponse.json({ template: res.rows[0] });
     } catch (error: any) {
@@ -45,7 +46,9 @@ export async function PUT(
             cancellation_policy,
             auto_accept,
             cutoff_time,
-            payment_handle
+            payment_handle,
+            pay_window,
+            start_check_in_hrs_before_departure
         } = body;
 
         const res = await client.query(
@@ -61,13 +64,16 @@ export async function PUT(
                 cancellation_policy = $9,
                 auto_accept = $10,
                 cutoff_time = $11,
-                payment_handle = $12
-             WHERE id = $13 AND driver = $14
+                payment_handle = $12,
+                pay_window = $13,
+                start_check_in_hrs_before_departure = $14
+             WHERE id = $15 AND driver = $16
              RETURNING *`,
             [
                 name, big_luggage_lim, small_luggage_lim, pickup_rules,
                 pickup_radius_meters, drop_off_radius_meters, departure_time_flexibility,
                 payment_methods, cancellation_policy, auto_accept, cutoff_time, payment_handle,
+                pay_window, start_check_in_hrs_before_departure,
                 templateId, user.uid
             ]
         );

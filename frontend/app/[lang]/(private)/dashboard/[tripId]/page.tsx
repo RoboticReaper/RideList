@@ -1,8 +1,8 @@
 'use client';
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, useCallback } from 'react';
 import { Container, Title, Tabs, Loader, Alert, Button, Group } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
-import { IconUsers, IconEdit, IconArrowLeft, IconExternalLink } from '@tabler/icons-react';
+import { IconUsers, IconEdit, IconArrowLeft, IconExternalLink, IconRefresh } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { ManageTripView } from './components/ManageTripView';
 import { EditTripView } from './components/EditTripView';
@@ -18,36 +18,41 @@ export default function TripManagementPage({ params }: { params: Promise<{ tripI
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<string | null>('manage');
+    const [lastRefreshed, setLastRefreshed] = useState(new Date());
+
+    const fetchTrip = useCallback(async () => {
+        if (!user) return;
+        try {
+            const token = await user.getIdToken();
+            const res = await fetch(`/api/trips/${tripId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!res.ok) throw new Error('Failed to fetch trip details');
+            const data = await res.json();
+
+            setTrip(data);
+            setLastRefreshed(new Date());
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    }, [user, tripId]);
 
     useEffect(() => {
-        if (!user) return;
-
-        const fetchTrip = async () => {
-            try {
-                const token = await user.getIdToken();
-                const res = await fetch(`/api/trips/${tripId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (!res.ok) throw new Error('Failed to fetch trip details');
-                const data = await res.json();
-
-                if (!data.isDriver) {
-                    // Non-drivers see the Rider View instead of redirecting
-                    // router.push(`/rides/${tripId}`); 
-                    // return;
-                }
-
-                setTrip(data);
-            } catch (err: any) {
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchTrip();
-    }, [user, tripId, router]);
+
+        const interval = setInterval(() => {
+            fetchTrip();
+        }, 120000); // 2 minutes
+
+        return () => clearInterval(interval);
+    }, [fetchTrip]);
+
+    const refreshTrip = () => {
+        fetchTrip();
+    };
 
     if (loading) return <Container py="xl"><Loader /></Container>;
 
@@ -69,27 +74,33 @@ export default function TripManagementPage({ params }: { params: Promise<{ tripI
                     <Button component={LocalizedLink} href={`/rides/${tripId}`} variant="outline" leftSection={<IconExternalLink size={16} />}>
                         View Public Posting
                     </Button>
+                    <Button variant="outline" leftSection={<IconRefresh size={16} />} onClick={refreshTrip}>
+                        Refresh
+                    </Button>
                 </Group>
                 <Title order={2} mb="xl">
                     {trip.from_text.split(',')[0]} &rarr; {trip.to_text.split(',')[0]}
                 </Title>
-                <RiderTripView trip={trip} />
+                <RiderTripView trip={trip} onRefresh={refreshTrip} />
             </Container>
         );
     }
 
     return (
-        <Container size="xl">
-            <Group mb="lg">
-                <Button component={LocalizedLink} href="/dashboard" variant="subtle" leftSection={<IconArrowLeft size={16} />}>
-                    Back to Dashboard
+        <>
+            <Group mb="md" gap="xs">
+                <Button component={LocalizedLink} href="/dashboard" variant="subtle" leftSection={<IconArrowLeft size={16} />} pr="xs" size="xs" pl={0}>
+                    Back
                 </Button>
-                <Button component={LocalizedLink} href={`/rides/${tripId}`} variant="outline" leftSection={<IconExternalLink size={16} />}>
-                    View Public Posting
+                <Button component={LocalizedLink} href={`/rides/${tripId}`} variant="outline" leftSection={<IconExternalLink size={16} />} px="xs" size="xs">
+                    Details
+                </Button>
+                <Button variant="outline" leftSection={<IconRefresh size={16} />} onClick={refreshTrip} px="xs" size="xs">
+                    Refresh
                 </Button>
             </Group>
 
-            <Title order={2} mb="xl">
+            <Title order={2} mb="lg">
                 {trip.from_text.split(',')[0]} &rarr; {trip.to_text.split(',')[0]}
             </Title>
 
@@ -103,14 +114,14 @@ export default function TripManagementPage({ params }: { params: Promise<{ tripI
                     </Tabs.Tab>
                 </Tabs.List>
 
-                <Tabs.Panel value="manage" pt="xl">
-                    <ManageTripView tripId={tripId} />
+                <Tabs.Panel value="manage" pt="lg">
+                    <ManageTripView tripId={tripId} tripStatus={trip.status} onStatusChange={refreshTrip} lastRefreshed={lastRefreshed} />
                 </Tabs.Panel>
 
-                <Tabs.Panel value="edit" pt="xl">
+                <Tabs.Panel value="edit" pt="lg">
                     <EditTripView trip={trip} />
                 </Tabs.Panel>
             </Tabs>
-        </Container>
+        </>
     );
 }

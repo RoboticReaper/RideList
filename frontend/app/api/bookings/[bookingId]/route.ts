@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
+import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
 
 export async function PATCH(
     req: Request,
@@ -61,6 +62,9 @@ export async function PATCH(
         }
 
         const booking = res.rows[0];
+
+        // Lazy Check-in Start
+        await checkAndProcessCheckInStart(client, booking.trip_id);
 
         // Authorization: Only driver can perform these actions
         if (booking.driver !== user.uid) {

@@ -19,7 +19,6 @@ export async function GET(req: Request) {
             `SELECT * FROM rule_templates WHERE driver = $1 ORDER BY name ASC`,
             [user.uid]
         );
-
         return NextResponse.json({ templates: templatesRes.rows });
 
     } catch (error: any) {
@@ -56,7 +55,8 @@ export async function POST(req: Request) {
             auto_accept,
             cutoff_time,
             payment_handle,
-            pay_window
+            pay_window,
+            start_check_in_hrs_before_departure
         } = body;
 
         if (!name) {
@@ -68,16 +68,17 @@ export async function POST(req: Request) {
                 driver, name, big_luggage_lim, small_luggage_lim, pickup_rules,
                 pickup_radius_meters, drop_off_radius_meters, departure_time_flexibility,
                 payment_methods, cancellation_policy, auto_accept, cutoff_time, payment_handle,
-                pay_window
-            ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-                $14
-            ) RETURNING *`,
+                    pay_window,
+                    start_check_in_hrs_before_departure
+                ) VALUES (
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+                    $14, $15
+                ) RETURNING *`,
             [
                 user.uid, name, big_luggage_lim, small_luggage_lim, pickup_rules,
                 pickup_radius_meters, drop_off_radius_meters, departure_time_flexibility,
                 payment_methods, cancellation_policy, auto_accept, cutoff_time, payment_handle,
-                pay_window
+                pay_window, start_check_in_hrs_before_departure
             ]
         );
 

@@ -10,7 +10,7 @@ interface Trip {
     from_text: string;
     to_text: string;
     departure_time: string;
-    status: 'bookable' | 'full' | 'departed' | 'done' | 'cancelled';
+    status: 'bookable' | 'full' | 'departed' | 'done' | 'cancelled' | 'locked';
     seats_taken: number;
     total_seats: number;
     price: string;
@@ -31,6 +31,7 @@ export function TripCard({ trip }: TripCardProps) {
         departed: 'blue',
         done: 'gray',
         cancelled: 'red',
+        locked: 'red',
     };
 
     return (

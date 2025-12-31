@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
+import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
+import { checkAndProcessTripCutoff } from '@/app/api/lib/tripCutoff';
 
 export async function GET(req: Request) {
     const client = await pool.connect();
@@ -77,6 +79,15 @@ export async function GET(req: Request) {
         // Lazy Cleanup: Check for pay window timeouts on returned bookings
         // Note: 'status' in trips row corresponds to booking status (aliased as booking_status)
         for (const trip of trips) {
+            // Lazy Check-in Start
+            await checkAndProcessCheckInStart(client, trip.id);
+
+            // Lazy Trip Cutoff Check
+            const s = await checkAndProcessTripCutoff(client, trip.id);
+            if (s !== trip.trip_status) {
+                trip.trip_status = s;
+            }
+
             if (trip.booking_status === 'joined_with_pay_window' && trip.booking_id) {
                 // Check and process (updates DB if needed)
                 const newStatus = await checkAndProcessPayWindowTimeout(client, trip.booking_id);

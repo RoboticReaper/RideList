@@ -8,15 +8,11 @@ import { notifications } from '@mantine/notifications';
 
 interface Trip {
     id: string; // trip_id
-    id_booking?: string; // We actually need the booking ID here, which comes from the API mostly as 'id' usually refers to trip id in this context? 
-    // Wait, in my API `t.id` is selected as `id`. We need the booking ID to mark it as paid. 
-    // Looking at the API `trips/rider/upcoming/route.ts`:
-    // SELECT t.id ... 
-    // It does NOT select `b.id`. I need to fix the API first to return `booking_id`.
+    id_booking?: string;
     from_text: string;
     to_text: string;
     departure_time: string;
-    trip_status: 'bookable' | 'full' | 'departed' | 'done' | 'cancelled';
+    trip_status: 'bookable' | 'full' | 'departed' | 'done' | 'cancelled' | 'locked';
     booking_status: 'waiting_approval' | 'joined_with_pay_window' | 'pending_pay_confirmation_from_driver' | 'confirmed';
     seats_booked: number;
     price: string;
@@ -60,6 +56,7 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
         departed: 'blue',
         done: 'gray',
         cancelled: 'red',
+        locked: 'red',
     };
 
     const handleMarkPaymentSent = async () => {

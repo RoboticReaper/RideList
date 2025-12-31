@@ -16,14 +16,37 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
     const router = useRouter();
     const isNew = templateId === 'new';
 
+    console.log(initialData)
+
+    // Parse flexibility interval to hours (number)
+    const parseIntervalToHours = (interval: any) => {
+        if (!interval) return null;
+        if (typeof interval === 'object') {
+            const h = (interval.hours || 0) + (interval.minutes || 0) / 60 + (interval.seconds || 0) / 3600;
+            return h > 0 ? h : null;
+        }
+
+        const p = parseFloat(String(interval));
+        return isNaN(p) ? null : p;
+    };
+
+    // Parse pay window interval to minutes (number)
+    const parsePayWindowToMinutes = (interval: any) => {
+        if (!interval) return null;
+        if (typeof interval === 'object') {
+            const m = (interval.hours || 0) * 60 + (interval.minutes || 0) + (interval.seconds || 0) / 60;
+            return m > 0 ? m : null;
+        }
+
+        const p = parseFloat(String(interval));
+        return isNaN(p) ? 30 : p;
+    };
+
+
     const [name, setName] = useState(initialData?.name || '');
     const [autoAccept, setAutoAccept] = useState(initialData?.auto_accept ?? true);
     // Parse flexibility (interval object)
-    const [flexibility, setFlexibility] = useState<number | ''>(() => {
-        const f = initialData?.departure_time_flexibility;
-        if (typeof f === 'object' && f !== null) return (f.hours || 0) + (f.minutes || 0) / 60;
-        return '';
-    });
+    const [flexibility, setFlexibility] = useState<number | ''>(parseIntervalToHours(initialData?.departure_time_flexibility));
     const [pickupRadius, setPickupRadius] = useState<number | ''>(initialData?.pickup_radius_meters ?? '');
     const [dropoffRadius, setDropoffRadius] = useState<number | ''>(initialData?.drop_off_radius_meters ?? '');
     const [pickupRules, setPickupRules] = useState(initialData?.pickup_rules || '');
@@ -36,11 +59,15 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
     // Parse cutoff
     const [cutoffEnabled, setCutoffEnabled] = useState(!!initialData?.cutoff_time);
     const [cutoffHours, setCutoffHours] = useState<number | ''>(
-        initialData?.cutoff_time ? parseInt(initialData.cutoff_time) : ''
+        parseIntervalToHours(initialData?.cutoff_time)
     );
 
     const [payWindow, setPayWindow] = useState<number | ''>(
-        initialData?.pay_window ? parseInt(initialData.pay_window) : 30
+        parsePayWindowToMinutes(initialData?.pay_window)
+    );
+
+    const [startCheckInHrs, setStartCheckInHrs] = useState<number | ''>(
+        parseIntervalToHours(initialData?.start_check_in_hrs_before_departure)
     );
 
     const [loading, setLoading] = useState(false);
@@ -67,8 +94,11 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
                 big_luggage_lim: bigLuggage === '' ? null : bigLuggage,
                 small_luggage_lim: smallLuggage === '' ? null : smallLuggage,
                 cutoff_time: (cutoffEnabled && cutoffHours !== '') ? `${cutoffHours} hours` : null,
-                pay_window: (payWindow !== '' && payWindow !== undefined) ? `${payWindow} minutes` : null
+                pay_window: (payWindow !== '' && payWindow !== undefined) ? `${payWindow} minutes` : null,
+                start_check_in_hrs_before_departure: (startCheckInHrs !== '' && startCheckInHrs !== undefined) ? `${startCheckInHrs} hours` : null,
             };
+
+            console.log(payload);
 
             const url = isNew ? '/api/user/rule-templates' : `/api/user/rule-templates/${templateId}`;
             const method = isNew ? 'POST' : 'PUT';
@@ -144,8 +174,6 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
                         label="Departure Flexibility (Hours)"
                         value={flexibility}
                         onChange={(val) => setFlexibility(val === '' ? '' : Number(val))}
-                        min={0}
-                        step={0.25}
                     />
 
                     <Switch
@@ -160,8 +188,6 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
                         description="Time for rider to pay after joining"
                         value={payWindow}
                         onChange={(val) => setPayWindow(val === '' ? '' : Number(val))}
-                        min={5}
-                        step={5}
                     />
 
                     <Divider />
@@ -189,6 +215,15 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
                             min={1}
                         />
                     )}
+
+                    <Divider />
+
+                    <NumberInput
+                        label="Auto-start Check-in (Hours before departure)"
+                        description="Leave empty if check-in is not required. Passengers can check in this many hours before departure."
+                        value={startCheckInHrs}
+                        onChange={(val) => setStartCheckInHrs(val === '' ? '' : Number(val))}
+                    />
 
                     <TagsInput
                         label="Payment Methods"

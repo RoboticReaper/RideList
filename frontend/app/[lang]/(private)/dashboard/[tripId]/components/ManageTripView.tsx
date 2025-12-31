@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Table, Avatar, Text, Group, Badge, Loader, Stack, Alert, Button, ActionIcon, Tooltip, Modal, Select, Textarea, Collapse, UnstyledButton } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { IconInfoCircle, IconCheck, IconX, IconTrash, IconCurrencyDollar, IconChevronRight, IconChevronDown } from '@tabler/icons-react';
@@ -20,6 +20,9 @@ interface Booking {
 
 interface ManageTripViewProps {
     tripId: string;
+    tripStatus: string;
+    onStatusChange: () => void;
+    lastRefreshed?: Date;
 }
 
 const PRE_PAYMENT_REASONS = [
@@ -108,7 +111,7 @@ function RemoveRiderModal({ booking, onClose, onConfirm, loading }: { booking: B
     );
 }
 
-export function ManageTripView({ tripId }: ManageTripViewProps) {
+export function ManageTripView({ tripId, tripStatus, onStatusChange, lastRefreshed }: ManageTripViewProps) {
     const { user } = useAuth();
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
@@ -118,6 +121,10 @@ export function ManageTripView({ tripId }: ManageTripViewProps) {
 
     // Removal Modal State
     const [riderToRemove, setRiderToRemove] = useState<Booking | null>(null);
+
+    // Cancel Trip Modal
+    const [cancelModalOpen, setCancelModalOpen] = useState(false);
+    const [statusLoading, setStatusLoading] = useState(false);
 
     const [columnWidths, setColumnWidths] = useState({
         rider: 150,
@@ -159,7 +166,7 @@ export function ManageTripView({ tripId }: ManageTripViewProps) {
         resizer.addEventListener('pointercancel', handlePointerUp as any);
     };
 
-    const fetchBookings = async () => {
+    const fetchBookings = useCallback(async () => {
         try {
             if (!user) return;
             const token = await user.getIdToken();
@@ -175,11 +182,11 @@ export function ManageTripView({ tripId }: ManageTripViewProps) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [user, tripId]);
 
     useEffect(() => {
         fetchBookings();
-    }, [user, tripId]);
+    }, [fetchBookings, lastRefreshed]);
 
     const handleAction = async (bookingId: string, action: string, reason?: string) => {
         if (!user) return;
@@ -237,16 +244,49 @@ export function ManageTripView({ tripId }: ManageTripViewProps) {
         }
     };
 
+    const handleStatusUpdate = async (newStatus: 'departed' | 'cancelled') => {
+        if (!user) return;
+        setStatusLoading(true);
+        try {
+            const token = await user.getIdToken();
+            const res = await fetch(`/api/trips/${tripId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to update status');
+
+            notifications.show({
+                title: 'Success',
+                message: `Trip marked as ${newStatus}`,
+                color: 'green'
+            });
+
+            if (newStatus === 'cancelled') {
+                setCancelModalOpen(false);
+            }
+
+            onStatusChange();
+
+        } catch (err: any) {
+            notifications.show({
+                title: 'Error',
+                message: err.message,
+                color: 'red'
+            });
+        } finally {
+            setStatusLoading(false);
+        }
+    };
+
     if (loading) return <Loader />;
     if (error) return <Alert color="red" title="Error">{error}</Alert>;
 
-    if (bookings.length === 0) {
-        return (
-            <Alert icon={<IconInfoCircle size={16} />} title="No Bookings" color="blue">
-                No one has booked this trip yet.
-            </Alert>
-        );
-    }
 
     const activeBookings = bookings.filter(b => !INACTIVE_STATUSES.includes(b.status));
     const inactiveBookings = bookings.filter(b => INACTIVE_STATUSES.includes(b.status));
@@ -525,16 +565,49 @@ export function ManageTripView({ tripId }: ManageTripViewProps) {
 
             {/* Active Bookings Section */}
             <div>
-                <Text size="sm" c="dimmed" mb="xs">{activeBookings.length} Active Booking{activeBookings.length !== 1 ? 's' : ''}</Text>
+                <Group mb="md">
+                    <Button
+                        color="indigo"
+                        variant={tripStatus === 'departed' ? 'filled' : 'light'}
+                        onClick={() => handleStatusUpdate('departed')}
+                        loading={statusLoading}
+                        disabled={tripStatus === 'departed' || tripStatus === 'cancelled' || tripStatus === 'completed'}
+                    >
+                        {tripStatus === 'departed' ? 'Departed' : 'Mark as Departed'}
+                    </Button>
+                    <Button
+                        color="red"
+                        variant="light"
+                        onClick={() => setCancelModalOpen(true)}
+                        loading={statusLoading}
+                        disabled={tripStatus === 'cancelled' || tripStatus === 'completed'}
+                    >
+                        {tripStatus === 'cancelled' ? 'Cancelled' : 'Cancel Trip'}
+                    </Button>
+                </Group>
+
+                <Modal opened={cancelModalOpen} onClose={() => setCancelModalOpen(false)} title="Cancel Trip">
+                    <Text size="sm" mb="md">Are you sure you want to cancel this trip? This action cannot be undone.</Text>
+                    <Group justify="flex-end">
+                        <Button variant="default" onClick={() => setCancelModalOpen(false)}>Back</Button>
+                        <Button color="red" onClick={() => handleStatusUpdate('cancelled')} loading={statusLoading}>Confirm Cancel</Button>
+                    </Group>
+                </Modal>
+
                 {activeBookings.length > 0 ? (
-                    <div style={{ overflowX: 'auto', margin: '0 -1rem' }}>
-                        <Table horizontalSpacing="xs" verticalSpacing="xs" style={{ minWidth: '600px', tableLayout: 'fixed' }}>
-                            {renderHeader()}
-                            <Table.Tbody>{renderRows(activeBookings, true)}</Table.Tbody>
-                        </Table>
-                    </div>
+                    <>
+                        <Text size="sm" c="dimmed" mb="xs">{activeBookings.length} Active Booking{activeBookings.length !== 1 ? 's' : ''}</Text>
+                        <div style={{ overflowX: 'auto', margin: '0' }}>
+                            <Table horizontalSpacing="xs" verticalSpacing="xs" style={{ minWidth: '500px', tableLayout: 'fixed' }}>
+                                {renderHeader()}
+                                <Table.Tbody>{renderRows(activeBookings, true)}</Table.Tbody>
+                            </Table>
+                        </div>
+                    </>
                 ) : (
-                    <Text size="sm" c="dimmed">No active bookings.</Text>
+                    <Alert icon={<IconInfoCircle size={16} />} title="No Bookings" color="blue">
+                        No one has booked this trip yet.
+                    </Alert>
                 )}
             </div>
 
@@ -548,8 +621,8 @@ export function ManageTripView({ tripId }: ManageTripViewProps) {
                         </Group>
                     </UnstyledButton>
                     <Collapse in={inactiveOpen}>
-                        <div style={{ overflowX: 'auto', margin: '0 -1rem', opacity: 0.7 }}>
-                            <Table horizontalSpacing="xs" verticalSpacing="xs" style={{ minWidth: '600px', tableLayout: 'fixed' }}>
+                        <div style={{ overflowX: 'auto', margin: '0', opacity: 0.7 }}>
+                            <Table horizontalSpacing="xs" verticalSpacing="xs" style={{ minWidth: '500px', tableLayout: 'fixed' }}>
                                 {renderHeader()}
                                 <Table.Tbody>{renderRows(inactiveBookings, false)}</Table.Tbody>
                             </Table>

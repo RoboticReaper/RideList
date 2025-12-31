@@ -14,7 +14,7 @@ create extension if not exists postgis;
 -- ======================
 -- ENUMS
 -- ======================
-create type trip_status as enum ('bookable', 'full', 'departed', 'done', 'cancelled');
+create type trip_status as enum ('bookable', 'locked', 'full', 'departed', 'done', 'cancelled');
 
 create type booking_status as enum (
   'waiting_approval',
@@ -130,6 +130,8 @@ create table trips (
   origin_geog geography(Point, 4326) not null,
   destination_geog geography(Point, 4326) not null,
 
+  start_check_in bool default false,
+
   departure_time timestamptz not null,
   total_seats int not null check (total_seats > 0),
   seats_taken int not null default 0 check (seats_taken >= 0 and seats_taken <= total_seats),
@@ -158,7 +160,8 @@ create table trip_rules (
 
   auto_accept bool not null default true,
   cutoff_time interval,  -- nullable = no cutoff, or enforce a default in app
-  pay_window interval not null default '30 minutes'
+  pay_window interval not null default '30 minutes',
+  start_check_in_hrs_before_departure interval default '3 hours'
 );
 
 create table trip_routes ( -- expensive feature. only paid users will have routes
@@ -224,15 +227,16 @@ create table booking_rule_snapshot (
   big_luggage_lim int,
   small_luggage_lim int,
   pickup_rules text,
-  pickup_radius_meters int not null default 1000,
-  drop_off_radius_meters int not null default 1000,
-  departure_time_flexibility interval not null default interval '15 minutes',
+  pickup_radius_meters int not null,
+  drop_off_radius_meters int not null,
+  departure_time_flexibility interval not null,
   payment_methods text[],
   payment_handle text,
   cancellation_policy text,
-  auto_accept bool not null default true,
+  auto_accept bool not null,
   cutoff_time interval,
-  pay_window interval not null
+  pay_window interval not null,
+  start_check_in_hrs_before_departure interval
 );
 
 create table booking_status_history (
@@ -289,7 +293,8 @@ create table rule_templates (
   auto_accept bool,
   cutoff_time interval,
   payment_handle text,
-  pay_window interval
+  pay_window interval,
+  start_check_in_hrs_before_departure interval
 );
 
 create table trip_templates (
@@ -302,7 +307,9 @@ create table trip_templates (
 
   notes text not null,
   from_text text,
+  from_place_id text,
   to_text text,
+  to_place_id text,
   origin_geog geography(Point, 4326),
   destination_geog geography(Point, 4326),
 

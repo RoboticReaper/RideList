@@ -50,6 +50,8 @@ export async function PUT(
             total_seats,
             from_text,
             to_text,
+            from_place_id,
+            to_place_id,
             origin_lat,
             origin_lng,
             dest_lat,
@@ -66,6 +68,8 @@ export async function PUT(
                 total_seats = COALESCE($4, total_seats),
                 from_text = COALESCE($5, from_text),
                 to_text = COALESCE($6, to_text),
+                from_place_id = COALESCE($15, from_place_id),
+                to_place_id = COALESCE($16, to_place_id),
                 origin_geog = CASE WHEN $7::float IS NOT NULL AND $8::float IS NOT NULL THEN ST_SetSRID(ST_MakePoint($8, $7), 4326) ELSE origin_geog END,
                 destination_geog = CASE WHEN $9::float IS NOT NULL AND $10::float IS NOT NULL THEN ST_SetSRID(ST_MakePoint($10, $9), 4326) ELSE destination_geog END,
                 car = $11,
@@ -77,7 +81,8 @@ export async function PUT(
                 origin_lat, origin_lng,
                 dest_lat, dest_lng,
                 car_id, rule_id,
-                templateId, user.uid
+                templateId, user.uid,
+                from_place_id, to_place_id
             ]
         );
 

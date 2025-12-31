@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
+import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
 
 export async function POST(
     req: Request,
@@ -27,7 +28,7 @@ export async function POST(
         // Check booking ownership and current status
         // Locking row for consistency
         const bookingQuery = `
-            SELECT id, rider, status
+            SELECT id, rider, trip, status
             FROM bookings
             WHERE id = $1
             FOR UPDATE
@@ -40,6 +41,9 @@ export async function POST(
         }
 
         const booking = bookingRes.rows[0];
+
+        // Lazy Check-in Start
+        await checkAndProcessCheckInStart(client, booking.trip);
 
         if (booking.rider !== user.uid) {
             await client.query('ROLLBACK');

@@ -56,10 +56,10 @@ export async function GET(
                 // (t.driver = requester AND b.rider = target) OR (t.driver = target AND b.rider = requester)
                 const relationshipRes = await pool.query(
                     `SELECT 1 FROM bookings b
-           JOIN trips t ON b.trip = t.id
-           WHERE (t.driver = $1 AND b.rider = $2)
-              OR (t.driver = $2 AND b.rider = $1)
-           LIMIT 1`,
+                    JOIN trips t ON b.trip = t.id
+                    WHERE (t.driver = $1 AND b.rider = $2)
+                        OR (t.driver = $2 AND b.rider = $1)
+                    LIMIT 1`,
                     [requesterUser.uid, targetUserId]
                 );
 

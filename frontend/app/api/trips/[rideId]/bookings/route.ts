@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
+import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
+import { checkAndProcessTripCutoff } from '@/app/api/lib/tripCutoff';
 import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
 
 export async function GET(
@@ -36,6 +38,12 @@ export async function GET(
         for (const row of timeouts.rows) {
             await checkAndProcessPayWindowTimeout(client, row.id);
         }
+
+        // Lazy Check-in Start
+        await checkAndProcessCheckInStart(client, rideId);
+
+        // Lazy Trip Cutoff Check
+        await checkAndProcessTripCutoff(client, rideId);
 
         // Fetch Bookings with Rider Info
         const query = `
@@ -104,6 +112,12 @@ export async function POST(
             await checkAndProcessPayWindowTimeout(client, row.id);
         }
 
+        // Lazy Check-in Start
+        await checkAndProcessCheckInStart(client, rideId);
+
+        // Lazy Trip Cutoff Check
+        await checkAndProcessTripCutoff(client, rideId);
+
         // Fetch Trip & Rules & Driver
         // Locking row for consistency
         const tripQuery = `
@@ -112,10 +126,12 @@ export async function POST(
                 t.total_seats,
                 t.seats_taken,
                 t.departure_time,
+                t.status,
                 tr.big_luggage_lim,
                 tr.small_luggage_lim,
                 tr.auto_accept,
-                tr.departure_time_flexibility
+                tr.departure_time_flexibility,
+                tr.cutoff_time
             FROM trips t
             LEFT JOIN trip_rules tr ON t.id = tr.id
             WHERE t.id = $1
@@ -130,10 +146,48 @@ export async function POST(
 
         const trip = tripRes.rows[0];
 
+        // 0. Check if trip is bookable
+        if (trip.status !== 'bookable') {
+            await client.query('ROLLBACK');
+            return NextResponse.json({ error: 'Trip is not bookable' }, { status: 400 });
+        }
+
         // 1. Check if user is driver
         if (trip.driver === user.uid) {
             await client.query('ROLLBACK');
             return NextResponse.json({ error: 'You cannot book your own trip' }, { status: 400 });
+        }
+
+        // 1.5 Check Cutoff Time
+        if (trip.cutoff_time) {
+            const now = new Date().getTime();
+            const departure = new Date(trip.departure_time).getTime();
+
+            // cutoff_time is an Interval object from Postgres (e.g. { hours: 1, minutes: 30 })
+            const c = trip.cutoff_time;
+            const days = c.days || 0;
+            const hours = c.hours || 0;
+            const minutes = c.minutes || 0;
+
+            const cutoffMs = (days * 24 * 60 * 60 * 1000) +
+                (hours * 60 * 60 * 1000) +
+                (minutes * 60 * 1000);
+
+            // Add flexibility to departure time
+            let flexMs = 0;
+            if (trip.departure_time_flexibility) {
+                const f = trip.departure_time_flexibility;
+                const fh = f.hours || 0;
+                const fm = f.minutes || 0;
+                flexMs = (fh * 60 * 60 * 1000) + (fm * 60 * 1000);
+            }
+
+            const cutoffPoint = departure + flexMs - cutoffMs;
+
+            if (now > cutoffPoint) {
+                await client.query('ROLLBACK');
+                return NextResponse.json({ error: 'Booking for this trip has closed.' }, { status: 400 });
+            }
         }
 
         // 2. Check seats available
@@ -147,6 +201,11 @@ export async function POST(
         // Limits are PER PERSON (per seat booked)
         const totalBigAllowed = (trip.big_luggage_lim || 0) * seats_booked;
         const totalSmallAllowed = (trip.small_luggage_lim || 0) * seats_booked;
+
+        console.log("big_luggage", big_luggage);
+        console.log("totalBigAllowed", totalBigAllowed);
+        console.log("small_luggage", small_luggage);
+        console.log("totalSmallAllowed", totalSmallAllowed);
 
         if (big_luggage > totalBigAllowed) {
             await client.query('ROLLBACK');
@@ -216,12 +275,7 @@ export async function POST(
 
         // Auto-accept Check
         // If they were previously removed, do NOT auto-accept (safety)
-        const wasRemoved = existingStatus === 'removed'; // reusing existing fetch checks latest, but removalCheck logic was "if EVER removed".
-        // The original logic was: SELECT 1 FROM bookings WHERE ... status = 'removed'. 
-        // Let's keep the detailed check for "EVER removed" if we want to be strict, or just use latest.
-        // If I was removed 5 times ago, maybe I shouldn't be auto-accepted now? 
-        // I'll stick to the original "EVER removed" check for auto-accept safety, or simpler: 
-        // If latest was removed, definitely don't auto accept.
+        const wasRemoved = existingStatus === 'removed';
 
         if (trip.auto_accept && !wasRemoved) {
             status = 'joined_with_pay_window';

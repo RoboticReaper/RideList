@@ -3,9 +3,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-    Container, Title, Text, Card, Group, Badge, Stack, Grid, LoadingOverlay, Alert, Divider, Avatar, ThemeIcon, Progress, Tooltip, SimpleGrid, Paper, Button, Popover, Transition, NumberInput
+    Container, Title, Text, Card, Group, Badge, Stack, Grid, LoadingOverlay, Alert, Divider, Avatar, ThemeIcon, Progress, Tooltip, SimpleGrid, Paper, Button, Popover, Transition, NumberInput, Modal
 } from '@mantine/core';
-import { TimeInput } from '@mantine/dates';
+import { DateTimePicker } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { useMediaQuery, useIntersection, useInterval } from '@mantine/hooks';
@@ -62,14 +62,18 @@ interface RideDetails {
             radius: number;
             dropoff_radius: number;
         };
-        time_flexibility: any;
+        flexibility: any;
         payment: {
             methods: string[];
             handle: string | null;
         };
         auto_accept: boolean;
         cancellation_policy: string | null;
-        cutoff_time: any;
+        cutoff_time: {
+            days?: number;
+            hours?: number;
+            minutes?: number;
+        } | null;
     };
     user_booking_status: string | null;
 }
@@ -91,11 +95,16 @@ export default function RidePage() {
     // Booking State
     const [bookingOpen, setBookingOpen] = useState(false);
     const [bookingSubmitting, setBookingSubmitting] = useState(false);
-    const [bookingData, setBookingData] = useState({
+    const [bookingData, setBookingData] = useState<{
+        seats: number;
+        bigLuggage: number;
+        smallLuggage: number;
+        pickupTime: Date | null;
+    }>({
         seats: 1,
         bigLuggage: 0,
         smallLuggage: 0,
-        pickupTime: '',
+        pickupTime: null,
     });
 
     const fetchRide = async () => {
@@ -159,7 +168,7 @@ export default function RidePage() {
                             ...prev,
                             bigLuggage: Math.min(defaults.default_big_luggage || 0, maxBig),
                             smallLuggage: Math.min(defaults.default_small_luggage || 0, maxSmall),
-                            pickupTime: dayjs(ride.departure_time).format('HH:mm')
+                            pickupTime: new Date(ride.departure_time)
                         }));
                         prefilledRef.current = true;
                     }
@@ -197,12 +206,7 @@ export default function RidePage() {
             // Construct preferred pickup time date object if time is set
             let preferredIso = null;
             if (bookingData.pickupTime) {
-                const [h, m] = bookingData.pickupTime.split(':').map(Number);
-                const dep = dayjs(ride?.departure_time);
-                // Assume same day as departure for simplicity, or nearest future match
-                // Ideally we use the departure date and set the time
-                const pref = dep.hour(h).minute(m);
-                preferredIso = pref.toISOString();
+                preferredIso = bookingData.pickupTime.toISOString();
             }
 
             const token = await user.getIdToken();
@@ -286,9 +290,13 @@ export default function RidePage() {
                 {/* Header Section */}
                 <div>
                     <Group justify="space-between" align="start" mb="xs">
-                        <Badge size="lg" variant="gradient" gradient={{ from: 'blue', to: 'cyan' }}>
-                            {ride.status === 'bookable' ? 'Open for Booking' : ride.status.toUpperCase()}
-                        </Badge>
+                        {ride.status === 'locked' ? (
+                            <Badge size="lg" color="red">BOOKING CLOSED</Badge>
+                        ) : (
+                            <Badge size="lg" variant="gradient" gradient={{ from: 'blue', to: 'cyan' }}>
+                                {ride.status === 'bookable' ? 'Open for Booking' : ride.status.toUpperCase()}
+                            </Badge>
+                        )}
                         <Text size="xs" c="dimmed">Posted {dayjs(ride.created_at).fromNow()}</Text>
                     </Group>
 
@@ -309,10 +317,10 @@ export default function RidePage() {
                             <IconClock size={18} color="gray" />
                             <Text fw={500}>
                                 {dayjs(ride.departure_time).format('h:mm A')}
-                                {ride.rules.time_flexibility && (
+                                {ride.rules.flexibility && (
                                     <Text span size="sm" c="dimmed" ml={4}>
                                         {(() => {
-                                            const f = ride.rules.time_flexibility;
+                                            const f = ride.rules.flexibility;
                                             if (typeof f === 'object' && f !== null) {
                                                 const h = f.hours || 0;
                                                 const m = f.minutes || 0;
@@ -330,6 +338,21 @@ export default function RidePage() {
                             </Text>
                         </Group>
                     </Group>
+                    {ride.rules.cutoff_time && (
+                        <Group gap={6} mt={4}>
+                            <IconAlertCircle size={18} color="orange" />
+                            <Text size="sm" c="orange">
+                                Booking closes {(() => {
+                                    const c = ride.rules.cutoff_time;
+                                    const parts = [];
+                                    if (c?.days) parts.push(`${c.days} day${c.days > 1 ? 's' : ''}`);
+                                    if (c?.hours) parts.push(`${c.hours} hr${c.hours > 1 ? 's' : ''}`);
+                                    if (c?.minutes) parts.push(`${c.minutes} min${c.minutes > 1 ? 's' : ''}`);
+                                    return parts.join(' ');
+                                })()} before departure
+                            </Text>
+                        </Group>
+                    )}
                 </div>
 
                 <Grid gutter="xl">
@@ -348,117 +371,48 @@ export default function RidePage() {
                                                 Status: {ride.user_booking_status.replace(/_/g, ' ').toUpperCase()}
                                             </Text>
                                         )}
-                                        <Popover
-                                            opened={bookingOpen}
-                                            onChange={setBookingOpen}
-                                            width={300}
-                                            position="bottom"
-                                            withArrow
-                                            shadow="md"
-                                            trapFocus
+                                        <Button
+                                            ref={ref}
+                                            mt="sm"
+                                            size="sm"
+                                            variant="light"
+                                            color={isDriver ? 'blue' : (ride.status === 'bookable' || !!ride.user_booking_status) ? 'blue' : 'gray'}
+                                            disabled={(() => {
+                                                const isActiveBooking = !!ride.user_booking_status && !['removed', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status);
+                                                return !isDriver && !isActiveBooking && ride.status !== 'bookable';
+                                            })()}
+                                            onClick={() => {
+                                                if (!user) {
+                                                    handleProtectedAction();
+                                                    return;
+                                                }
+                                                if (isDriver) {
+                                                    router.push(`/dashboard/${rideId}`);
+                                                    return;
+                                                }
+                                                const status = ride.user_booking_status;
+
+                                                // Active statuses: waiting_approval, joined_with_pay_window, confirmed, pending_payment...
+                                                // Inactive statuses: removed, rejected, pay_timeout, left_paid, left_unpaid, cancelled.
+                                                // logic: if active, goto dashboard. if inactive (except cancelled), open booking.
+
+                                                const isInactive = ['removed', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(status || '');
+
+                                                if (status && !isInactive) {
+                                                    router.push(`/dashboard/${rideId}`);
+                                                    return;
+                                                }
+                                                setBookingOpen(true);
+                                            }}
                                         >
-                                            <Popover.Target>
-                                                <Button
-                                                    ref={ref}
-                                                    mt="sm"
-                                                    size="sm"
-                                                    variant="light"
-                                                    color={isDriver ? 'blue' : (ride.status === 'bookable' || !!ride.user_booking_status) ? 'blue' : 'gray'}
-                                                    disabled={!isDriver && (ride.user_booking_status === 'cancelled' || (!ride.user_booking_status && ride.status !== 'bookable'))}
-                                                    onClick={() => {
-                                                        if (!user) {
-                                                            handleProtectedAction();
-                                                            return;
-                                                        }
-                                                        if (isDriver) {
-                                                            router.push(`/dashboard/${rideId}`);
-                                                            return;
-                                                        }
-                                                        const status = ride.user_booking_status;
+                                            {user ? (
+                                                isDriver ? 'Manage Trip' :
+                                                    (ride.user_booking_status === 'cancelled') ? 'Booking Cancelled' :
+                                                        (ride.status === 'locked' && !ride.user_booking_status) ? 'Booking Closed' :
+                                                            ((ride.user_booking_status && !['removed', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) ? 'Manage in Dashboard' : 'Book Now')
+                                            ) : ride.status === 'bookable' ? 'Login to Book' : 'Trip cannot be booked'}
 
-                                                        // Active statuses: waiting_approval, joined_with_pay_window, confirmed, pending_payment...
-                                                        // Inactive statuses: removed, rejected, pay_timeout, left_paid, left_unpaid, cancelled.
-                                                        // logic: if active, goto dashboard. if inactive (except cancelled), open booking.
-
-                                                        const isInactive = ['removed', 'pay_timeout', 'left_paid', 'left_unpaid', 'cancelled'].includes(status || '');
-
-                                                        if (status && !isInactive) {
-                                                            router.push(`/dashboard/${rideId}`);
-                                                            return;
-                                                        }
-                                                        setBookingOpen((o) => !o);
-                                                    }}
-                                                >
-                                                    {user ? (
-                                                        isDriver ? 'Manage Trip' :
-                                                            (ride.user_booking_status === 'cancelled') ? 'Booking Cancelled' :
-                                                                ((ride.user_booking_status && !['removed', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) ? 'Manage in Dashboard' : 'Book Now')
-                                                    ) : 'Login to Book'}
-
-                                                </Button>
-                                            </Popover.Target>
-                                            <Popover.Dropdown>
-                                                <Stack gap="sm">
-                                                    <Text fw={600} size="sm">Booking Details</Text>
-
-                                                    <NumberInput
-                                                        label="Seats"
-                                                        description={`Max ${ride.seats.total - ride.seats.taken}`}
-                                                        min={1}
-                                                        max={ride.seats.total - ride.seats.taken}
-                                                        value={bookingData.seats}
-                                                        onChange={(v) => setBookingData({ ...bookingData, seats: Number(v) })}
-                                                        required
-                                                    />
-
-                                                    <Group grow>
-                                                        <NumberInput
-                                                            label="Big Luggage"
-                                                            min={0}
-                                                            max={(ride.rules.luggage.big * bookingData.seats)}
-                                                            value={bookingData.bigLuggage}
-                                                            onChange={(v) => setBookingData({ ...bookingData, bigLuggage: Number(v) })}
-                                                        />
-                                                        <NumberInput
-                                                            label="Small Luggage"
-                                                            min={0}
-                                                            max={(ride.rules.luggage.small * bookingData.seats)}
-                                                            value={bookingData.smallLuggage}
-                                                            onChange={(v) => setBookingData({ ...bookingData, smallLuggage: Number(v) })}
-                                                        />
-                                                    </Group>
-
-                                                    <TimeInput
-                                                        label="Preferred Pickup Time"
-                                                        description={(() => {
-                                                            const f = ride.rules.time_flexibility;
-                                                            if (typeof f === 'object' && f !== null) {
-                                                                const h = f.hours || 0;
-                                                                const m = f.minutes || 0;
-                                                                if (h === 0 && m === 0) return 'Exact time only';
-
-                                                                const parts = [];
-                                                                if (h > 0) parts.push(`${h} hr${h > 1 ? 's' : ''}`);
-                                                                if (m > 0) parts.push(`${m} min${m > 1 ? 's' : ''}`);
-                                                                return `Flexibility: +/- ${parts.join(' ')}`;
-                                                            }
-                                                            return 'Optional';
-                                                        })()}
-                                                        leftSection={<IconClock size={16} />}
-                                                        value={bookingData.pickupTime}
-                                                        onChange={(e) => setBookingData({ ...bookingData, pickupTime: e.currentTarget.value })}
-                                                    />
-
-                                                    <Button
-                                                        fullWidth
-                                                        onClick={handleBook}
-                                                        loading={bookingSubmitting}
-                                                    >
-                                                        Confirm Booking
-                                                    </Button>
-                                                </Stack>
-                                            </Popover.Dropdown>
-                                        </Popover>
+                                        </Button>
                                     </div>
                                     <div style={{ width: isSmallScreen ? '100%' : 140, marginTop: isSmallScreen ? 'var(--mantine-spacing-md)' : 0 }}>
                                         <Text size="sm" fw={500} mb={4} ta={isSmallScreen ? "left" : "right"}>
@@ -680,7 +634,10 @@ export default function RidePage() {
                                                 ride.user_booking_status ? 'blue' :
                                                     ride.status === 'bookable' ? 'blue' : 'gray'
                                         }
-                                        disabled={!isDriver && (ride.user_booking_status === 'cancelled' || (!ride.user_booking_status && ride.status !== 'bookable'))}
+                                        disabled={(() => {
+                                            const isActiveBooking = !!ride.user_booking_status && !['removed', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status);
+                                            return !isDriver && !isActiveBooking && ride.status !== 'bookable';
+                                        })()}
                                         onClick={() => {
                                             if (!user) {
                                                 handleProtectedAction();
@@ -697,15 +654,17 @@ export default function RidePage() {
                                                 router.push(`/dashboard/${rideId}`);
                                                 return;
                                             }
-                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                            // window.scrollTo({ top: 0, behavior: 'smooth' });
                                             setBookingOpen(true);
                                         }}
                                     >
                                         {user ? (
                                             isDriver ? 'Manage Trip' :
                                                 (ride.user_booking_status === 'cancelled') ? 'Booking Cancelled' :
-                                                    ((ride.user_booking_status && !['removed', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) ? 'Manage in Dashboard' : 'Book Now')
-                                        ) : 'Login to Book'}
+                                                    (ride.status === 'locked' && !ride.user_booking_status) ? 'Booking Closed' :
+                                                        ((ride.user_booking_status && !['removed', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) ? 'Manage in Dashboard' : 'Book Now')
+                                        ) :
+                                            ride.status === 'bookable' ? 'Login to Book' : 'Trip cannot be booked'}
 
                                     </Button>
                                 </Group>
@@ -713,6 +672,71 @@ export default function RidePage() {
                         </Paper>
                     )}
                 </Transition>
+
+                <Modal opened={bookingOpen} onClose={() => setBookingOpen(false)} title="Booking Details" centered>
+                    <Stack gap="sm">
+                        <NumberInput
+                            label="Seats"
+                            description={`Max ${ride.seats.total - ride.seats.taken}`}
+                            min={1}
+                            max={ride.seats.total - ride.seats.taken}
+                            value={bookingData.seats}
+                            onChange={(v) => setBookingData({ ...bookingData, seats: Number(v) })}
+                            required
+                        />
+
+                        <Group grow>
+                            <NumberInput
+                                label="Big Luggage"
+                                description={`Total Max ${ride.rules.luggage.big * bookingData.seats}`}
+                                min={0}
+                                max={(ride.rules.luggage.big * bookingData.seats)}
+                                value={bookingData.bigLuggage}
+                                onChange={(v) => setBookingData({ ...bookingData, bigLuggage: Number(v) })}
+                            />
+                            <NumberInput
+                                label="Small Luggage"
+                                description={`Total Max ${ride.rules.luggage.small * bookingData.seats}`}
+                                min={0}
+                                max={(ride.rules.luggage.small * bookingData.seats)}
+                                value={bookingData.smallLuggage}
+                                onChange={(v) => setBookingData({ ...bookingData, smallLuggage: Number(v) })}
+                            />
+                        </Group>
+
+                        <DateTimePicker
+                            label="Preferred Pickup Time"
+                            description={(() => {
+                                const f = ride.rules.flexibility;
+                                if (typeof f === 'object' && f !== null) {
+                                    const h = f.hours || 0;
+                                    const m = f.minutes || 0;
+                                    if (h === 0 && m === 0) return 'Exact time only';
+
+                                    const parts = [];
+                                    if (h > 0) parts.push(`${h} hr${h > 1 ? 's' : ''}`);
+                                    if (m > 0) parts.push(`${m} min${m > 1 ? 's' : ''}`);
+                                    return `Flexibility: +/- ${parts.join(' ')}`;
+                                }
+                                return 'Optional';
+                            })()}
+                            leftSection={<IconClock size={16} />}
+                            value={bookingData.pickupTime}
+                            onChange={(date: any) => {
+                                const d = (typeof date === 'string' && date) ? new Date(date) : date;
+                                setBookingData({ ...bookingData, pickupTime: d });
+                            }}
+                        />
+
+                        <Button
+                            fullWidth
+                            onClick={handleBook}
+                            loading={bookingSubmitting}
+                        >
+                            Confirm Booking
+                        </Button>
+                    </Stack>
+                </Modal>
 
             </Stack>
         </Container >

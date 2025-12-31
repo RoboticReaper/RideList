@@ -79,31 +79,37 @@ export function EditTripView({ trip }: EditTripViewProps) {
 
     // Parse flexibility interval to hours (number)
     const parseIntervalToHours = (interval: any) => {
-        if (!interval) return 0.25;
+        if (!interval) return null;
         if (typeof interval === 'object') {
-            return (interval.hours || 0) + (interval.minutes || 0) / 60;
+            const h = (interval.hours || 0) + (interval.minutes || 0) / 60 + (interval.seconds || 0) / 3600;
+            return h > 0 ? h : null;
         }
-        return 0.25; // fallback
+
+        const p = parseFloat(String(interval));
+        return isNaN(p) ? null : p;
     };
 
     // Parse cutoff interval to hours (number)
     const parseCutoffToHours = (interval: any) => {
-        if (!interval) return '';
+        if (!interval) return null;
         if (typeof interval === 'object') {
-            const h = (interval.hours || 0) + (interval.minutes || 0) / 60;
-            return h > 0 ? h : '';
+            const h = (interval.hours || 0) + (interval.minutes || 0) / 60 + (interval.seconds || 0) / 3600;
+            return h > 0 ? h : null;
         }
+
+        const p = parseFloat(String(interval));
+        return isNaN(p) ? null : p;
     };
 
     // Parse pay window interval to minutes (number)
     const parsePayWindowToMinutes = (interval: any) => {
-        if (!interval) return 30; // default
+        if (!interval) return null;
         if (typeof interval === 'object') {
-            const m = (interval.hours || 0) * 60 + (interval.minutes || 0);
-            return m > 0 ? m : 30;
+            const m = (interval.hours || 0) * 60 + (interval.minutes || 0) + (interval.seconds || 0) / 60;
+            return m > 0 ? m : null;
         }
-        // If string "30 minutes"
-        const p = parseInt(String(interval));
+
+        const p = parseFloat(String(interval));
         return isNaN(p) ? 30 : p;
     };
 
@@ -132,12 +138,38 @@ export function EditTripView({ trip }: EditTripViewProps) {
             pickupRadius: Number(trip.rules.pickup.radius ?? 1000),
             dropoffRadius: Number(trip.rules.pickup.dropoff_radius ?? 1000),
 
-            flexibility: parseIntervalToHours(trip.rules.time_flexibility),
+            flexibility: parseIntervalToHours(trip.rules.flexibility),
             autoAccept: trip.rules.auto_accept,
             cutoffTime: parseCutoffToHours(trip.rules.cutoff_time), // number of hours
             payWindow: parsePayWindowToMinutes(trip.rules.pay_window),
+            startCheckInHrs: parseCutoffToHours(trip.rules.start_check_in_hrs), // Reusing helper for hours
         },
     });
+
+    const [isCheckInStarted, setIsCheckInStarted] = useState(trip.start_check_in);
+
+    const handleManualStartCheckIn = async () => {
+        if (!user) return;
+        setLoading(true);
+        try {
+            const token = await user.getIdToken();
+            const res = await fetch(`/api/trips/${trip.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ start_check_in: true })
+            });
+            if (!res.ok) throw new Error('Failed to start check-in');
+            setIsCheckInStarted(true);
+            notifications.show({ title: 'Success', message: 'Check-in started!', color: 'green' });
+        } catch (error) {
+            notifications.show({ title: 'Error', message: 'Failed to start check-in', color: 'red' });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // --- Autocomplete Logic ---
     const fetchPlaces = async (query: string, setSuggestions: (data: string[]) => void, setLoading: (l: boolean) => void, sessionToken: string) => {
@@ -340,21 +372,21 @@ export function EditTripView({ trip }: EditTripViewProps) {
                 if (selectedCar.big_luggage !== undefined && selectedCar.big_luggage !== null) {
                     if (Number(values.bigLuggage || 0) > selectedCar.big_luggage) {
                         notifications.show({
-                            title: 'Luggage Limit',
-                            message: `Big luggage limit (${values.bigLuggage}) exceeds car capacity (${selectedCar.big_luggage}).`,
-                            color: 'red'
+                            title: 'Big Luggage Limit',
+                            message: `Big luggage limit (${values.bigLuggage}) exceeds car capacity (${selectedCar.big_luggage}). Please adjust the luggage limits to avoid overloading the car.`,
+                            color: 'yellow',
+                            autoClose: false,
                         });
-                        return;
                     }
                 }
                 if (selectedCar.small_luggage !== undefined && selectedCar.small_luggage !== null) {
                     if (Number(values.smallLuggage || 0) > selectedCar.small_luggage) {
                         notifications.show({
-                            title: 'Luggage Limit',
-                            message: `Small luggage limit (${values.smallLuggage}) exceeds car capacity (${selectedCar.small_luggage}).`,
-                            color: 'red'
+                            title: 'Small Luggage Limit',
+                            message: `Small luggage limit (${values.smallLuggage}) exceeds car capacity (${selectedCar.small_luggage}). Please adjust the luggage limits to avoid overloading the car.`,
+                            color: 'yellow',
+                            autoClose: false,
                         });
-                        return;
                     }
                 }
             }
@@ -385,6 +417,18 @@ export function EditTripView({ trip }: EditTripViewProps) {
                 payload.payWindow = `${values.payWindow} minutes`;
             } else {
                 payload.payWindow = '30 minutes';
+            }
+
+            if (values.startCheckInHrs !== '' && values.startCheckInHrs !== null) {
+                payload.startCheckInHrs = `${values.startCheckInHrs} hours`;
+            } else {
+                payload.startCheckInHrs = null;
+            }
+
+            if (values.flexibility !== '' && values.flexibility !== null) {
+                payload.flexibility = `${values.flexibility} hours`;
+            } else {
+                payload.flexibility = null;
             }
 
             if (payload.car === 'none') {
@@ -576,6 +620,28 @@ export function EditTripView({ trip }: EditTripViewProps) {
                     />
                 </SimpleGrid>
 
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                    <NumberInput
+                        label="Auto-start Check-in (Hours before)"
+                        placeholder="e.g. 24"
+                        min={0}
+                        step={0.5}
+                        decimalScale={2}
+                        {...form.getInputProps('startCheckInHrs')}
+                    />
+                </SimpleGrid>
+
+                {!isCheckInStarted && (
+                    <Alert color="orange" title="Check-in Not Started" icon={<IconAlertTriangle size={16} />}>
+                        <Group justify="space-between" align="center">
+                            <span>Passengers cannot check in yet.</span>
+                            <Button size="xs" variant="white" color="orange" onClick={handleManualStartCheckIn} loading={loading}>
+                                Start Check-in Now
+                            </Button>
+                        </Group>
+                    </Alert>
+                )}
+
                 <NumberInput
                     label="Wait Flexibility (Hours)"
                     description="How long are you willing to wait?"
@@ -592,8 +658,6 @@ export function EditTripView({ trip }: EditTripViewProps) {
                 <NumberInput
                     label="Pay Window (Minutes)"
                     description="Time for rider to pay after approval"
-                    min={5}
-                    step={5}
                     {...form.getInputProps('payWindow')}
                 />
 

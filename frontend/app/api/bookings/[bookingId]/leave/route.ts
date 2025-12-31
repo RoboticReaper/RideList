@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
+import { checkAndProcessTripCutoff } from '@/app/api/lib/tripCutoff';
 
 export async function POST(
     req: Request,
@@ -26,7 +27,7 @@ export async function POST(
 
         // Check booking ownership and current status
         const bookingQuery = `
-            SELECT id, rider, trip, status, seats_booked
+            SELECT id, rider, trip, status, seats_booked, paid
             FROM bookings
             WHERE id = $1
             FOR UPDATE
@@ -54,6 +55,7 @@ export async function POST(
         }
 
 
+
         // check if user already paid
         if (booking.paid) {
             // Update booking status
@@ -63,6 +65,24 @@ export async function POST(
                 WHERE id = $1
             `;
             await client.query(updateBookingQuery, [bookingId]);
+
+            // Release seats if they were taken
+            const activeStatuses = ['joined_with_pay_window', 'pending_pay_confirmation_from_driver', 'confirmed'];
+            if (activeStatuses.includes(booking.status)) {
+                const releaseSeatsQuery = `
+                    UPDATE trips
+                    SET seats_taken = seats_taken - $1
+                    WHERE id = $2
+                    RETURNING status
+                `;
+                const releaseRes = await client.query(releaseSeatsQuery, [booking.seats_booked, booking.trip]);
+
+                if (releaseRes.rows.length > 0 && releaseRes.rows[0].status === 'full') {
+                    await client.query("UPDATE trips SET status = 'bookable' WHERE id = $1", [booking.trip]);
+                    // Check if we should lock it again immediately
+                    await checkAndProcessTripCutoff(client, booking.trip);
+                }
+            }
 
             // Log booking status history
             const statusHistoryQuery = `
@@ -80,6 +100,24 @@ export async function POST(
             `;
             await client.query(updateBookingQuery, [bookingId]);
 
+            // Release seats if they were taken
+            const activeStatuses = ['joined_with_pay_window', 'pending_pay_confirmation_from_driver', 'confirmed'];
+            if (activeStatuses.includes(booking.status)) {
+                const releaseSeatsQuery = `
+                    UPDATE trips
+                    SET seats_taken = seats_taken - $1
+                    WHERE id = $2
+                    RETURNING status
+                `;
+                const releaseRes = await client.query(releaseSeatsQuery, [booking.seats_booked, booking.trip]);
+
+                if (releaseRes.rows.length > 0 && releaseRes.rows[0].status === 'full') {
+                    await client.query("UPDATE trips SET status = 'bookable' WHERE id = $1", [booking.trip]);
+                    // Check if we should lock it again immediately
+                    await checkAndProcessTripCutoff(client, booking.trip);
+                }
+            }
+
             // Log booking status history
             const statusHistoryQuery = `
                 INSERT INTO booking_status_history (booking_id, actor_id, old_status, new_status)
@@ -93,7 +131,7 @@ export async function POST(
 
         await client.query('COMMIT');
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, paid: booking.paid });
 
     } catch (error: any) {
         await client.query('ROLLBACK');

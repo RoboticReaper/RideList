@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
+import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
+import { checkAndProcessTripCutoff } from '@/app/api/lib/tripCutoff';
 
 export async function GET(req: Request) {
     const client = await pool.connect();
@@ -67,6 +69,15 @@ export async function GET(req: Request) {
         let trips = res.rows;
 
         const tripIds = trips.map((t: any) => t.id);
+
+        // Lazy Check-in and Cutoff (Iterate all trips)
+        for (const trip of trips) {
+            await checkAndProcessCheckInStart(client, trip.id);
+            const s = await checkAndProcessTripCutoff(client, trip.id);
+            if (s !== trip.status) {
+                trip.status = s;
+            }
+        }
 
         if (tripIds.length > 0) {
             const timeouts = await client.query(
