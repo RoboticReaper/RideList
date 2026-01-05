@@ -27,9 +27,10 @@ export async function POST(
 
         // Check booking ownership and current status
         const bookingQuery = `
-            SELECT id, rider, trip, status, seats_booked, paid
-            FROM bookings
-            WHERE id = $1
+            SELECT b.id, b.rider, b.trip, b.status, b.seats_booked, b.paid, t.status as trip_status, t.seats_taken as trip_seats_taken
+            FROM bookings b
+            JOIN trips t ON b.trip = t.id
+            WHERE b.id = $1
             FOR UPDATE
         `;
         const bookingRes = await client.query(bookingQuery, [bookingId]);
@@ -46,12 +47,24 @@ export async function POST(
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
+        // Global Read-Only Check
+        if (booking.trip_status === 'done' || booking.trip_status === 'cancelled') {
+            await client.query('ROLLBACK');
+            return NextResponse.json({ error: 'Trip is read-only because it is done or cancelled.' }, { status: 400 });
+        }
+
         // Check if booking is already inactive
         // Inactive statuses: pay_timeout, removed, left_paid, left_unpaid, cancelled.
         const inactiveStatuses = ['pay_timeout', 'removed', 'left_paid', 'left_unpaid', 'cancelled', 'rejected'];
         if (inactiveStatuses.includes(booking.status)) {
             await client.query('ROLLBACK');
             return NextResponse.json({ error: 'Booking is already inactive.' }, { status: 400 });
+        }
+
+        // Prevent leaving if confirmed and departed
+        if (booking.status === 'confirmed' && booking.trip_status === 'departed') {
+            await client.query('ROLLBACK');
+            return NextResponse.json({ error: 'Cannot leave trip after it has departed.' }, { status: 400 });
         }
 
 
@@ -77,19 +90,36 @@ export async function POST(
                 `;
                 const releaseRes = await client.query(releaseSeatsQuery, [booking.seats_booked, booking.trip]);
 
-                if (releaseRes.rows.length > 0 && releaseRes.rows[0].status === 'full') {
-                    await client.query("UPDATE trips SET status = 'bookable' WHERE id = $1", [booking.trip]);
-                    // Check if we should lock it again immediately
-                    await checkAndProcessTripCutoff(client, booking.trip);
+                if (releaseRes.rows.length > 0) {
+                    const updatedTrip = releaseRes.rows[0];
+
+                    if (updatedTrip.status === 'full') {
+                        await client.query("UPDATE trips SET status = 'bookable' WHERE id = $1", [booking.trip]);
+
+                        // Check if we should lock it again immediately
+                        await checkAndProcessTripCutoff(client, booking.trip);
+
+                        // Log Status Change (Full -> Bookable)
+                        const { logTripEvent } = await import('@/app/api/lib/tripEvents');
+                        await logTripEvent({
+                            client,
+                            tripId: booking.trip,
+                            actorId: user.uid,
+                            eventType: 'trip_updated',
+                            affectedEntities: ['trips'],
+                            changes: { trip: { status: { old: 'full', new: 'bookable' } } },
+                            notes: `status change due to rider leave.`
+                        });
+                    }
                 }
             }
 
             // Log booking status history
             const statusHistoryQuery = `
-                INSERT INTO booking_status_history (booking_id, actor_id, old_status, new_status)
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO booking_status_history (booking_id, actor_id, old_status, new_status, trigger_event_id)
+                VALUES ($1, $2, $3, $4, $5)
             `;
-            await client.query(statusHistoryQuery, [bookingId, user.uid, booking.status, 'left_paid']);
+            await client.query(statusHistoryQuery, [bookingId, user.uid, booking.status, 'left_paid', null]);
 
         } else {
             // Update booking status
@@ -115,15 +145,27 @@ export async function POST(
                     await client.query("UPDATE trips SET status = 'bookable' WHERE id = $1", [booking.trip]);
                     // Check if we should lock it again immediately
                     await checkAndProcessTripCutoff(client, booking.trip);
+
+                    // Log Status Change (Full -> Bookable)
+                    const { logTripEvent } = await import('@/app/api/lib/tripEvents');
+                    await logTripEvent({
+                        client,
+                        tripId: booking.trip,
+                        actorId: user.uid,
+                        eventType: 'trip_updated',
+                        affectedEntities: ['trips'],
+                        changes: { trip: { status: { old: 'full', new: 'bookable' } } },
+                        notes: `status change due to rider leave.`
+                    });
                 }
             }
 
             // Log booking status history
             const statusHistoryQuery = `
-                INSERT INTO booking_status_history (booking_id, actor_id, old_status, new_status)
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO booking_status_history (booking_id, actor_id, old_status, new_status, trigger_event_id)
+                VALUES ($1, $2, $3, $4, $5)
             `;
-            await client.query(statusHistoryQuery, [bookingId, user.uid, booking.status, 'left_unpaid']);
+            await client.query(statusHistoryQuery, [bookingId, user.uid, booking.status, 'left_unpaid', null]);
         }
 
 

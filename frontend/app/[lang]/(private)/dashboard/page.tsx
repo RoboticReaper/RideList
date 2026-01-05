@@ -9,7 +9,7 @@ export default function DashboardPage() {
     const { role } = useDashboard();
 
     return (
-        <Container size="xl" py="xl">
+        <Container size="xl" pb="xl" pt="sm">
             <Title order={2} mb="lg">{role === 'driver' ? 'Driver' : 'Rider'} Dashboard</Title>
             {role === 'driver' ? (
                 <DriverDashboard />

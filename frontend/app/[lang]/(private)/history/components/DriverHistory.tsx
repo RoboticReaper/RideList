@@ -1,16 +1,15 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Container, Title, Button, Stack, Text, Loader, Center, Group } from '@mantine/core';
+import { Stack, Text, Loader, Center, Group, Button } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
-import { TripCard } from './TripCard';
-import { IconRefresh, IconPlus } from '@tabler/icons-react';
-import { LocalizedLink } from '@/components/LocalizedLink';
+import { TripCard } from '../../dashboard/components/TripCard';
+import { IconRefresh } from '@tabler/icons-react';
 
 interface Trip {
     id: string;
     from_text: string;
     to_text: string;
     departure_time: string;
-    status: 'bookable' | 'full' | 'departed' | 'done' | 'cancelled' | 'aborted';
+    status: 'bookable' | 'full' | 'departed' | 'done' | 'cancelled';
     seats_taken: number;
     total_seats: number;
     price: string;
@@ -19,10 +18,9 @@ interface Trip {
     plate?: string;
     color?: string;
     start_check_in?: boolean;
-    driver_phone?: string;
 }
 
-export function DriverDashboard() {
+export function DriverHistory() {
     const { user } = useAuth();
     const [trips, setTrips] = useState<Trip[]>([]);
     const [loading, setLoading] = useState(true);
@@ -34,7 +32,7 @@ export function DriverDashboard() {
 
         try {
             const token = await user.getIdToken();
-            let url = '/api/trips/upcoming?limit=10';
+            let url = '/api/trips/history?limit=10';
             if (cursor) {
                 url += `&cursor=${cursor}`;
             }
@@ -67,14 +65,6 @@ export function DriverDashboard() {
         }
     }, [user, fetchTrips]);
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            fetchTrips();
-        }, 120000); // 2 minutes
-
-        return () => clearInterval(interval);
-    }, [fetchTrips]);
-
     const handleLoadMore = () => {
         if (nextCursor) {
             setLoadingMore(true);
@@ -97,30 +87,19 @@ export function DriverDashboard() {
     return (
         <Stack gap="lg">
             <Group>
-                <Text size="xl" fw={600}>Upcoming Drives</Text>
-                <Group gap={0}>
-                    <Button
-                        variant="subtle"
-                        leftSection={<IconRefresh size={16} />}
-                        onClick={handleRefresh}
-                        size="xs"
-                    >
-                        Refresh
-                    </Button>
-                    <Button
-                        component={LocalizedLink}
-                        href="/newRide"
-                        leftSection={<IconPlus size={16} />}
-                        size="xs"
-                        variant="subtle"
-                    >
-                        Post Ride
-                    </Button>
-                </Group>
+                <Text size="xl" fw={600}>Past Drives</Text>
+                <Button
+                    variant="subtle"
+                    leftSection={<IconRefresh size={16} />}
+                    onClick={handleRefresh}
+                    size="xs"
+                >
+                    Refresh
+                </Button>
             </Group>
 
             {trips.length === 0 ? (
-                <Text c="dimmed" ta="center">You have no upcoming trips scheduled.</Text>
+                <Text c="dimmed" ta="center">You have no past trips.</Text>
             ) : (
                 <Stack gap="md">
                     {trips.map(trip => (

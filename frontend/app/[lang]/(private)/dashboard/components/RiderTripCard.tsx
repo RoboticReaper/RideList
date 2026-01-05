@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Card, Text, Group, Stack, Button, Flex, ActionIcon, Tooltip } from '@mantine/core';
+import { Card, Text, Group, Stack, Button, Flex, ActionIcon, Tooltip, Badge } from '@mantine/core';
+import { getTripStatusConfig, getBookingStatusConfig } from '@/utils/statusUtils';
 import { IconMapPin, IconCalendar, IconUserCheck, IconExternalLink, IconCash, IconLuggage } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { LocalizedLink } from '@/components/LocalizedLink';
@@ -19,6 +20,7 @@ interface Trip {
     booking_id: string;
     big_luggage: number;
     small_luggage: number;
+    start_check_in?: boolean;
 }
 
 interface RiderTripCardProps {
@@ -32,32 +34,7 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
 
     const [cancelling, setCancelling] = useState(false);
 
-    const bookingStatusColors: Record<string, string> = {
-        waiting_approval: 'yellow',
-        joined_with_pay_window: 'orange', // awaiting payment
-        pending_pay_confirmation_from_driver: 'grape',
-        confirmed: 'green',
-        left_unpaid: 'gray',
-        cancelled: 'red'
-    };
 
-    const bookingStatusLabels: Record<string, string> = {
-        waiting_approval: 'Awaiting Driver Approval',
-        joined_with_pay_window: 'Awaiting Your Payment',
-        pending_pay_confirmation_from_driver: 'Driver confirming payment',
-        confirmed: 'Confirmed',
-        left_unpaid: 'Left Unpaid',
-        cancelled: 'Cancelled'
-    };
-
-    const tripStatusColors: Record<string, string> = {
-        bookable: 'green',
-        full: 'orange',
-        departed: 'blue',
-        done: 'gray',
-        cancelled: 'red',
-        locked: 'red',
-    };
 
     const handleMarkPaymentSent = async () => {
         if (!user) return;
@@ -157,6 +134,9 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
                                     <IconExternalLink size={16} />
                                 </ActionIcon>
                             </Tooltip>
+                            {trip.start_check_in && trip.trip_status !== 'done' && trip.trip_status !== 'cancelled' && (
+                                <Badge size="sm" color="cyan" variant="filled">Check-in Started</Badge>
+                            )}
                         </Group>
                         <Text size="xs" c="dimmed" ml={28}>
                             {trip.from_text} &rarr; {trip.to_text}
@@ -166,20 +146,21 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
                     <Flex direction="column" align={{ base: 'flex-start', sm: 'flex-end' }} gap={0}>
                         <Group gap={6}>
                             <Text size="xs" fw={700} c="dimmed">TRIP:</Text>
-                            <Text c={tripStatusColors[trip.trip_status] || 'dimmed'} fw={700} size="sm">
-                                {trip.trip_status.toUpperCase()}
+                            <Text c={getTripStatusConfig(trip.trip_status).color} fw={700} size="sm">
+                                {getTripStatusConfig(trip.trip_status).label.toUpperCase()}
                             </Text>
+
                         </Group>
                         <Group gap={6} align="flex-start">
                             <Text size="xs" fw={700} c="dimmed" style={{ whiteSpace: 'nowrap', marginTop: 1 }}>BOOKING:</Text>
                             <Text
-                                c={bookingStatusColors[trip.booking_status] || 'dimmed'}
+                                c={getBookingStatusConfig(trip.booking_status).color}
                                 fw={700}
                                 size="sm"
                                 ta={{ base: 'left', sm: 'right' }}
                                 style={{ lineHeight: 1.3 }}
                             >
-                                {bookingStatusLabels[trip.booking_status] || trip.booking_status.replace(/_/g, ' ').toUpperCase()}
+                                {getBookingStatusConfig(trip.booking_status).label}
                             </Text>
                         </Group>
                     </Flex>

@@ -14,7 +14,7 @@ create extension if not exists postgis;
 -- ======================
 -- ENUMS
 -- ======================
-create type trip_status as enum ('bookable', 'locked', 'full', 'departed', 'done', 'cancelled');
+create type trip_status as enum ('bookable', 'locked', 'full', 'departed', 'done', 'cancelled', 'aborted');
 
 create type booking_status as enum (
   'waiting_approval',
@@ -23,9 +23,13 @@ create type booking_status as enum (
   'confirmed',
   'pay_timeout',
   'removed',
-  'left_paid',
-  'left_unpaid',
-  'cancelled'
+  'left_paid', -- rider left BEFORE departure after paying
+  'left_unpaid', -- rider left BEFORE departure without paying
+    -- left_* statuses is never set once trip status has moved beyond departed
+
+  'cancelled', -- trip-level cancellation OR trip aborted BEFORE rider pickup
+  'completed', -- rider was picked up and trip finished
+  'no_show' -- rider was NOT picked up AFTER pickup started
 );
 
 create type trip_event_type as enum (
@@ -34,8 +38,7 @@ create type trip_event_type as enum (
   'trip_cancelled',
   'trip_departed',
   'trip_completed',
-  'paid_booking_cancelled_by_rider',
-  'unpaid_booking_cancelled_by_rider',
+  'trip_aborted',
   'system_cancelled'
 );
 
@@ -146,22 +149,22 @@ create table trips (
 create table trip_rules (
   id uuid primary key references trips(id) on delete cascade,
 
-  big_luggage_lim int check (big_luggage_lim is null or big_luggage_lim >= 0),
-  small_luggage_lim int check (small_luggage_lim is null or small_luggage_lim >= 0),
+  big_luggage_lim int not null check (big_luggage_lim >= 0),
+  small_luggage_lim int not null check (small_luggage_lim >= 0),
 
   pickup_rules text,
   pickup_radius_meters int not null default 1000 check (pickup_radius_meters > 0),
   drop_off_radius_meters int not null default 1000 check (drop_off_radius_meters > 0),
 
-  departure_time_flexibility interval not null default interval '15 minutes',
+  departure_time_flexibility interval not null,
   payment_methods text[],
   cancellation_policy text,
   payment_handle text,
 
   auto_accept bool not null default true,
-  cutoff_time interval,  -- nullable = no cutoff, or enforce a default in app
-  pay_window interval not null default '30 minutes',
-  start_check_in_hrs_before_departure interval default '3 hours'
+  cutoff_time interval not null,
+  pay_window interval not null,
+  start_check_in_hrs_before_departure interval
 );
 
 create table trip_routes ( -- expensive feature. only paid users will have routes
@@ -210,9 +213,14 @@ create table bookings (
   created_at timestamptz not null default now(),
   status booking_status not null,
 
+  intended_payment_method text not null,
+
   ready bool not null default false,
   ready_at timestamptz,
   preferred_pickup_time timestamptz,
+
+  picked_up bool not null default false,
+  picked_up_at timestamptz,
 
   constraint ready_time_consistency check (
       (ready = false and ready_at is null) or (ready = true and ready_at is not null)
@@ -264,13 +272,15 @@ create table booking_removal (
 -- Snapshot car info for each trip at departure time (immutable history)
 create table car_snapshots (
   id uuid primary key references trips(id) on delete cascade,
-  original_car_id uuid, -- no FK: traceability only
+  original_car_id uuid, -- no FK req: traceability only
   make text,
   model text,
   seats int,
   big_luggage int,
   small_luggage int,
   plate text,
+  color text,
+  year text,
   created_at timestamptz not null default now()
 );
 

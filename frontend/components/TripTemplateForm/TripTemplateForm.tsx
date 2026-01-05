@@ -1,10 +1,12 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Button, TextInput, NumberInput, Group, Select, Stack, Paper, Title, Autocomplete, Loader, ActionIcon, Textarea } from '@mantine/core';
+import { Button, TextInput, NumberInput, Group, Select, Stack, Paper, Title, Autocomplete, Loader, ActionIcon, Textarea, Text, Modal } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
 import { IconDeviceFloppy, IconTrash, IconX } from '@tabler/icons-react';
+import { useDisclosure } from '@mantine/hooks';
 import { useAuth } from '@/components/firebase/AuthContext';
+import { LocalizedLink } from '@/components/LocalizedLink';
 
 interface TripTemplateFormProps {
     templateId?: string; // 'new' or uuid
@@ -54,6 +56,7 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
     const startSessionToken = useRef<string>(typeof crypto !== 'undefined' ? crypto.randomUUID() : '');
     const endSessionToken = useRef<string>(typeof crypto !== 'undefined' ? crypto.randomUUID() : '');
 
+    const [opened, { open, close }] = useDisclosure(false);
     const [loading, setLoading] = useState(false);
 
 
@@ -199,7 +202,7 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
                 dest_lat: eCoords?.lat,
                 dest_lng: eCoords?.lng,
                 car_id: selectedCar === 'none' ? null : selectedCar,
-                rule_id: selectedRule === 'none' ? null : selectedRule
+                rule_id: selectedRule === 'none' || selectedRule === '' ? null : selectedRule
             };
 
             const url = isNew ? '/api/user/trip-templates' : `/api/user/trip-templates/${templateId}`;
@@ -228,20 +231,19 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
     };
 
     const handleDelete = async () => {
-        if (confirm('Are you sure you want to delete this template?')) {
-            setLoading(true);
-            try {
-                const token = await user?.getIdToken();
-                await fetch(`/api/user/trip-templates/${templateId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                router.push('/trip-templates');
-            } catch (error) {
-                console.error(error);
-                notifications.show({ title: 'Error', message: 'Failed to delete template', color: 'red' });
-                setLoading(false);
-            }
+        setLoading(true);
+        try {
+            const token = await user?.getIdToken();
+            await fetch(`/api/user/trip-templates/${templateId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            router.push('/trip-templates');
+        } catch (error) {
+            console.error(error);
+            notifications.show({ title: 'Error', message: 'Failed to delete template', color: 'red' });
+            setLoading(false);
+            close();
         }
     };
 
@@ -250,7 +252,7 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
             <Group justify="space-between">
                 <Title order={3}>{isNew ? 'New Trip Template' : 'Edit Trip Template'}</Title>
                 {!isNew && (
-                    <Button color="red" variant="subtle" leftSection={<IconTrash size={16} />} onClick={handleDelete} loading={loading}>
+                    <Button color="red" variant="subtle" leftSection={<IconTrash size={16} />} onClick={open} loading={loading}>
                         Delete
                     </Button>
                 )}
@@ -299,7 +301,7 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
 
                     <Select
                         label="Vehicle"
-                        placeholder="Select a car..."
+                        placeholder="Select a vehicle..."
                         data={[
                             { value: 'none', label: 'No Vehicle' },
                             ...myCars.map(c => ({ value: c.id, label: `${c.make} ${c.model}` }))
@@ -309,6 +311,9 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
                         searchable
                         clearable
                     />
+                    <Text size="xs" c="dimmed" mt={-10}>
+                        To add a new vehicle, save your changes and go to <LocalizedLink href="/cars" style={{ textDecoration: 'underline' }}>My Vehicles</LocalizedLink> page.
+                    </Text>
 
                     <Select
                         label="Rule Template"
@@ -330,6 +335,16 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
             <Button leftSection={<IconDeviceFloppy size={16} />} onClick={handleSubmit} loading={loading}>
                 Save Trip Template
             </Button>
+
+            <Modal opened={opened} onClose={close} title="Confirm Deletion" centered>
+                <Text size="sm" mb="lg">
+                    Are you sure you want to delete this trip template? This action cannot be undone.
+                </Text>
+                <Group justify="flex-end">
+                    <Button variant="default" onClick={close}>Cancel</Button>
+                    <Button color="red" onClick={handleDelete} loading={loading}>Delete Template</Button>
+                </Group>
+            </Modal>
         </Stack>
     );
 }

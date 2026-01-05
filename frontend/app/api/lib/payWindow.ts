@@ -25,9 +25,11 @@ export async function checkAndProcessPayWindowTimeout(client: PoolClient, bookin
                     b.status, 
                     b.seats_booked, 
                     b.trip AS trip_id,
-                    tr.pay_window
+                    tr.pay_window,
+                    t.status as trip_status
                 FROM bookings b
                 JOIN trip_rules tr ON b.trip = tr.id
+                JOIN trips t ON b.trip = t.id
                 WHERE b.id = $1
             ),
             status_start AS (
@@ -42,6 +44,7 @@ export async function checkAndProcessPayWindowTimeout(client: PoolClient, bookin
                 bi.seats_booked,
                 bi.trip_id,
                 bi.pay_window,
+                bi.trip_status,
                 ss.start_time,
                 NOW() as current_time
             FROM booking_info bi
@@ -54,10 +57,15 @@ export async function checkAndProcessPayWindowTimeout(client: PoolClient, bookin
             return 'not_found'; // Or throw
         }
 
-        const { status, seats_booked, trip_id, pay_window, start_time, current_time } = res.rows[0];
+        const { status, seats_booked, trip_id, pay_window, start_time, current_time, trip_status } = res.rows[0];
 
         // optimization: if not in the target status, return immediately
         if (status !== 'joined_with_pay_window') {
+            return status;
+        }
+
+        // if trip has departed, do not expire
+        if (trip_status === 'departed') {
             return status;
         }
 
@@ -95,16 +103,46 @@ export async function checkAndProcessPayWindowTimeout(client: PoolClient, bookin
             );
 
             // 2. Release Seats
-            await client.query(
-                `UPDATE trips SET seats_taken = seats_taken - $1 WHERE id = $2`,
+            const releaseRes = await client.query(
+                `UPDATE trips SET seats_taken = seats_taken - $1 WHERE id = $2 RETURNING status, seats_taken`,
                 [seats_booked, trip_id]
             );
 
-            // 3. Log History
+            if (releaseRes.rows.length > 0 && releaseRes.rows[0].status === 'full') {
+                await client.query("UPDATE trips SET status = 'bookable', modified_at = NOW() WHERE id = $1", [trip_id]);
+
+                // Log Status Change (Full -> Bookable)
+                const { logTripEvent } = await import('@/app/api/lib/tripEvents');
+                await logTripEvent({
+                    client,
+                    tripId: trip_id,
+                    actorId: null, // System
+                    eventType: 'trip_updated',
+                    affectedEntities: ['trips'],
+                    changes: { trip: { status: { old: 'full', new: 'bookable' } } }
+                });
+
+                // Check cutoff immediately (might re-lock it if past cutoff)
+                const { checkAndProcessTripCutoff } = await import('@/app/api/lib/tripCutoff');
+                await checkAndProcessTripCutoff(client, trip_id);
+            }
+
+            // 3. Log Trip Event (System Cancellation)
+            const { logTripEvent } = await import('@/app/api/lib/tripEvents');
+            const eventId = await logTripEvent({
+                client,
+                tripId: trip_id,
+                actorId: null, // System
+                eventType: 'system_cancelled', // Mapped from requirement: 'system_cancelled' for pay window timeout
+                affectedEntities: ['bookings', 'trips'],
+                changes: { booking_id: bookingId, seats_released: seats_booked, reason: 'pay_window_timeout' }
+            });
+
+            // 4. Log History
             await client.query(
-                `INSERT INTO booking_status_history (booking_id, actor_id, old_status, new_status)
-                 VALUES ($1, NULL, $2, 'pay_timeout')`, // Actor NULL for system
-                [bookingId, status]
+                `INSERT INTO booking_status_history (booking_id, actor_id, old_status, new_status, trigger_event_id)
+                 VALUES ($1, NULL, $2, 'pay_timeout', $3)`, // Actor NULL for system
+                [bookingId, status, eventId]
             );
 
             return 'pay_timeout';

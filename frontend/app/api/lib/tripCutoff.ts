@@ -18,7 +18,7 @@ export async function checkAndProcessTripCutoff(client: PoolClient, tripId: stri
                 tr.cutoff_time,
                 CASE 
                     WHEN tr.cutoff_time IS NOT NULL THEN (NOW() >= (t.departure_time + COALESCE(tr.departure_time_flexibility, '0 seconds'::interval) - tr.cutoff_time))
-                    ELSE false 
+                    ELSE (NOW() >= (t.departure_time + COALESCE(tr.departure_time_flexibility, '0 seconds'::interval)))
                 END as is_past_cutoff
             FROM trips t
             LEFT JOIN trip_rules tr ON t.id = tr.id
@@ -39,17 +39,24 @@ export async function checkAndProcessTripCutoff(client: PoolClient, tripId: stri
             return status;
         }
 
-        if (!cutoff_time) {
-            return status;
-        }
-
         if (is_past_cutoff) {
             console.log(`Trip ${tripId} passed booking cutoff. Locking.`);
 
             await client.query(
-                "UPDATE trips SET status = 'locked' WHERE id = $1",
+                "UPDATE trips SET status = 'locked', modified_at = NOW() WHERE id = $1",
                 [tripId]
             );
+
+            // Log Trip Event (System Lock)
+            const { logTripEvent } = await import('@/app/api/lib/tripEvents');
+            await logTripEvent({
+                client,
+                tripId,
+                actorId: null, // System
+                eventType: 'trip_updated',
+                affectedEntities: ['trips'],
+                changes: { trip: { status: { old: 'bookable', new: 'locked' } } }
+            });
 
             return 'locked';
         }

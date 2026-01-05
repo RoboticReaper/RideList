@@ -30,7 +30,7 @@ export function DashboardNavbar({ drawerOpened, toggleDrawer, closeDrawer }: { d
         ...(role === 'driver' ? [
             { link: '/trip-templates', label: 'Trip Templates', icon: IconMapPin },
             { link: '/rule-templates', label: 'Rule Templates', icon: IconReceipt2 },
-            { link: '/cars', label: 'My Cars', icon: IconCar },
+            { link: '/cars', label: 'My Vehicles', icon: IconCar },
         ] : []),
         { link: '/history', label: 'History', icon: IconHistory },
         { link: '/roleSettings', label: 'Role-based Settings', icon: IconSettings },
@@ -45,7 +45,13 @@ export function DashboardNavbar({ drawerOpened, toggleDrawer, closeDrawer }: { d
         // Let's iterate and see if pathname contains the link.
         // Assuming links are unique enough.
 
-        const currentItem = data.find(item => pathname.endsWith(item.link));
+        const currentItem = data.find(item => {
+            // if (item.link === '/dashboard') {
+            //     return pathname.endsWith('/dashboard') || pathname.includes('/dashboard/');
+            // }
+            return pathname.includes(item.link);
+        });
+
         if (currentItem) {
             setActiveLink(currentItem.label);
         } else if (pathname.endsWith('/')) {

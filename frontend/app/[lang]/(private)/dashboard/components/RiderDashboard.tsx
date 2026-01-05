@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { Stack, Text, Loader, Center, Button, Group } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { RiderTripCard } from './RiderTripCard';
-import { IconRefresh } from '@tabler/icons-react';
+import { IconRefresh, IconPlus } from '@tabler/icons-react';
+import { LocalizedLink } from '@/components/LocalizedLink';
 
 interface Trip {
     id: string;
@@ -16,6 +17,7 @@ interface Trip {
     booking_id: string;
     big_luggage: number;
     small_luggage: number;
+    start_check_in?: boolean;
 }
 
 export function RiderDashboard() {
@@ -94,14 +96,25 @@ export function RiderDashboard() {
         <Stack gap="lg">
             <Group>
                 <Text size="xl" fw={600}>Upcoming Rides</Text>
-                <Button
-                    variant="subtle"
-                    leftSection={<IconRefresh size={16} />}
-                    onClick={handleRefresh}
-                    size="xs"
-                >
-                    Refresh
-                </Button>
+                <Group gap={0}>
+                    <Button
+                        variant="subtle"
+                        leftSection={<IconRefresh size={16} />}
+                        onClick={handleRefresh}
+                        size="xs"
+                    >
+                        Refresh
+                    </Button>
+                    <Button
+                        component={LocalizedLink}
+                        href="/rides"
+                        leftSection={<IconPlus size={16} />}
+                        size="xs"
+                        variant="subtle"
+                    >
+                        Find Ride
+                    </Button>
+                </Group>
             </Group>
             {trips.length === 0 ? (
                 <Text c="dimmed" ta="center">You have no upcoming trips.</Text>

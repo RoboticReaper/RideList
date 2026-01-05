@@ -1,10 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Button, TextInput, NumberInput, Switch, Textarea, Group, Select, TagsInput, Stack, Paper, Title, Divider } from '@mantine/core';
+import { Button, TextInput, NumberInput, Switch, Textarea, Group, Select, TagsInput, Stack, Paper, Title, Divider, Modal, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
 import { IconDeviceFloppy, IconTrash } from '@tabler/icons-react';
+import { useDisclosure } from '@mantine/hooks';
 import { useAuth } from '@/components/firebase/AuthContext';
+
+import { parseFlexibilityNullable, parsePayWindowNullable, parseCutoffTimeNullable, parseStartCheckInNullable } from '@/utils/intervalParsers';
 
 interface RuleTemplateFormProps {
     templateId?: string; // 'new' or uuid
@@ -18,35 +21,13 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
 
     console.log(initialData)
 
-    // Parse flexibility interval to hours (number)
-    const parseIntervalToHours = (interval: any) => {
-        if (!interval) return null;
-        if (typeof interval === 'object') {
-            const h = (interval.hours || 0) + (interval.minutes || 0) / 60 + (interval.seconds || 0) / 3600;
-            return h > 0 ? h : null;
-        }
-
-        const p = parseFloat(String(interval));
-        return isNaN(p) ? null : p;
-    };
-
-    // Parse pay window interval to minutes (number)
-    const parsePayWindowToMinutes = (interval: any) => {
-        if (!interval) return null;
-        if (typeof interval === 'object') {
-            const m = (interval.hours || 0) * 60 + (interval.minutes || 0) + (interval.seconds || 0) / 60;
-            return m > 0 ? m : null;
-        }
-
-        const p = parseFloat(String(interval));
-        return isNaN(p) ? 30 : p;
-    };
-
 
     const [name, setName] = useState(initialData?.name || '');
     const [autoAccept, setAutoAccept] = useState(initialData?.auto_accept ?? true);
     // Parse flexibility (interval object)
-    const [flexibility, setFlexibility] = useState<number | ''>(parseIntervalToHours(initialData?.departure_time_flexibility));
+    // Use Nullable parser. If 0 (exact time), it returns 0. If null/empty, returns null.
+    // Ensure 0 is preserved as 0, but null becomes '' for the input.
+    const [flexibility, setFlexibility] = useState<number | ''>(parseFlexibilityNullable(initialData?.departure_time_flexibility) ?? '');
     const [pickupRadius, setPickupRadius] = useState<number | ''>(initialData?.pickup_radius_meters ?? '');
     const [dropoffRadius, setDropoffRadius] = useState<number | ''>(initialData?.drop_off_radius_meters ?? '');
     const [pickupRules, setPickupRules] = useState(initialData?.pickup_rules || '');
@@ -59,17 +40,18 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
     // Parse cutoff
     const [cutoffEnabled, setCutoffEnabled] = useState(!!initialData?.cutoff_time);
     const [cutoffHours, setCutoffHours] = useState<number | ''>(
-        parseIntervalToHours(initialData?.cutoff_time)
+        parseCutoffTimeNullable(initialData?.cutoff_time) ?? ''
     );
 
     const [payWindow, setPayWindow] = useState<number | ''>(
-        parsePayWindowToMinutes(initialData?.pay_window)
+        parsePayWindowNullable(initialData?.pay_window) ?? ''
     );
 
     const [startCheckInHrs, setStartCheckInHrs] = useState<number | ''>(
-        parseIntervalToHours(initialData?.start_check_in_hrs_before_departure)
+        parseStartCheckInNullable(initialData?.start_check_in_hrs_before_departure) ?? ''
     );
 
+    const [opened, { open, close }] = useDisclosure(false);
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async () => {
@@ -87,10 +69,10 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
                 departure_time_flexibility: (flexibility !== '' && flexibility !== undefined) ? `${flexibility} hours` : null,
                 pickup_radius_meters: pickupRadius === '' ? null : pickupRadius,
                 drop_off_radius_meters: dropoffRadius === '' ? null : dropoffRadius,
-                pickup_rules: pickupRules,
-                cancellation_policy: cancellationPolicy,
-                payment_methods: paymentMethods,
-                payment_handle: paymentHandle,
+                pickup_rules: pickupRules || null,
+                cancellation_policy: cancellationPolicy || null,
+                payment_methods: paymentMethods && paymentMethods.length > 0 ? paymentMethods : null,
+                payment_handle: paymentHandle || null,
                 big_luggage_lim: bigLuggage === '' ? null : bigLuggage,
                 small_luggage_lim: smallLuggage === '' ? null : smallLuggage,
                 cutoff_time: (cutoffEnabled && cutoffHours !== '') ? `${cutoffHours} hours` : null,
@@ -126,20 +108,25 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
     };
 
     const handleDelete = async () => {
-        if (confirm('Are you sure you want to delete this template?')) {
-            setLoading(true);
-            try {
-                const token = await user?.getIdToken();
-                await fetch(`/api/user/rule-templates/${templateId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                router.push('/rule-templates');
-            } catch (error) {
-                console.error(error);
-                notifications.show({ title: 'Error', message: 'Failed to delete template', color: 'red' });
-                setLoading(false);
+        setLoading(true);
+        try {
+            const token = await user?.getIdToken();
+            const res = await fetch(`/api/user/rule-templates/${templateId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to delete template');
             }
+
+            router.push('/rule-templates');
+        } catch (error: any) {
+            console.error(error);
+            notifications.show({ title: 'Error', message: error.message, color: 'red' });
+            setLoading(false);
+            close();
         }
     };
 
@@ -148,7 +135,7 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
             <Group justify="space-between">
                 <Title order={3}>{isNew ? 'New Rule Template' : 'Edit Rule Template'}</Title>
                 {!isNew && (
-                    <Button color="red" variant="subtle" leftSection={<IconTrash size={16} />} onClick={handleDelete} loading={loading}>
+                    <Button color="red" variant="subtle" leftSection={<IconTrash size={16} />} onClick={open} loading={loading}>
                         Delete
                     </Button>
                 )}
@@ -218,12 +205,22 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
 
                     <Divider />
 
-                    <NumberInput
-                        label="Auto-start Check-in (Hours before departure)"
-                        description="Leave empty if check-in is not required. Passengers can check in this many hours before departure."
-                        value={startCheckInHrs}
-                        onChange={(val) => setStartCheckInHrs(val === '' ? '' : Number(val))}
+                    <Switch
+                        label="Auto-start Check-in"
+                        description="Automatically enable check-in for this rule set"
+                        checked={startCheckInHrs !== ''}
+                        onChange={(e) => setStartCheckInHrs(e.currentTarget.checked ? 3 : '')}
                     />
+                    {startCheckInHrs !== '' && (
+                        <NumberInput
+                            label="Hours before departure"
+                            placeholder="e.g. 3"
+                            value={startCheckInHrs}
+                            onChange={(val) => setStartCheckInHrs(val === '' ? '' : Number(val))}
+                            min={1}
+                            mt="xs"
+                        />
+                    )}
 
                     <TagsInput
                         label="Payment Methods"
@@ -241,6 +238,16 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
             <Button leftSection={<IconDeviceFloppy size={16} />} onClick={handleSubmit} loading={loading}>
                 Save Template
             </Button>
+
+            <Modal opened={opened} onClose={close} title="Confirm Deletion" centered>
+                <Text size="sm" mb="lg">
+                    Are you sure you want to delete this rule template? This action cannot be undone.
+                </Text>
+                <Group justify="flex-end">
+                    <Button variant="default" onClick={close}>Cancel</Button>
+                    <Button color="red" onClick={handleDelete} loading={loading}>Delete Template</Button>
+                </Group>
+            </Modal>
         </Stack>
     );
 }

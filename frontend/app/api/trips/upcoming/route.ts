@@ -29,17 +29,21 @@ export async function GET(req: Request) {
                 t.to_text,
                 t.departure_time,
                 t.status,
+                t.driver as driver_id,
+                t.start_check_in,
                 t.seats_taken,
                 t.total_seats,
                 t.price,
                 c.make,
                 c.model,
                 c.plate,
-                c.color
+                c.color,
+                pg.phone as driver_phone
             FROM trips t
             LEFT JOIN cars c ON t.car = c.id
+            LEFT JOIN profile_global pg ON t.driver = pg.id
             WHERE t.driver = $1
-            AND t.status NOT IN ('done', 'cancelled')
+            AND t.status NOT IN ('done', 'cancelled', 'aborted')
         `;
 
         const params: any[] = [user.uid];
@@ -72,7 +76,11 @@ export async function GET(req: Request) {
 
         // Lazy Check-in and Cutoff (Iterate all trips)
         for (const trip of trips) {
-            await checkAndProcessCheckInStart(client, trip.id);
+            const checkInStarted = await checkAndProcessCheckInStart(client, trip.id);
+            if (checkInStarted) {
+                trip.start_check_in = true;
+            }
+
             const s = await checkAndProcessTripCutoff(client, trip.id);
             if (s !== trip.status) {
                 trip.status = s;

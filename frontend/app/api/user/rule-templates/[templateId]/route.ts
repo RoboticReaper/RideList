@@ -97,6 +97,11 @@ export async function DELETE(
         const user = await verifyUserFromRequest(req.headers.get('authorization') ?? undefined);
         if (!user || !user.uid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+        const check = await client.query('SELECT 1 FROM trip_templates WHERE rule = $1 LIMIT 1', [templateId]);
+        if (check.rowCount && check.rowCount > 0) {
+            return NextResponse.json({ error: 'Cannot delete this rule template because it is currently linked to a trip template.' }, { status: 409 });
+        }
+
         const res = await client.query('DELETE FROM rule_templates WHERE id = $1 AND driver = $2 RETURNING id', [templateId, user.uid]);
         if (res.rowCount === 0) return NextResponse.json({ error: 'Not found or unauthorized' }, { status: 404 });
         return NextResponse.json({ success: true, id: templateId });

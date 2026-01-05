@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "/Users/baorenliu/Documents/Programming/google-cloud-sdk/cloud-sql-proxy --port 5432 --credentials-file=app/api/lib/ridelist-db-service-account.json ridelist-e9048:us-central1:free-trial-ridelist & next dev",
+    "dev": "next dev",
+    "dev_both": "/Users/baorenliu/Documents/Programming/google-cloud-sdk/cloud-sql-proxy --port 5432 --credentials-file=app/api/lib/ridelist-db-service-account.json ridelist-e9048:us-central1:free-trial-ridelist & next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

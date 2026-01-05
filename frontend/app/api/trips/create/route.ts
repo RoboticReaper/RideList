@@ -320,13 +320,13 @@ export async function POST(req: Request) {
                 paymentMethods || [],
                 paymentHandle || null, // Optional now
                 autoAccept,
-                flexibility || null,
+                flexibility || '15 minutes',
                 pickupRadius,
                 dropoffRadius,
                 pickupRules || null,
                 cancellationPolicy || null,
-                cutoffTime || null,
-                payWindow || '30 minutes',
+                cutoffTime || '3 hours',
+                payWindow || '60 minutes',
                 startCheckInHrs || null
             ]
         );
@@ -376,13 +376,13 @@ export async function POST(req: Request) {
                         paymentMethods || [],
                         paymentHandle || null,
                         autoAccept,
-                        flexibility,
+                        flexibility || '15 minutes',
                         pickupRadius,
                         dropoffRadius,
                         pickupRules || null,
                         cancellationPolicy || null,
-                        cutoffTime || null,
-                        payWindow || '30 minutes',
+                        cutoffTime || '3 hours',
+                        payWindow || '60 minutes',
                         startCheckInHrs || null
                     ]
                 );
@@ -437,6 +437,32 @@ export async function POST(req: Request) {
         // Lazy Check-in Start (for immediate effect if created within window)
         await checkAndProcessCheckInStart(client, tripId);
 
+        // --- LOG TRIP EVENT ---
+        const { logTripEvent } = await import('@/app/api/lib/tripEvents');
+        await logTripEvent({
+            client,
+            tripId,
+            actorId: user.uid,
+            eventType: 'trip_created',
+            affectedEntities: ['trips', 'trip_rules'],
+            changes: { // Initial snapshot could be full body or simplified
+                trip: {
+                    driver: user.uid,
+                    price,
+                    from_text: fromText,
+                    to_text: toText,
+                    departure_time: departureTime,
+                    total_seats: seats
+                },
+                rules: {
+                    big_luggage: bigLuggage || 0,
+                    small_luggage: smallLuggage || 0,
+                    auto_accept: autoAccept,
+                    cutoff_time: cutoffTime || '3 hours'
+                }
+            }
+        });
+
         await client.query('COMMIT');
 
         return NextResponse.json({ success: true, tripId });
@@ -444,10 +470,6 @@ export async function POST(req: Request) {
     } catch (error: any) {
         await client.query('ROLLBACK');
         console.error("Create Trip API Error:", error);
-
-        // Debug Logging
-        const fs = require('fs');
-        fs.appendFileSync('debug_error.txt', `\n[${new Date().toISOString()}]Error: ${error.message}\nStack: ${error.stack}\n`);
 
         return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
     } finally {

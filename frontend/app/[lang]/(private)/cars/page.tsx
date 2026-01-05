@@ -21,7 +21,7 @@ export default function CarsPage() {
                 const res = await fetch('/api/user/cars', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                if (!res.ok) throw new Error('Failed to fetch cars');
+                if (!res.ok) throw new Error('Failed to fetch vehicles');
                 const data = await res.json();
                 setCars(data.cars || []);
             } catch (err: any) {
@@ -41,9 +41,9 @@ export default function CarsPage() {
     return (
         <Container size="md" py="xl">
             <Group justify="space-between" mb="lg">
-                <Title order={2}>Your Cars</Title>
+                <Title order={2}>Your Vehicles</Title>
                 <Button component={LocalizedLink} href="/cars/new" leftSection={<IconPlus size={16} />}>
-                    Add New Car
+                    Add New Vehicle
                 </Button>
             </Group>
 
@@ -52,10 +52,10 @@ export default function CarsPage() {
                     <ThemeIcon size={64} radius="xl" color="gray" variant="light" mb="md">
                         <IconCar size={32} />
                     </ThemeIcon>
-                    <Title order={3} mb="sm">No Cars Found</Title>
-                    <Text c="dimmed" mb="lg">Add your first car to start creating trips.</Text>
+                    <Title order={3} mb="sm">No Vehicles Found</Title>
+                    <Text c="dimmed" mb="lg">Add your first vehicle to start creating trips.</Text>
                     <Button component={LocalizedLink} href="/cars/new" variant="outline">
-                        Add Car
+                        Add Vehicle
                     </Button>
                 </Paper>
             ) : (

@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
-import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
-import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
-import { checkAndProcessTripCutoff } from '@/app/api/lib/tripCutoff';
 
 export async function GET(req: Request) {
     const client = await pool.connect();
@@ -21,13 +18,20 @@ export async function GET(req: Request) {
         const limit = parseInt(searchParams.get('limit') || '10');
         const cursor = searchParams.get('cursor'); // ISO date string
 
-        // Query upcoming trips where the user has ANY booking history
-        // We want:
-        // 1. All trips where user has a booking
-        // 2. Uniqueness: if multiple bookings for same trip, take the latest one (by created_at)
-        // 3. No status filtering (show cancelled, removed, etc)
+        // Query logic:
+        // We want trips where the user had a booking, AND either:
+        // 1. The trip is done/cancelled
+        // OR
+        // 2. The booking was cancelled/removed/paid-left/unpaid-left (regardless of trip status)
 
-        // Using DISTINCT ON to get latest booking per trip
+        // As defined in the prompt: "complement of their corresponding upcoming trips"
+        // Upcoming trips query was: 
+        // WHERE lb.status IN ('waiting_approval', 'joined_with_pay_window', 'pending_pay_confirmation_from_driver', 'confirmed')
+        // AND t.status NOT IN ('done', 'cancelled')
+
+        // So History is:
+        // (lb.status NOT IN (...) OR t.status IN ('done', 'cancelled'))
+
         let query = `
             WITH latest_bookings AS (
                 SELECT DISTINCT ON (trip) 
@@ -48,7 +52,6 @@ export async function GET(req: Request) {
                 t.to_text,
                 t.departure_time,
                 t.status as trip_status,
-                t.start_check_in,
                 t.price,
                 lb.status as booking_status,
                 lb.seats_booked,
@@ -57,46 +60,27 @@ export async function GET(req: Request) {
                 lb.small_luggage
             FROM latest_bookings lb
             JOIN trips t ON lb.trip = t.id
-            WHERE lb.status IN ('waiting_approval', 'joined_with_pay_window', 'pending_pay_confirmation_from_driver', 'confirmed')
-            AND t.status NOT IN ('done', 'cancelled', 'aborted')
+            WHERE (
+                lb.status NOT IN ('waiting_approval', 'joined_with_pay_window', 'pending_pay_confirmation_from_driver', 'confirmed')
+                OR 
+                t.status IN ('done', 'cancelled', 'aborted')
+            )
         `;
 
         const params: any[] = [user.uid];
         let paramIndex = 2;
 
         if (cursor) {
-            query += ` AND t.departure_time > $${paramIndex}`;
+            query += ` AND t.departure_time < $${paramIndex}`;
             params.push(cursor);
             paramIndex++;
         }
 
-        query += ` ORDER BY t.departure_time ASC LIMIT $${paramIndex}`;
+        query += ` ORDER BY t.departure_time DESC LIMIT $${paramIndex}`;
         params.push(limit);
 
         const res = await client.query(query, params);
         const trips = res.rows;
-
-        // Lazy Cleanup: Check for pay window timeouts on returned bookings
-        // Note: 'status' in trips row corresponds to booking status (aliased as booking_status)
-        for (const trip of trips) {
-            // Lazy Check-in Start
-            await checkAndProcessCheckInStart(client, trip.id);
-
-            // Lazy Trip Cutoff Check
-            const s = await checkAndProcessTripCutoff(client, trip.id);
-            if (s !== trip.trip_status) {
-                trip.trip_status = s;
-            }
-
-            if (trip.booking_status === 'joined_with_pay_window' && trip.booking_id) {
-                // Check and process (updates DB if needed)
-                const newStatus = await checkAndProcessPayWindowTimeout(client, trip.booking_id);
-                // Update local representation
-                if (newStatus !== trip.booking_status) {
-                    trip.booking_status = newStatus;
-                }
-            }
-        }
 
         let nextCursor = null;
         if (trips.length === limit) {
@@ -106,7 +90,7 @@ export async function GET(req: Request) {
         return NextResponse.json({ trips, nextCursor });
 
     } catch (error: any) {
-        console.error("Fetch Rider Upcoming Trips Error:", error);
+        console.error("Fetch Rider History Error:", error);
         return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
     } finally {
         client.release();

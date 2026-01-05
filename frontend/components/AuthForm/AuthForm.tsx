@@ -92,7 +92,39 @@ export function AuthForm(props: PaperProps) {
           })
         }}
       >
-        Tester login
+        Tester login 1
+      </Button>
+      <Button
+        radius="xl"
+        onClick={() => {
+          signInWithEmailAndPassword(auth, "baowenliu2019@gmail.com", "asdfasdf").then((success) => {
+            if (success) {
+              if (returnUrl) {
+                router.push(getLocalizedHref(params, returnUrl));
+              } else {
+                router.push(getLocalizedHref(params, "/dashboard"));
+              }
+            }
+          })
+        }}
+      >
+        Tester login 2
+      </Button>
+      <Button
+        radius="xl"
+        onClick={() => {
+          signInWithEmailAndPassword(auth, "liubaoren2006.2@gmail.com", "asdfasdf").then((success) => {
+            if (success) {
+              if (returnUrl) {
+                router.push(getLocalizedHref(params, returnUrl));
+              } else {
+                router.push(getLocalizedHref(params, "/dashboard"));
+              }
+            }
+          })
+        }}
+      >
+        Tester login 3
       </Button>
 
       <Input.Wrapper label="Agreements" withAsterisk error={error}>

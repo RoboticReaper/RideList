@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/firebase/AuthContext';
 import {
-    TextInput, NumberInput, Button, Group, Stack, Container, Title, Paper, LoadingOverlay, ColorInput, SimpleGrid, Text
+    TextInput, NumberInput, Button, Group, Stack, Container, Title, Paper, LoadingOverlay, ColorInput, SimpleGrid, Text, Modal
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconCar, IconDeviceFloppy, IconTrash } from '@tabler/icons-react';
+import { useDisclosure } from '@mantine/hooks';
 
 interface CarFormProps {
     initialData?: any;
@@ -16,6 +17,7 @@ interface CarFormProps {
 export default function CarForm({ initialData, isEditing = false, carId }: CarFormProps) {
     const { user } = useAuth();
     const router = useRouter();
+    const [opened, { open, close }] = useDisclosure(false);
     const [loading, setLoading] = useState(false);
 
     const [make, setMake] = useState(initialData?.make || '');
@@ -77,7 +79,6 @@ export default function CarForm({ initialData, isEditing = false, carId }: CarFo
 
     const handleDelete = async () => {
         if (!user || !carId) return;
-        if (!confirm('Are you sure you want to delete this car?')) return;
 
         setLoading(true);
         try {
@@ -95,8 +96,8 @@ export default function CarForm({ initialData, isEditing = false, carId }: CarFo
         } catch (error) {
             console.error(error);
             notifications.show({ title: 'Error', message: 'Failed to delete car', color: 'red' });
-        } finally {
             setLoading(false);
+            close();
         }
     };
 
@@ -105,9 +106,9 @@ export default function CarForm({ initialData, isEditing = false, carId }: CarFo
             <Paper withBorder p="xl" radius="md" pos="relative">
                 <LoadingOverlay visible={loading} />
                 <Group justify="space-between" mb="lg">
-                    <Title order={2}>{isEditing ? 'Edit Car' : 'Add New Car'}</Title>
+                    <Title order={2}>{isEditing ? 'Edit Vehicle' : 'Add New Vehicle'}</Title>
                     {isEditing && (
-                        <Button color="red" variant="subtle" leftSection={<IconTrash size={16} />} onClick={handleDelete}>
+                        <Button color="red" variant="subtle" leftSection={<IconTrash size={16} />} onClick={open}>
                             Delete
                         </Button>
                     )}
@@ -149,7 +150,7 @@ export default function CarForm({ initialData, isEditing = false, carId }: CarFo
                     <TextInput
                         label="License Plate"
                         placeholder="ABC-1234"
-                        description="Used for verification, only shown to confirmed passengers"
+                        description="Used for riders to identify your vehicle."
                         value={plate}
                         onChange={(e) => setPlate(e.currentTarget.value)}
                     />
@@ -185,11 +186,21 @@ export default function CarForm({ initialData, isEditing = false, carId }: CarFo
                             onClick={handleSubmit}
                             loading={loading}
                         >
-                            Save Car
+                            Save Vehicle
                         </Button>
                     </Group>
                 </Stack>
             </Paper>
+
+            <Modal opened={opened} onClose={close} title="Confirm Deletion" centered>
+                <Text size="sm" mb="lg">
+                    Are you sure you want to delete this vehicle? This action cannot be undone.
+                </Text>
+                <Group justify="flex-end">
+                    <Button variant="default" onClick={close}>Cancel</Button>
+                    <Button color="red" onClick={handleDelete} loading={loading}>Delete Vehicle</Button>
+                </Group>
+            </Modal>
         </Container>
     );
 }

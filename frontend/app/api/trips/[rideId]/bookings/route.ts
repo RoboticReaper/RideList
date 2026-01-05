@@ -13,69 +13,133 @@ export async function GET(
     const client = await pool.connect();
 
     try {
+        // 1️⃣ Authenticate
         const user = await verifyUserFromRequest(
             req.headers.get('authorization') ?? undefined
         );
 
-        if (!user || !user.uid) {
+        if (!user?.uid) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Verify Driver Ownership
-        const tripCheck = await client.query('SELECT driver FROM trips WHERE id = $1', [rideId]);
+        // 2️⃣ Verify driver owns this trip
+        const tripCheck = await client.query(
+            `SELECT driver FROM trips WHERE id = $1`,
+            [rideId]
+        );
+
         if (tripCheck.rowCount === 0) {
             return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
         }
+
         if (tripCheck.rows[0].driver !== user.uid) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        // Lazy Cleanup of Timed Out Bookings
-        const timeouts = await client.query(
-            "SELECT id FROM bookings WHERE trip = $1 AND status = 'joined_with_pay_window'",
-            [rideId]
-        );
-        for (const row of timeouts.rows) {
-            await checkAndProcessPayWindowTimeout(client, row.id);
-        }
-
-        // Lazy Check-in Start
-        await checkAndProcessCheckInStart(client, rideId);
-
-        // Lazy Trip Cutoff Check
-        await checkAndProcessTripCutoff(client, rideId);
-
-        // Fetch Bookings with Rider Info
+        // 3️⃣ Fetch bookings
         const query = `
-            SELECT 
-                b.id,
-                b.seats_booked,
-                b.big_luggage,
-                b.small_luggage,
-                b.status,
-                b.created_at,
-                pg.name as rider_name,
-                pg.photo_url as rider_photo_url,
-                pr.rating_cached as rider_rating,
-                pr.completed_rides as rider_completed_rides
-            FROM bookings b
-            JOIN profile_global pg ON b.rider = pg.id
-            LEFT JOIN profile_rider pr ON b.rider = pr.id
-            WHERE b.trip = $1
-            ORDER BY b.created_at DESC
-        `;
+      SELECT 
+        b.id,
+        b.status,
+        b.seats_booked,
+        b.big_luggage,
+        b.small_luggage,
+        b.picked_up,
+        b.picked_up_at,
+        b.ready,
+        b.ready_at,
+        b.created_at,
+        b.intended_payment_method,
+
+        pg.name as rider_name,
+        pg.photo_url as rider_photo_url,
+        pr.rating_cached as rider_rating,
+        pr.completed_rides as rider_completed_rides
+
+      FROM bookings b
+      JOIN profile_global pg ON b.rider = pg.id
+      LEFT JOIN profile_rider pr ON b.rider = pr.id
+      WHERE b.trip = $1
+      ORDER BY b.created_at ASC
+    `;
 
         const res = await client.query(query, [rideId]);
 
-        return NextResponse.json({ bookings: res.rows });
+        // 4️⃣ Access logic helper
+        function getAccessLevel(status: string): 0 | 1 | 2 {
+            const fullAccess = [
+                'joined_with_pay_window',
+                'pending_pay_confirmation_from_driver',
+                'confirmed'
+            ];
+
+            const partialAccess = [
+                'completed',
+                'no_show'
+            ];
+
+            if (fullAccess.includes(status)) return 2;
+            if (partialAccess.includes(status)) return 1;
+            return 0;
+        }
+
+        function getRiderPhoneAccess(status: string): boolean {
+            return [
+                'joined_with_pay_window',
+                'pending_pay_confirmation_from_driver',
+                'confirmed'
+            ].includes(status);
+        }
+
+
+        // 5️⃣ Redact per booking
+        const bookings = res.rows.map(row => {
+            const accessLevel = getAccessLevel(row.status);
+            const phoneVisible = getRiderPhoneAccess(row.status);
+
+            let displayName: string;
+            if (accessLevel >= 1) {
+                displayName = row.rider_name;
+            } else if (row.rider_name) {
+                displayName = row.rider_name.substring(0, 3) + '***';
+            } else {
+                displayName = 'Anon';
+            }
+
+            return {
+                id: row.id,
+                status: row.status,
+                seats_booked: row.seats_booked,
+                big_luggage: row.big_luggage,
+                small_luggage: row.small_luggage,
+                ready: row.ready,
+                ready_at: row.ready_at,
+                picked_up: row.picked_up,
+                picked_up_at: row.picked_up_at,
+                created_at: row.created_at,
+                intended_payment_method: row.intended_payment_method,
+                rider_name: displayName,
+                rider_photo_url: row.rider_photo_url,
+                rider_rating: row.rider_rating ?? null,
+                rider_completed_rides: row.rider_completed_rides ?? 0,
+                rider_phone: phoneVisible ? row.rider_phone : null,
+                rider_phone_visible: phoneVisible ? (row.rider_phone ? 'VISIBLE' : 'MISSING') : 'REDACTED'
+            };
+        });
+
+        return NextResponse.json({ bookings });
 
     } catch (error: any) {
-        console.error("Fetch Bookings Error:", error);
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+        console.error('Fetch Bookings Error:', error);
+        return NextResponse.json(
+            { error: 'Internal Server Error' },
+            { status: 500 }
+        );
     } finally {
         client.release();
     }
 }
+
 
 export async function POST(
     req: Request,
@@ -94,11 +158,27 @@ export async function POST(
         }
 
         const body = await req.json();
-        const { seats_booked, big_luggage, small_luggage, preferred_pickup_time } = body;
+        const { seats_booked, big_luggage, small_luggage, preferred_pickup_time, intended_payment_method } = body;
+
+        // Check for Global Profile
+        const profileCheck = await client.query(
+            "SELECT 1 FROM profile_global WHERE id = $1 LIMIT 1",
+            [user.uid]
+        );
+
+        if (profileCheck.rowCount === 0) {
+            return NextResponse.json({
+                error: 'Profile required',
+                code: 'PROFILE_REQUIRED'
+            }, { status: 403 });
+        }
 
         // Basic Validation
         if (!seats_booked || seats_booked < 1) {
             return NextResponse.json({ error: 'Must book at least 1 seat' }, { status: 400 });
+        }
+        if (!intended_payment_method) {
+            return NextResponse.json({ error: 'Intended payment method is required' }, { status: 400 });
         }
 
         await client.query('BEGIN');
@@ -131,7 +211,15 @@ export async function POST(
                 tr.small_luggage_lim,
                 tr.auto_accept,
                 tr.departure_time_flexibility,
-                tr.cutoff_time
+                tr.cutoff_time,
+                tr.pickup_rules,
+                tr.pickup_radius_meters,
+                tr.drop_off_radius_meters,
+                tr.payment_methods,
+                tr.payment_handle,
+                tr.cancellation_policy,
+                tr.pay_window,
+                tr.start_check_in_hrs_before_departure
             FROM trips t
             LEFT JOIN trip_rules tr ON t.id = tr.id
             WHERE t.id = $1
@@ -202,10 +290,7 @@ export async function POST(
         const totalBigAllowed = (trip.big_luggage_lim || 0) * seats_booked;
         const totalSmallAllowed = (trip.small_luggage_lim || 0) * seats_booked;
 
-        console.log("big_luggage", big_luggage);
-        console.log("totalBigAllowed", totalBigAllowed);
-        console.log("small_luggage", small_luggage);
-        console.log("totalSmallAllowed", totalSmallAllowed);
+
 
         if (big_luggage > totalBigAllowed) {
             await client.query('ROLLBACK');
@@ -237,8 +322,22 @@ export async function POST(
             }
         }
 
+        // 5. Check payment method
+        const paymentMethods = trip.payment_methods || [];
+        if (paymentMethods.length > 0) {
+            if (!paymentMethods.includes(intended_payment_method)) {
+                await client.query('ROLLBACK');
+                return NextResponse.json({ error: `Invalid payment method. Must be one of: ${paymentMethods.join(', ')}` }, { status: 400 });
+            }
+        } else {
+            if (intended_payment_method !== 'None') {
+                await client.query('ROLLBACK');
+                return NextResponse.json({ error: "Payment method must be 'None' when no methods are specified by driver." }, { status: 400 });
+            }
+        }
 
-        // 5. Determine Status & Check Existing Bookings
+
+        // 6. Determine Status & Check Existing Bookings
 
         // Fetch USER's latest booking for this trip
         const invalidStatusCheck = await client.query(
@@ -275,17 +374,22 @@ export async function POST(
 
         // Auto-accept Check
         // If they were previously removed, do NOT auto-accept (safety)
-        const wasRemoved = existingStatus === 'removed';
+        // Check if user was EVER removed from this trip
+        const removedCheck = await client.query(
+            "SELECT 1 FROM bookings WHERE trip = $1 AND rider = $2 AND status = 'removed' LIMIT 1",
+            [rideId, user.uid]
+        );
+        const wasRemoved = removedCheck.rowCount ? removedCheck.rowCount > 0 : false;
 
         if (trip.auto_accept && !wasRemoved) {
             status = 'joined_with_pay_window';
         }
 
 
-        // 6. Insert Booking
+        // 7. Insert Booking
         const insertQuery = `
-            INSERT INTO bookings (trip, rider, seats_booked, big_luggage, small_luggage, preferred_pickup_time, status)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO bookings (trip, rider, seats_booked, big_luggage, small_luggage, preferred_pickup_time, intended_payment_method, status)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING id
         `;
 
@@ -296,6 +400,7 @@ export async function POST(
             big_luggage || 0,
             small_luggage || 0,
             preferred_pickup_time || null,
+            intended_payment_method,
             status
         ]);
 
@@ -303,7 +408,27 @@ export async function POST(
 
         // 7. Update Trip Seats (ONLY if auto-accepted)
         if (status === 'joined_with_pay_window') {
-            await client.query('UPDATE trips SET seats_taken = seats_taken + $1 WHERE id = $2', [seats_booked, rideId]);
+            const updateRes = await client.query(
+                'UPDATE trips SET seats_taken = seats_taken + $1 WHERE id = $2 RETURNING seats_taken, total_seats, status',
+                [seats_booked, rideId]
+            );
+            const { seats_taken, total_seats, status: tripStatus } = updateRes.rows[0];
+
+            if (tripStatus === 'bookable' && seats_taken >= total_seats) {
+                await client.query("UPDATE trips SET status = 'full', modified_at = NOW() WHERE id = $1", [rideId]);
+
+                // Log Status Change (Bookable -> Full)
+                const { logTripEvent } = await import('@/app/api/lib/tripEvents');
+                await logTripEvent({
+                    client,
+                    tripId: rideId,
+                    actorId: user.uid,
+                    eventType: 'trip_updated',
+                    affectedEntities: ['trips'],
+                    changes: { trip: { status: { old: 'bookable', new: 'full' } } },
+                    notes: `status change due to rider join.`
+                });
+            }
         }
 
         // 8. Create initial log in booking status history
@@ -312,6 +437,43 @@ export async function POST(
             VALUES ($1, $2, $3, NOW())
         `;
         await client.query(statusHistoryQuery, [bookingId, user.uid, status]);
+
+        // 9. Snapshot Rules
+        const snapshotQuery = `
+            INSERT INTO booking_rule_snapshot (
+                id,
+                big_luggage_lim,
+                small_luggage_lim,
+                pickup_rules,
+                pickup_radius_meters,
+                drop_off_radius_meters,
+                departure_time_flexibility,
+                payment_methods,
+                payment_handle,
+                cancellation_policy,
+                auto_accept,
+                cutoff_time,
+                pay_window,
+                start_check_in_hrs_before_departure
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        `;
+
+        await client.query(snapshotQuery, [
+            bookingId,
+            trip.big_luggage_lim,
+            trip.small_luggage_lim,
+            trip.pickup_rules,
+            trip.pickup_radius_meters,
+            trip.drop_off_radius_meters,
+            trip.departure_time_flexibility,
+            trip.payment_methods,
+            trip.payment_handle,
+            trip.cancellation_policy,
+            trip.auto_accept,
+            trip.cutoff_time,
+            trip.pay_window,
+            trip.start_check_in_hrs_before_departure
+        ]);
 
         await client.query('COMMIT');
 

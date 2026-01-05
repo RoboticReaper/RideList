@@ -23,7 +23,7 @@ export async function PATCH(
         const body = await req.json();
         const { action, reason } = body;
 
-        if (!['accept', 'reject', 'remove', 'confirm_payment'].includes(action)) {
+        if (!['accept', 'reject', 'remove', 'confirm_payment', 'mark_picked_up'].includes(action)) {
             return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
         }
 
@@ -44,7 +44,8 @@ export async function PATCH(
                 t.id as trip_id,
                 t.driver,
                 t.seats_taken,
-                t.total_seats
+                t.total_seats,
+                t.status as trip_status
             FROM bookings b
             JOIN trips t ON b.trip = t.id
             WHERE b.id = $1
@@ -75,6 +76,13 @@ export async function PATCH(
         let newStatus = '';
         let seatsChange = 0;
 
+        // Global Read-Only Check for Trip Status
+        const readOnlyTripStatuses = ['done', 'cancelled', 'aborted'];
+        if (readOnlyTripStatuses.includes(booking.trip_status)) {
+            await client.query('ROLLBACK');
+            return NextResponse.json({ error: 'Trip is read-only because it is done, cancelled, or aborted.' }, { status: 400 });
+        }
+
         // State Machine Logic
         switch (action) {
             case 'accept':
@@ -103,6 +111,11 @@ export async function PATCH(
                 break;
 
             case 'remove':
+                if (booking.status === 'confirmed' && (booking.trip_status === 'departed' || readOnlyTripStatuses.includes(booking.trip_status))) {
+                    await client.query('ROLLBACK');
+                    return NextResponse.json({ error: 'Cannot remove a confirmed rider after the trip has departed, cancelled, aborted, or completed.' }, { status: 400 });
+                }
+
                 if (booking.status === 'joined_with_pay_window' || booking.status === 'pending_pay_confirmation_from_driver' || booking.status === 'confirmed') {
                     newStatus = 'removed';
                     seatsChange = -booking.seats_booked; // Release seats
@@ -124,6 +137,28 @@ export async function PATCH(
                 newStatus = 'confirmed';
                 seatsChange = 0; // Seats already taken
                 break;
+
+            case 'mark_picked_up':
+                if (booking.status !== 'confirmed') {
+                    await client.query('ROLLBACK');
+                    return NextResponse.json({ error: 'Booking must be confirmed to mark as picked up' }, { status: 400 });
+                }
+                // Check trip status, it must be 'departed'
+                // We fetched t.status as trip_status
+                if (booking.trip_status !== 'departed') {
+                    await client.query('ROLLBACK');
+                    return NextResponse.json({ error: 'Trip must be departed to mark riders as picked up' }, { status: 400 });
+                }
+
+                newStatus = booking.status;
+                seatsChange = 0;
+
+                // We need to perform the specific update for picked_up
+                await client.query(
+                    'UPDATE bookings SET picked_up = true, picked_up_at = NOW() WHERE id = $1',
+                    [bookingId]
+                );
+                break;
         }
 
         // Apply Updates
@@ -136,18 +171,40 @@ export async function PATCH(
 
         // 2. Update Trip Seats (if changed)
         if (seatsChange !== 0) {
-            await client.query(
-                'UPDATE trips SET seats_taken = seats_taken + $1 WHERE id = $2',
+            const releaseRes = await client.query(
+                'UPDATE trips SET seats_taken = seats_taken + $1 WHERE id = $2 RETURNING status, seats_taken, total_seats',
                 [seatsChange, booking.trip_id]
             );
+
+            if (releaseRes.rows.length > 0 && releaseRes.rows[0].status === 'full') {
+                await client.query("UPDATE trips SET status = 'bookable', modified_at = NOW() WHERE id = $1", [booking.trip_id]);
+
+                // Log Status Change (Full -> Bookable)
+                const { logTripEvent } = await import('@/app/api/lib/tripEvents');
+                await logTripEvent({
+                    client,
+                    tripId: booking.trip_id,
+                    actorId: null,
+                    eventType: 'trip_updated',
+                    affectedEntities: ['trips'],
+                    changes: { trip: { status: { old: 'full', new: 'bookable' } } },
+                    notes: `status change due to driver removing booking with id ${bookingId}`
+                });
+
+                // Check cutoff immediately
+                const { checkAndProcessTripCutoff } = await import('@/app/api/lib/tripCutoff');
+                await checkAndProcessTripCutoff(client, booking.trip_id);
+            }
         }
 
         // 3. Log Status History
-        await client.query(
-            `INSERT INTO booking_status_history (booking_id, actor_id, old_status, new_status)
-             VALUES ($1, $2, $3, $4)`,
-            [bookingId, user.uid, booking.status, newStatus]
-        );
+        if (booking.status !== newStatus) {
+            await client.query(
+                `INSERT INTO booking_status_history (booking_id, actor_id, old_status, new_status)
+                 VALUES ($1, $2, $3, $4)`,
+                [bookingId, user.uid, booking.status, newStatus]
+            );
+        }
 
         // 4. Log Removal Reason (if removed)
         if (newStatus === 'removed') {

@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-    Container, Title, Text, Card, Group, Badge, Stack, Grid, LoadingOverlay, Alert, Divider, Avatar, ThemeIcon, Progress, Tooltip, SimpleGrid, Paper, Button, Popover, Transition, NumberInput, Modal
+    Container, Title, Text, Card, Group, Badge, Stack, Grid, LoadingOverlay, Alert, Divider, Avatar, ThemeIcon, Progress, Tooltip, SimpleGrid, Paper, Button, Popover, Transition, NumberInput, Modal, Select, TextInput
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
@@ -15,10 +15,11 @@ import {
 import { LocalizedLink } from '@/components/LocalizedLink';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { getBookingStatusConfig, getTripStatusConfig } from '@/utils/statusUtils';
 
 dayjs.extend(relativeTime);
 
-// Updated Interface matching API response
+
 interface RideDetails {
     id: string;
     status: string;
@@ -26,10 +27,9 @@ interface RideDetails {
     modified_at: string;
     from_text: string;
     to_text: string;
-    origin_geog: any;
-    destination_geog: any;
     departure_time: string;
     price: string;
+    sensitive_info_access: boolean;
     seats: {
         total: number;
         taken: number;
@@ -100,11 +100,13 @@ export default function RidePage() {
         bigLuggage: number;
         smallLuggage: number;
         pickupTime: Date | null;
+        intendedPaymentMethod: string;
     }>({
         seats: 1,
         bigLuggage: 0,
         smallLuggage: 0,
         pickupTime: null,
+        intendedPaymentMethod: '',
     });
 
     const fetchRide = async () => {
@@ -154,7 +156,8 @@ export default function RidePage() {
         const maxSmall = ride.rules.luggage.small;
 
         if (!prefilledRef.current) {
-            const fetchProfile = async () => {
+            const initializeBookingData = async () => {
+                let profileDefaults: any = {};
                 try {
                     const token = await user.getIdToken();
                     const res = await fetch(`/api/user/${user.uid}`, {
@@ -162,21 +165,22 @@ export default function RidePage() {
                     });
                     if (res.ok) {
                         const profile = await res.json();
-                        const defaults = profile.rider_profile || {};
-
-                        setBookingData(prev => ({
-                            ...prev,
-                            bigLuggage: Math.min(defaults.default_big_luggage || 0, maxBig),
-                            smallLuggage: Math.min(defaults.default_small_luggage || 0, maxSmall),
-                            pickupTime: new Date(ride.departure_time)
-                        }));
-                        prefilledRef.current = true;
+                        profileDefaults = profile.rider_profile || {};
                     }
                 } catch (e) {
                     console.error("Failed to fetch profile defaults", e);
                 }
+
+                setBookingData(prev => ({
+                    ...prev,
+                    bigLuggage: Math.min(profileDefaults.default_big_luggage || 0, maxBig),
+                    smallLuggage: Math.min(profileDefaults.default_small_luggage || 0, maxSmall),
+                    pickupTime: new Date(ride.departure_time),
+                    intendedPaymentMethod: (ride.rules.payment.methods && ride.rules.payment.methods.length > 0) ? '' : 'None'
+                }));
+                prefilledRef.current = true;
             };
-            fetchProfile();
+            initializeBookingData();
         } else {
             // Re-clamp in case rules changed
             setBookingData(prev => ({
@@ -220,20 +224,29 @@ export default function RidePage() {
                     seats_booked: bookingData.seats,
                     big_luggage: bookingData.bigLuggage,
                     small_luggage: bookingData.smallLuggage,
-                    preferred_pickup_time: preferredIso
+                    preferred_pickup_time: preferredIso,
+                    intended_payment_method: bookingData.intendedPaymentMethod
                 })
             });
 
             const data = await res.json();
             if (!res.ok) {
+                // Handle Profile Required Error
+                if (res.status === 403 && data.code === 'PROFILE_REQUIRED') {
+                    notifications.show({
+                        title: 'Profile Required',
+                        message: 'You need to complete your profile before booking.',
+                        color: 'blue'
+                    });
+                    const returnUrl = encodeURIComponent(`/rides/${rideId}`);
+                    // localized path manual construction as router.push doesn't auto-localize
+                    const lang = params.lang || 'en';
+                    router.push(`/${lang}/complete-profile?returnUrl=${returnUrl}`);
+                    return;
+                }
+
                 throw new Error(data.error || 'Failed to book');
             }
-
-            notifications.show({
-                title: 'Success',
-                message: data.status === 'ordered_with_pay_window' ? 'Booking initiated! Proceeding to payment...' : 'Booking request sent! Waiting for approval.', // prompt said 'joined with pay window', handling generalized success msg
-                color: 'green'
-            });
 
             // If status is 'joined_with_pay_window', we might want to show a modal or redirect.
             // For now, just close popover and maybe refresh or update local state
@@ -248,6 +261,12 @@ export default function RidePage() {
                     message: 'Please arrange payment with the driver.',
                     color: 'blue',
                     autoClose: false
+                });
+            } else {
+                notifications.show({
+                    title: 'Success',
+                    message: data.status === 'ordered_with_pay_window' ? 'Booking initiated! Proceeding to payment...' : 'Booking request sent! Waiting for approval.', // prompt said 'joined with pay window', handling generalized success msg
+                    color: 'green'
                 });
             }
 
@@ -293,8 +312,8 @@ export default function RidePage() {
                         {ride.status === 'locked' ? (
                             <Badge size="lg" color="red">BOOKING CLOSED</Badge>
                         ) : (
-                            <Badge size="lg" variant="gradient" gradient={{ from: 'blue', to: 'cyan' }}>
-                                {ride.status === 'bookable' ? 'Open for Booking' : ride.status.toUpperCase()}
+                            <Badge size="lg" color={getTripStatusConfig(ride.status).color}>
+                                {getTripStatusConfig(ride.status).label.toUpperCase()}
                             </Badge>
                         )}
                         <Text size="xs" c="dimmed">Posted {dayjs(ride.created_at).fromNow()}</Text>
@@ -338,7 +357,7 @@ export default function RidePage() {
                             </Text>
                         </Group>
                     </Group>
-                    {ride.rules.cutoff_time && (
+                    {ride.rules.cutoff_time && ((ride.rules.cutoff_time.days ?? 0) > 0 || (ride.rules.cutoff_time.hours ?? 0) > 0 || (ride.rules.cutoff_time.minutes ?? 0) > 0) && (
                         <Group gap={6} mt={4}>
                             <IconAlertCircle size={18} color="orange" />
                             <Text size="sm" c="orange">
@@ -368,7 +387,7 @@ export default function RidePage() {
                                         <Text size="sm" c="dimmed">per seat</Text>
                                         {ride.user_booking_status && (
                                             <Text size="sm" fw={700} c="blue" mt={4}>
-                                                Status: {ride.user_booking_status.replace(/_/g, ' ').toUpperCase()}
+                                                Status: {getBookingStatusConfig(ride.user_booking_status).label.toUpperCase()}
                                             </Text>
                                         )}
                                         <Button
@@ -458,11 +477,18 @@ export default function RidePage() {
                                             )}
                                         </Group>
                                         <Text size="sm" c="dimmed">Member since {memberSinceYear}</Text>
-                                        {ride.driver.phone && (
-                                            <Group gap="xs" mt={4}>
-                                                <IconPhone size={16} color="gray" />
-                                                <Text size="sm">{ride.driver.phone}</Text>
-                                            </Group>
+
+                                        {ride.sensitive_info_access ? (
+                                            ride.driver.phone ? (
+                                                <Group gap="xs" mt={4}>
+                                                    <IconPhone size={16} color="gray" />
+                                                    <Text size="sm">{ride.driver.phone}</Text>
+                                                </Group>
+                                            ) : (
+                                                <Text size="sm" c="dimmed" fs="italic" mt={4}>Contact details provided before departure</Text>
+                                            )
+                                        ) : (
+                                            <Text size="sm" c="dimmed" fs="italic" mt={4}>Hidden until booking accepted by driver</Text>
                                         )}
 
                                         <Group mt="sm" gap="xl">
@@ -493,8 +519,13 @@ export default function RidePage() {
                                         <div>
                                             <Text fw={600} size="lg">{ride.car.year} {ride.car.make} {ride.car.model}</Text>
                                             <Badge color="gray" variant="outline">{ride.car.color}</Badge>
-                                            {ride.car.plate && (
-                                                <Badge color="blue" variant="light" ml="xs">{ride.car.plate}</Badge>
+
+                                            {ride.sensitive_info_access ? (
+                                                ride.car.plate ? (
+                                                    <Badge color="blue" variant="light" ml="xs">{ride.car.plate}</Badge>
+                                                ) : null
+                                            ) : (
+                                                <Badge color="gray" variant="light" ml="xs">Plate Hidden</Badge>
                                             )}
                                         </div>
                                     </Group>
@@ -578,7 +609,7 @@ export default function RidePage() {
                                             <Badge key={method} variant="dot" size="lg">{method}</Badge>
                                         ))
                                     ) : (
-                                        <Text size="sm" c="dimmed">Cash Only</Text>
+                                        <Text size="sm" c="dimmed">None</Text>
                                     )}
                                 </Group>
 
@@ -586,9 +617,15 @@ export default function RidePage() {
 
                                 <div>
                                     <Text size="xs" c="dimmed" mb={4}>Payment handle / contact</Text>
-                                    <Text size="sm" c={ride.rules.payment.handle ? undefined : "dimmed"}>
-                                        {ride.rules.payment.handle || 'No special requirements'}
-                                    </Text>
+                                    {ride.sensitive_info_access ? (
+                                        <Text size="sm" c={ride.rules.payment.handle ? undefined : "dimmed"}>
+                                            {ride.rules.payment.handle || 'No special requirements'}
+                                        </Text>
+                                    ) : (
+                                        <Text size="sm" c="dimmed" fs="italic">
+                                            Hidden until booking accepted by driver
+                                        </Text>
+                                    )}
                                 </div>
 
                                 <Text size="xs" c="dimmed" mt="md">
@@ -622,7 +659,7 @@ export default function RidePage() {
                                         <Text size="xs" c="dimmed">per seat</Text>
                                         {ride.user_booking_status && (
                                             <Text size="xs" fw={700} c="blue" mt={2}>
-                                                Status: {ride.user_booking_status.replace(/_/g, ' ').toUpperCase()}
+                                                Status: {getBookingStatusConfig(ride.user_booking_status).label.toUpperCase()}
                                             </Text>
                                         )}
                                     </div>
@@ -688,7 +725,7 @@ export default function RidePage() {
                         <Group grow>
                             <NumberInput
                                 label="Big Luggage"
-                                description={`Total Max ${ride.rules.luggage.big * bookingData.seats}`}
+                                description={`Max ${ride.rules.luggage.big * bookingData.seats}`}
                                 min={0}
                                 max={(ride.rules.luggage.big * bookingData.seats)}
                                 value={bookingData.bigLuggage}
@@ -696,7 +733,7 @@ export default function RidePage() {
                             />
                             <NumberInput
                                 label="Small Luggage"
-                                description={`Total Max ${ride.rules.luggage.small * bookingData.seats}`}
+                                description={`Max ${ride.rules.luggage.small * bookingData.seats}`}
                                 min={0}
                                 max={(ride.rules.luggage.small * bookingData.seats)}
                                 value={bookingData.smallLuggage}
@@ -704,8 +741,39 @@ export default function RidePage() {
                             />
                         </Group>
 
+                        {/* Payment Method Selection */}
+                        {ride.rules.payment.methods && ride.rules.payment.methods.length > 0 ? (
+                            <Select
+                                label="Intended Payment Method"
+                                placeholder="Select how you plan to pay"
+                                data={ride.rules.payment.methods}
+                                value={bookingData.intendedPaymentMethod}
+                                onChange={(value) => setBookingData({ ...bookingData, intendedPaymentMethod: value || '' })}
+                                required
+                                allowDeselect={false}
+                            />
+                        ) : (
+                            <TextInput
+                                label="Intended Payment Method"
+                                value="None"
+                                disabled
+                                description="No specific payment methods listed by driver"
+                            />
+                        )}
+
+
+                        <Group justify="space-between" mb={0} pb={0}>
+                            <Text size="sm" fw={500}>Preferred Pickup Time</Text>
+                            <Button
+                                variant="transparent"
+                                size="compact-xs"
+                                style={{ fontSize: 11, height: 'auto' }}
+                                onClick={() => setBookingData(prev => ({ ...prev, pickupTime: new Date(ride.departure_time) }))}
+                            >
+                                Reset to Departure
+                            </Button>
+                        </Group>
                         <DateTimePicker
-                            label="Preferred Pickup Time"
                             description={(() => {
                                 const f = ride.rules.flexibility;
                                 if (typeof f === 'object' && f !== null) {
@@ -722,6 +790,7 @@ export default function RidePage() {
                             })()}
                             leftSection={<IconClock size={16} />}
                             value={bookingData.pickupTime}
+                            valueFormat="MM/DD/YYYY HH:mm"
                             onChange={(date: any) => {
                                 const d = (typeof date === 'string' && date) ? new Date(date) : date;
                                 setBookingData({ ...bookingData, pickupTime: d });
@@ -732,6 +801,7 @@ export default function RidePage() {
                             fullWidth
                             onClick={handleBook}
                             loading={bookingSubmitting}
+                            disabled={ride.rules.payment.methods && ride.rules.payment.methods.length > 0 && !bookingData.intendedPaymentMethod}
                         >
                             Confirm Booking
                         </Button>

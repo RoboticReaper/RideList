@@ -76,11 +76,19 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ carId
 
         // Soft delete
         const res = await client.query(
-            `UPDATE cars SET deleted = true WHERE id = $1 AND owner = $2`,
+            `UPDATE cars SET deleted = true, deleted_at = NOW() WHERE id = $1 AND owner = $2`,
             [carId, user.uid]
         );
 
-        if (res.rowCount === 0) {
+        if ((res.rowCount || 0) > 0) {
+            // Unlink from trip templates
+            await client.query(
+                `UPDATE trip_templates SET car = NULL WHERE car = $1 AND driver = $2`,
+                [carId, user.uid]
+            );
+        }
+
+        if ((res.rowCount || 0) === 0) {
             return NextResponse.json({ error: 'Car not found' }, { status: 404 });
         }
 

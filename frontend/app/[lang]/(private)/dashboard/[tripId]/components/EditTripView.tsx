@@ -1,13 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
-import { Button, NumberInput, Stack, Textarea, Group, Switch, Select, Alert, MultiSelect, SimpleGrid, Title, Divider, Autocomplete, Loader, ActionIcon, TextInput, TagsInput } from '@mantine/core';
+import { Button, NumberInput, Stack, Textarea, Group, Switch, Select, Alert, MultiSelect, SimpleGrid, Title, Divider, Autocomplete, Loader, ActionIcon, TextInput, TagsInput, Accordion, Text, Anchor } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { DateTimePicker } from '@mantine/dates';
 import { useAuth } from '@/components/firebase/AuthContext';
-import { IconCheck, IconAlertTriangle, IconCalendar, IconCar, IconMapPin, IconCurrencyDollar, IconScript, IconX } from '@tabler/icons-react';
+import { IconCheck, IconAlertTriangle, IconCalendar, IconCar, IconMapPin, IconCurrencyDollar, IconScript, IconX, IconLock } from '@tabler/icons-react';
+import { parseFlexibility, parsePayWindow, parseCutoffTimeNullable, parseStartCheckInNullable, parseFlexibilityNullable, parseCutoffTime } from '@/utils/intervalParsers';
+import { LocalizedLink } from '@/components/LocalizedLink';
 
 interface EditTripViewProps {
     trip: any; // Using any for simplicity as Trip type is large
+    manualRefreshId: number;
 }
 
 interface Car {
@@ -36,7 +39,7 @@ interface PlacePrediction {
     };
 }
 
-export function EditTripView({ trip }: EditTripViewProps) {
+export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
 
@@ -77,99 +80,74 @@ export function EditTripView({ trip }: EditTripViewProps) {
         }
     }, [user]);
 
-    // Parse flexibility interval to hours (number)
-    const parseIntervalToHours = (interval: any) => {
-        if (!interval) return null;
-        if (typeof interval === 'object') {
-            const h = (interval.hours || 0) + (interval.minutes || 0) / 60 + (interval.seconds || 0) / 3600;
-            return h > 0 ? h : null;
-        }
 
-        const p = parseFloat(String(interval));
-        return isNaN(p) ? null : p;
-    };
 
-    // Parse cutoff interval to hours (number)
-    const parseCutoffToHours = (interval: any) => {
-        if (!interval) return null;
-        if (typeof interval === 'object') {
-            const h = (interval.hours || 0) + (interval.minutes || 0) / 60 + (interval.seconds || 0) / 3600;
-            return h > 0 ? h : null;
-        }
+    const mapTripToValues = (t: any) => ({
+        // Trip Details
+        from_text: t.from_text || '',
+        to_text: t.to_text || '',
+        departure_time: t.departure_time ? new Date(t.departure_time) : null,
+        price: Number(t.price),
+        total_seats: Number(t.seats.total),
+        car: t.car?.id || 'none', // 'none' means no car/walking
 
-        const p = parseFloat(String(interval));
-        return isNaN(p) ? null : p;
-    };
+        // Trip Note
+        notes: t.notes || '',
 
-    // Parse pay window interval to minutes (number)
-    const parsePayWindowToMinutes = (interval: any) => {
-        if (!interval) return null;
-        if (typeof interval === 'object') {
-            const m = (interval.hours || 0) * 60 + (interval.minutes || 0) + (interval.seconds || 0) / 60;
-            return m > 0 ? m : null;
-        }
+        // Logistics / Rules
+        paymentMethods: t.rules.payment.methods || [],
+        paymentHandle: t.rules.payment.handle || '',
+        cancellationPolicy: t.rules.cancellation_policy || '',
 
-        const p = parseFloat(String(interval));
-        return isNaN(p) ? 30 : p;
-    };
+        bigLuggage: Number(t.rules.luggage.big ?? 0),
+        smallLuggage: Number(t.rules.luggage.small ?? 0),
 
-    const form = useForm({
-        initialValues: {
-            // Trip Details
-            from_text: trip.from_text || '',
-            to_text: trip.to_text || '',
-            departure_time: trip.departure_time ? new Date(trip.departure_time) : null,
-            price: Number(trip.price),
-            total_seats: Number(trip.seats.total),
-            car: trip.car?.id || 'none', // 'none' means no car/walking
+        pickupRules: t.rules.pickup.rules || '',
+        pickupRadius: Number(t.rules.pickup.radius ?? 1000),
+        dropoffRadius: Number(t.rules.pickup.dropoff_radius ?? 1000),
 
-            // Trip Note
-            notes: trip.notes || '',
+        flexibility: parseFlexibility(t.rules.flexibility),
+        autoAccept: t.rules.auto_accept,
 
-            // Logistics / Rules
-            paymentMethods: trip.rules.payment.methods || [],
-            paymentHandle: trip.rules.payment.handle || '',
-            cancellationPolicy: trip.rules.cancellation_policy || '',
+        // Cutoff
+        cutoffEnabled: parseCutoffTimeNullable(t.rules.cutoff_time) !== null,
+        cutoffTime: parseCutoffTimeNullable(t.rules.cutoff_time),
 
-            bigLuggage: Number(trip.rules.luggage.big ?? 0),
-            smallLuggage: Number(trip.rules.luggage.small ?? 0),
+        payWindow: parsePayWindow(t.rules.pay_window),
 
-            pickupRules: trip.rules.pickup.rules || '',
-            pickupRadius: Number(trip.rules.pickup.radius ?? 1000),
-            dropoffRadius: Number(trip.rules.pickup.dropoff_radius ?? 1000),
-
-            flexibility: parseIntervalToHours(trip.rules.flexibility),
-            autoAccept: trip.rules.auto_accept,
-            cutoffTime: parseCutoffToHours(trip.rules.cutoff_time), // number of hours
-            payWindow: parsePayWindowToMinutes(trip.rules.pay_window),
-            startCheckInHrs: parseCutoffToHours(trip.rules.start_check_in_hrs), // Reusing helper for hours
-        },
+        // Check-in
+        startCheckInEnabled: parseStartCheckInNullable(t.rules.start_check_in_hrs) !== null,
+        startCheckInHrs: parseStartCheckInNullable(t.rules.start_check_in_hrs) ?? 3,
     });
 
-    const [isCheckInStarted, setIsCheckInStarted] = useState(trip.start_check_in);
+    const form = useForm({
+        initialValues: mapTripToValues(trip),
+    });
 
-    const handleManualStartCheckIn = async () => {
-        if (!user) return;
-        setLoading(true);
-        try {
-            const token = await user.getIdToken();
-            const res = await fetch(`/api/trips/${trip.id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ start_check_in: true })
-            });
-            if (!res.ok) throw new Error('Failed to start check-in');
-            setIsCheckInStarted(true);
-            notifications.show({ title: 'Success', message: 'Check-in started!', color: 'green' });
-        } catch (error) {
-            notifications.show({ title: 'Error', message: 'Failed to start check-in', color: 'red' });
-        } finally {
-            setLoading(false);
+    const prevManualRefreshId = useRef(manualRefreshId);
+
+    useEffect(() => {
+        // If manualRefreshId changed, FORCE update (overwrite dirty state)
+        if (manualRefreshId !== prevManualRefreshId.current) {
+            const newValues = mapTripToValues(trip);
+            form.setValues(newValues);
+            form.setInitialValues(newValues); // reset dirty state
+            form.resetDirty();
+            prevManualRefreshId.current = manualRefreshId;
+        } else {
+            // Auto-refresh: Only update if form is clean
+            if (!form.isDirty()) {
+                const newValues = mapTripToValues(trip);
+                form.setValues(newValues);
+                form.setInitialValues(newValues);
+                // No need to reset dirty, as it was already clean
+            }
         }
-    };
+    }, [trip, manualRefreshId]);
+
+
+
+
 
     // --- Autocomplete Logic ---
     const fetchPlaces = async (query: string, setSuggestions: (data: string[]) => void, setLoading: (l: boolean) => void, sessionToken: string) => {
@@ -349,7 +327,7 @@ export function EditTripView({ trip }: EditTripViewProps) {
         // Intervals can be 0.
         // But let's ensure it's not empty text if that's possible.
         // It's a number input. 0 is valid "no flexibility".
-        if (values.flexibility === '' || values.flexibility === undefined || values.flexibility === null) {
+        if ((values.flexibility as any) === '' || values.flexibility === undefined || values.flexibility === null) {
             notifications.show({ title: 'Invalid Flexibility', message: 'Please specify flexibility (0 for none).', color: 'red' });
             return;
         }
@@ -407,28 +385,28 @@ export function EditTripView({ trip }: EditTripViewProps) {
                 payload.to_session_token = endSessionToken.current;
             }
 
-            if (values.cutoffTime !== '' && values.cutoffTime !== null) {
+            if (values.cutoffEnabled && (values.cutoffTime as any) !== '' && values.cutoffTime !== null) {
                 payload.cutoffTime = `${values.cutoffTime} hours`;
             } else {
-                payload.cutoffTime = null;
+                payload.cutoffTime = 0; // Explicit 0 if disabled
             }
 
-            if (values.payWindow !== '' && values.payWindow !== null) {
+            if ((values.payWindow as any) !== '' && values.payWindow !== null) {
                 payload.payWindow = `${values.payWindow} minutes`;
             } else {
-                payload.payWindow = '30 minutes';
+                payload.payWindow = '60 minutes';
             }
 
-            if (values.startCheckInHrs !== '' && values.startCheckInHrs !== null) {
+            if (values.startCheckInEnabled && (values.startCheckInHrs as any) !== '' && values.startCheckInHrs !== null) {
                 payload.startCheckInHrs = `${values.startCheckInHrs} hours`;
             } else {
                 payload.startCheckInHrs = null;
             }
 
-            if (values.flexibility !== '' && values.flexibility !== null) {
+            if ((values.flexibility as any) !== '' && values.flexibility !== null) {
                 payload.flexibility = `${values.flexibility} hours`;
             } else {
-                payload.flexibility = null;
+                payload.flexibility = '15 minutes';
             }
 
             if (payload.car === 'none') {
@@ -468,202 +446,256 @@ export function EditTripView({ trip }: EditTripViewProps) {
         }
     };
 
+    const isReadOnly = trip.status === 'cancelled' || trip.status === 'done' || trip.status === 'aborted';
+
     return (
         <form onSubmit={form.onSubmit(handleSubmit)}>
             <Stack gap="lg" maw={800} mx="auto">
-                <Alert title="Editing Mode" color="blue" icon={<IconAlertTriangle size={16} />}>
-                    Modifying and saving changes will update the listing immediately.
-                </Alert>
-
-                <Title order={4} td="underline">Trip Details</Title>
-                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-                    <Autocomplete
-                        label="From"
-                        placeholder="Starting Location"
-                        leftSection={<IconMapPin size={16} />}
-                        data={startSuggestions}
-                        value={form.values.from_text}
-                        onChange={handleStartChange}
-                        onOptionSubmit={(val) => {
-                            form.setFieldValue('from_text', val);
-                            const pid = predictionsMap.current.get(val);
-                            if (pid) setStartPlaceId(pid);
-                        }}
-                        rightSection={renderRightSection(loadingStart, form.values.from_text, clearStart)}
-                    />
-                    <Autocomplete
-                        label="To"
-                        placeholder="Destination"
-                        leftSection={<IconMapPin size={16} />}
-                        data={endSuggestions}
-                        value={form.values.to_text}
-                        onChange={handleEndChange}
-                        onOptionSubmit={(val) => {
-                            form.setFieldValue('to_text', val);
-                            const pid = predictionsMap.current.get(val);
-                            if (pid) setEndPlaceId(pid);
-                        }}
-                        rightSection={renderRightSection(loadingEnd, form.values.to_text, clearEnd)}
-                    />
-                </SimpleGrid>
-                <DateTimePicker
-                    label="Departure Time"
-                    placeholder="Pick date & time"
-                    leftSection={<IconCalendar size={16} />}
-                    {...form.getInputProps('departure_time')}
-                />
-
-                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-                    <NumberInput
-                        label="Price ($)"
-                        placeholder="0.00"
-                        min={0}
-                        decimalScale={2}
-                        leftSection={<IconCurrencyDollar size={16} />}
-                        {...form.getInputProps('price')}
-                    />
-                    <NumberInput
-                        label="Total Seats"
-                        placeholder="1"
-                        min={1}
-                        {...form.getInputProps('total_seats')}
-                    />
-                </SimpleGrid>
-
-                <Select
-                    label="Vehicle"
-                    placeholder="Select a car"
-                    data={[
-                        { value: 'none', label: 'No Vehicle / Walking' },
-                        ...cars.map(c => ({ value: c.id, label: `${c.year} ${c.make} ${c.model}` }))
-                    ]}
-                    leftSection={<IconCar size={16} />}
-                    {...form.getInputProps('car')}
-                />
-
-                <Textarea
-                    label="Trip Notes"
-                    placeholder="Additional details..."
-                    autosize
-                    leftSection={<IconScript size={16} />}
-                    {...form.getInputProps('notes')}
-                />
-
-                <Divider />
-                <Title order={4} td="underline">Rules & Logistics</Title>
-
-                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-                    <NumberInput
-                        label="Big Luggage Limit"
-                        min={0}
-                        {...form.getInputProps('bigLuggage')}
-                    />
-                    <NumberInput
-                        label="Small Luggage Limit"
-                        min={0}
-                        {...form.getInputProps('smallLuggage')}
-                    />
-                </SimpleGrid>
-
-                <SimpleGrid cols={{ base: 1, sm: 2 }}>
-                    <NumberInput
-                        label="Pickup Radius (m)"
-                        min={0}
-                        step={100}
-                        {...form.getInputProps('pickupRadius')}
-                    />
-                    <NumberInput
-                        label="Dropoff Radius (m)"
-                        min={0}
-                        step={100}
-                        {...form.getInputProps('dropoffRadius')}
-                    />
-                </SimpleGrid>
-
-                <Textarea
-                    label="Pickup Rules"
-                    placeholder="e.g. Wait at main entrance"
-                    autosize
-                    minRows={2}
-                    {...form.getInputProps('pickupRules')}
-                />
-
-                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-                    <TagsInput
-                        label="Payment Methods"
-                        data={['Cash', 'Venmo', 'Zelle', 'WeChat', 'CashApp']}
-                        placeholder="Select methods"
-                        {...form.getInputProps('paymentMethods')}
-                    />
-                    <TextInput
-                        label="Payment Handle"
-                        placeholder="e.g. @user"
-                        {...form.getInputProps('paymentHandle')}
-                    />
-                </SimpleGrid>
-
-                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-                    <Textarea
-                        label="Cancellation Policy"
-                        placeholder="e.g. Free cancellation up to 24h before departure"
-                        minRows={2}
-                        autosize
-                        {...form.getInputProps('cancellationPolicy')}
-                    />
-                    <NumberInput
-                        label="Booking Cutoff (Hours before)"
-                        placeholder="e.g. 1"
-                        min={0}
-                        step={0.5}
-                        decimalScale={2}
-                        {...form.getInputProps('cutoffTime')}
-                    />
-                </SimpleGrid>
-
-                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-                    <NumberInput
-                        label="Auto-start Check-in (Hours before)"
-                        placeholder="e.g. 24"
-                        min={0}
-                        step={0.5}
-                        decimalScale={2}
-                        {...form.getInputProps('startCheckInHrs')}
-                    />
-                </SimpleGrid>
-
-                {!isCheckInStarted && (
-                    <Alert color="orange" title="Check-in Not Started" icon={<IconAlertTriangle size={16} />}>
-                        <Group justify="space-between" align="center">
-                            <span>Passengers cannot check in yet.</span>
-                            <Button size="xs" variant="white" color="orange" onClick={handleManualStartCheckIn} loading={loading}>
-                                Start Check-in Now
-                            </Button>
-                        </Group>
+                {isReadOnly ? (
+                    <Alert title="Read Only" color="gray" icon={<IconLock size={16} />}>
+                        This trip has been {trip.status === 'done' ? 'completed' : 'cancelled'} and cannot be modified.
+                    </Alert>
+                ) : (
+                    <Alert title="Editing Mode" color="blue" icon={<IconAlertTriangle size={16} />}>
+                        Modifying and saving changes will update the listing immediately.
                     </Alert>
                 )}
 
-                <NumberInput
-                    label="Wait Flexibility (Hours)"
-                    description="How long are you willing to wait?"
-                    min={0}
-                    step={0.25}
-                    {...form.getInputProps('flexibility')}
-                />
+                <fieldset disabled={isReadOnly} style={{ border: 'none', padding: 0, margin: 0 }}>
+                    <Stack gap="lg">
+                        <Title order={4} td="underline">Trip Details</Title>
+                        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                            <Autocomplete
+                                label="From"
+                                placeholder="Starting Location"
+                                leftSection={<IconMapPin size={16} />}
+                                data={startSuggestions}
+                                value={form.values.from_text}
+                                onChange={handleStartChange}
+                                onOptionSubmit={(val) => {
+                                    form.setFieldValue('from_text', val);
+                                    const pid = predictionsMap.current.get(val);
+                                    if (pid) setStartPlaceId(pid);
+                                }}
+                                rightSection={renderRightSection(loadingStart, form.values.from_text, clearStart)}
+                            />
+                            <Autocomplete
+                                label="To"
+                                placeholder="Destination"
+                                leftSection={<IconMapPin size={16} />}
+                                data={endSuggestions}
+                                value={form.values.to_text}
+                                onChange={handleEndChange}
+                                onOptionSubmit={(val) => {
+                                    form.setFieldValue('to_text', val);
+                                    const pid = predictionsMap.current.get(val);
+                                    if (pid) setEndPlaceId(pid);
+                                }}
+                                rightSection={renderRightSection(loadingEnd, form.values.to_text, clearEnd)}
+                            />
+                        </SimpleGrid>
+                        <DateTimePicker
+                            label="Departure Time"
+                            placeholder="Pick date & time"
+                            leftSection={<IconCalendar size={16} />}
+                            valueFormat="MM/DD/YYYY HH:mm"
+                            {...form.getInputProps('departure_time')}
+                        />
 
-                <Switch
-                    label="Auto-accept Bookings"
-                    {...form.getInputProps('autoAccept', { type: 'checkbox' })}
-                />
+                        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                            <NumberInput
+                                label="Price ($)"
+                                placeholder="0.00"
+                                min={0}
+                                decimalScale={2}
+                                leftSection={<IconCurrencyDollar size={16} />}
+                                {...form.getInputProps('price')}
+                            />
+                            <NumberInput
+                                label="Total Seats"
+                                placeholder="1"
+                                min={1}
+                                {...form.getInputProps('total_seats')}
+                            />
+                        </SimpleGrid>
 
-                <NumberInput
-                    label="Pay Window (Minutes)"
-                    description="Time for rider to pay after approval"
-                    {...form.getInputProps('payWindow')}
-                />
+                        <Select
+                            label="Vehicle"
+                            placeholder="Select a car"
+                            data={[
+                                { value: 'none', label: 'No Vehicle / Walking' },
+                                ...cars.map(c => ({ value: c.id, label: `${c.year} ${c.make} ${c.model}` }))
+                            ]}
+                            leftSection={<IconCar size={16} />}
+                            {...form.getInputProps('car')}
+                        />
+                        <Text size="xs" c="dimmed" mt={-10} mb="xs">
+                            Save changes and go to <Anchor component={LocalizedLink} href="/cars" style={{ textDecoration: 'underline' }}>My Vehicles</Anchor> to add new vehicle
+                        </Text>
 
-                <Button type="submit" loading={loading} fullWidth mt="md">
-                    Save Changes
-                </Button>
+                        <Textarea
+                            label="Trip Notes"
+                            placeholder="Additional details..."
+                            autosize
+                            minRows={4}
+                            leftSection={<IconScript size={16} />}
+                            {...form.getInputProps('notes')}
+                        />
+
+                        <Divider />
+                        <Title order={4} td="underline">Rules & Logistics</Title>
+
+                        {/* Logistics Step */}
+                        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                            <TagsInput
+                                label="Payment Methods"
+                                data={['Cash', 'Venmo', 'Zelle', 'WeChat', 'CashApp']}
+                                placeholder="Select or type methods"
+                                {...form.getInputProps('paymentMethods')}
+                            />
+                            <TextInput
+                                label="Payment Handle"
+                                placeholder="e.g. @user"
+                                {...form.getInputProps('paymentHandle')}
+                            />
+                        </SimpleGrid>
+
+                        <Textarea
+                            label="Pickup Rules"
+                            placeholder="e.g. Wait at main entrance"
+                            autosize
+                            minRows={2}
+                            {...form.getInputProps('pickupRules')}
+                        />
+
+                        <Textarea
+                            label="Cancellation Policy"
+                            placeholder="e.g. Free cancellation up to 24h before departure"
+                            minRows={2}
+                            autosize
+                            {...form.getInputProps('cancellationPolicy')}
+                        />
+
+                        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                            <NumberInput
+                                label="Big Luggage Limit"
+                                min={0}
+                                {...form.getInputProps('bigLuggage')}
+                            />
+                            <NumberInput
+                                label="Small Luggage Limit"
+                                min={0}
+                                {...form.getInputProps('smallLuggage')}
+                            />
+                        </SimpleGrid>
+
+                        <Divider label="Settings" labelPosition="center" />
+
+                        {/* Settings Step */}
+                        <NumberInput
+                            label="Departure Flexibility (Hours)"
+                            description="How long might you leave early or late? Riders will search and book within this time range."
+                            min={0}
+                            {...form.getInputProps('flexibility')}
+                        />
+
+                        <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                            <NumberInput
+                                label="Pickup Radius (m)"
+                                description="The area around your departure location where you are willing to pick up passengers"
+                                min={0}
+                                step={100}
+                                {...form.getInputProps('pickupRadius')}
+                            />
+                            <NumberInput
+                                label="Dropoff Radius (m)"
+                                description="The area around your arrival location where you are willing to drop off passengers"
+                                min={0}
+                                step={100}
+                                {...form.getInputProps('dropoffRadius')}
+                            />
+                        </SimpleGrid>
+
+                        <Accordion variant="separated" defaultValue="settings">
+                            <Accordion.Item value="settings">
+                                <Accordion.Control>Advanced Rules</Accordion.Control>
+                                <Accordion.Panel>
+                                    <Stack gap="md">
+                                        <Switch
+                                            label="Auto Accept Bookings"
+                                            description="Automatically approve requests that meet your criteria"
+                                            checked={form.values.autoAccept}
+                                            onChange={(e) => {
+                                                form.setFieldValue('autoAccept', e.currentTarget.checked);
+                                            }}
+                                        />
+
+                                        <Stack gap="xs">
+                                            <Switch
+                                                label="Auto Start Check-in"
+                                                description="Automatically ask passengers to check-in before the trip starts. Upon departure, check-in will begin automatically."
+                                                checked={form.values.startCheckInEnabled}
+                                                onChange={(e) => {
+                                                    form.setFieldValue('startCheckInEnabled', e.currentTarget.checked);
+                                                    form.setFieldValue('startCheckInHrs', e.currentTarget.checked ? 3 : ('' as any));
+                                                }}
+                                            />
+                                            {form.values.startCheckInEnabled && (
+                                                <NumberInput
+                                                    label="Start Check-in (Hours before departure)"
+                                                    placeholder="e.g. 3"
+                                                    min={0.1}
+                                                    decimalScale={2}
+                                                    {...form.getInputProps('startCheckInHrs')}
+                                                />
+                                            )}
+                                        </Stack>
+
+                                        <Stack gap="xs">
+                                            <Switch
+                                                label="Enable Booking Cutoff"
+                                                description="Stop accepting bookings X hours before departure"
+                                                checked={form.values.cutoffEnabled}
+                                                onChange={(e) => {
+                                                    form.setFieldValue('cutoffEnabled', e.currentTarget.checked);
+                                                    form.setFieldValue('cutoffTime', e.currentTarget.checked ? 3 : null);
+                                                }}
+                                            />
+                                            {form.values.cutoffEnabled && (
+                                                <NumberInput
+                                                    label="Hours before departure"
+                                                    description="e.g. 1.5 for 1 hour 30 mins"
+                                                    placeholder="1"
+                                                    min={0.1}
+                                                    step={0.5}
+                                                    decimalScale={2}
+                                                    {...form.getInputProps('cutoffTime')}
+                                                    value={form.values.cutoffTime === null ? '' : form.values.cutoffTime}
+                                                />
+                                            )}
+                                        </Stack>
+
+                                        <Divider />
+
+                                        <NumberInput
+                                            label="Pay Window (Minutes)"
+                                            description="Time allowed for rider to pay after approval"
+                                            {...form.getInputProps('payWindow')}
+                                            min={5}
+                                            step={5}
+                                        />
+                                    </Stack>
+                                </Accordion.Panel>
+                            </Accordion.Item>
+                        </Accordion>
+
+                        {!isReadOnly && (
+                            <Button type="submit" loading={loading} fullWidth mt="md">
+                                Save Changes
+                            </Button>
+                        )}
+                    </Stack>
+                </fieldset>
             </Stack>
         </form>
     );

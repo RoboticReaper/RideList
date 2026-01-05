@@ -11,6 +11,7 @@ import {
     IconNotification,
     IconWorld,
     IconLayoutDashboard,
+    IconHistory,
     IconUser,
     IconSettings,
 } from '@tabler/icons-react';
@@ -41,7 +42,7 @@ import {
 import { useDisclosure } from '@mantine/hooks';
 import classes from './DashboardHeaderMenu.module.css';
 import { getLocalizedHref, LocalizedLink } from '../LocalizedLink';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../firebase/AuthContext';
 import { getAuth, signOut } from 'firebase/auth';
@@ -64,6 +65,7 @@ export function DashboardHeaderMenu({ role, onRoleChange, drawerOpened, toggleDr
     const { user, loading } = useAuth();
     const router = useRouter()
     const params = useParams()
+    const pathname = usePathname();
 
     return (
         <Box>
@@ -81,6 +83,10 @@ export function DashboardHeaderMenu({ role, onRoleChange, drawerOpened, toggleDr
                         <SegmentedControl
                             value={role}
                             onChange={(value) => {
+                                const driverOnlyRoutes = ['/trip-templates', '/rule-templates', '/cars'];
+                                if (value === 'rider' && driverOnlyRoutes.some(route => pathname.includes(route))) {
+                                    router.push('/dashboard');
+                                }
                                 onRoleChange(value);
                                 closeDrawer();
                             }}
@@ -123,6 +129,13 @@ export function DashboardHeaderMenu({ role, onRoleChange, drawerOpened, toggleDr
                                         leftSection={<IconUser size={14} />}
                                     >
                                         Profile
+                                    </Menu.Item>
+                                    <Menu.Item
+                                        component={LocalizedLink}
+                                        href="/history"
+                                        leftSection={<IconHistory size={14} />}
+                                    >
+                                        History
                                     </Menu.Item>
                                     <Menu.Item
                                         component={LocalizedLink}

@@ -36,6 +36,7 @@ import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../firebase/AuthContext';
 import { getLocalizedHref } from '../LocalizedLink';
+import { parseFlexibility, parsePayWindow, parseCutoffTimeNullable, parseStartCheckInNullable } from '@/utils/intervalParsers';
 
 // Type for Place Prediction from New API
 interface PlacePrediction {
@@ -121,45 +122,6 @@ export function TripInputBar() {
 
     const hasFetchedCars = useRef(false);
 
-    // Parse flexibility interval to hours (number)
-    const parseStrToHours = (interval: any) => {
-        if (!interval) return 0;
-        if (typeof interval === 'string') {
-            const times = interval.split(':')
-            let h = parseInt(times[0])
-            let m = parseInt(times[1])
-            let s = parseInt(times[2])
-            return h + m / 60 + s / 3600
-        }
-        else if (typeof interval === 'object') {
-            const h = (interval.hours || 0) + (interval.minutes || 0) / 60 + (interval.seconds || 0) / 3600;
-            return h > 0 ? h : null;
-        }
-        else {
-            return interval;
-        }
-    };
-
-    // Parse pay window interval to minutes (number)
-    const parseStrToMinutes = (interval: any) => {
-        if (!interval) return 0;
-        if (typeof interval === 'string') {
-            const times = interval.split(':')
-            let h = parseInt(times[0])
-            let m = parseInt(times[1])
-            let s = parseInt(times[2])
-            return h * 60 + m + s / 60
-        }
-        else if (typeof interval === 'object') {
-            const h = (interval.hours || 0) + (interval.minutes || 0) / 60 + (interval.seconds || 0) / 3600;
-            return h > 0 ? h : null;
-        }
-        else {
-            return interval;
-        }
-    };
-
-
     // Fetch cars when entering step 3 (active = 2) or on mount if user exists
     useEffect(() => {
         if (user && active === 2 && !hasFetchedCars.current) {
@@ -200,16 +162,17 @@ export function TripInputBar() {
     const [dropoffRadius, setDropoffRadius] = useState<number | ''>(1000);
     const [pickupRules, setPickupRules] = useState('');
     const [cancellationPolicy, setCancellationPolicy] = useState('');
-    const [cutoffEnabled, setCutoffEnabled] = useState(false);
-    const [cutoffHours, setCutoffHours] = useState<number | ''>('');
+    const [cutoffEnabled, setCutoffEnabled] = useState(true);
+    const [cutoffHours, setCutoffHours] = useState<number | '' | null>(3);
     const [notes, setNotes] = useState('');
     const [saveTemplate, setSaveTemplate] = useState(false);
     const [saveTripTemplate, setSaveTripTemplate] = useState(false);
     const [linkTemplates, setLinkTemplates] = useState(false);
     const [ruleTemplateName, setRuleTemplateName] = useState('');
     const [tripTemplateName, setTripTemplateName] = useState('');
-    const [payWindow, setPayWindow] = useState<number | ''>(30); // Default 30 mins
-    const [startCheckInHrs, setStartCheckInHrs] = useState<number | ''>('');
+    const [payWindow, setPayWindow] = useState<number | ''>(60); // Default 60 mins
+    const [startCheckInEnabled, setStartCheckInEnabled] = useState(true);
+    const [startCheckInHrs, setStartCheckInHrs] = useState<number | ''>(3);
 
     const [templates, setTemplates] = useState<any[]>([]);
     const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -319,11 +282,12 @@ export function TripInputBar() {
         pickupRules: string;
         cancellationPolicy: string;
         cutoffEnabled: boolean;
-        cutoffHours: number | '';
+        cutoffHours: number | '' | null;
         payWindow: number | '';
         notes: string;
         startPlaceId: string | null;
         endPlaceId: string | null;
+        startCheckInEnabled: boolean;
         startCheckInHrs: number | '';
     }
 
@@ -377,7 +341,20 @@ export function TripInputBar() {
                 if (draft.cutoffHours !== undefined) setCutoffHours(draft.cutoffHours);
                 if (draft.payWindow !== undefined) setPayWindow(draft.payWindow);
                 if (draft.notes) setNotes(draft.notes);
-                if (draft.startCheckInHrs !== undefined) setStartCheckInHrs(draft.startCheckInHrs);
+
+                // Backwards compatibility for draft loading might be needed if user has old draft format
+                // But TypeScript might complain if we check property that doesn't exist on Type?
+                // Cast to any to check just in case or just assume new drafts going forward
+                const d = draft as any;
+                if (d.startCheckInEnabled !== undefined) {
+                    setStartCheckInEnabled(d.startCheckInEnabled);
+                    if (d.startCheckInHrs !== undefined) setStartCheckInHrs(d.startCheckInHrs);
+                } else if (d.startCheckInHrs !== undefined && d.startCheckInHrs !== null) {
+                    // Old format: startCheckInHrs was number or null. If number, it was enabled.
+                    setStartCheckInEnabled(true);
+                    setStartCheckInHrs(d.startCheckInHrs);
+                }
+
 
                 if (draft.startPlaceId) setStartPlaceId(draft.startPlaceId);
                 if (draft.endPlaceId) setEndPlaceId(draft.endPlaceId);
@@ -409,10 +386,12 @@ export function TripInputBar() {
                     (draft.dropoffRadius !== 1000 && draft.dropoffRadius !== '' && draft.dropoffRadius !== undefined) ||
                     (!!draft.pickupRules) ||
                     (!!draft.cancellationPolicy) ||
-                    (draft.cutoffEnabled === true) ||
-                    (draft.payWindow !== 30 && draft.payWindow !== '' && draft.payWindow !== undefined) ||
+                    (draft.cutoffEnabled !== true) ||
+                    (draft.payWindow !== 60 && draft.payWindow !== '' && draft.payWindow !== undefined) ||
                     (!!draft.notes) ||
-                    (draft.startCheckInHrs !== '' && draft.startCheckInHrs !== undefined);
+                    (draft.startCheckInEnabled !== true) ||
+                    (draft.cutoffHours !== 3 && draft.cutoffHours !== undefined) ||
+                    (draft.startCheckInHrs !== 3 && draft.startCheckInHrs !== undefined);
 
                 if (isMeaningful) {
                     notifications.show({
@@ -464,16 +443,17 @@ export function TripInputBar() {
         setDropoffRadius(1000);
         setPickupRules('');
         setCancellationPolicy('');
-        setCutoffEnabled(false);
-        setCutoffHours('');
+        setCutoffEnabled(true);
+        setCutoffHours(3);
         setNotes('');
         setSaveTemplate(false);
         setSaveTripTemplate(false);
         setLinkTemplates(false);
         setRuleTemplateName('');
         setTripTemplateName('');
-        setPayWindow(30);
-        setStartCheckInHrs('');
+        setPayWindow(60);
+        setStartCheckInEnabled(true);
+        setStartCheckInHrs(3);
         setSelectedTemplate(null);
         setSelectedTripTemplate(null);
         setPostedLink('');
@@ -551,6 +531,7 @@ export function TripInputBar() {
                 notes,
                 startPlaceId,
                 endPlaceId,
+                startCheckInEnabled,
                 startCheckInHrs
             };
             localStorage.setItem('trip_draft', JSON.stringify(draft));
@@ -736,7 +717,7 @@ export function TripInputBar() {
             if (carCapacity > 0 && Number(seats) > carCapacity) {
                 notifications.show({
                     title: 'Capacity Exceeded',
-                    message: `Trip seats (${seats}) cannot be more than the car's capacity (${carCapacity}).`,
+                    message: `Vehicle's capacity (${carCapacity}) cannot be less than the trip's seats (${seats}).`,
                     color: 'red'
                 });
                 return;
@@ -786,11 +767,14 @@ export function TripInputBar() {
                 }
             }
 
-            if (cutoffEnabled) {
-                if (cutoffHours === '' || cutoffHours <= 0) {
-                    notifications.show({ title: 'Invalid Cutoff Time', message: 'Please enter a valid number of hours (must be > 0).', color: 'red' });
-                    return;
-                }
+            // Required Field Validation
+            if (bigLuggage === '') {
+                notifications.show({ title: 'Big Luggage Limit Required', message: 'Please specify big luggage capacity (or 0).', color: 'red' });
+                return;
+            }
+            if (smallLuggage === '') {
+                notifications.show({ title: 'Small Luggage Limit Required', message: 'Please specify small luggage capacity (or 0).', color: 'red' });
+                return;
             }
         }
 
@@ -807,6 +791,28 @@ export function TripInputBar() {
         }
         if (saveTripTemplate && !tripTemplateName.trim()) {
             notifications.show({ title: 'Template Name Required', message: 'Please provide a name for your Trip Template.', color: 'red' });
+            return;
+        }
+
+        // Validation for Advanced Settings (Step 5)
+        if (flexibility === '') {
+            notifications.show({ title: 'Flexibility Required', message: 'Please specify departure flexibility.', color: 'red' });
+            return;
+        }
+        if (pickupRadius === '') {
+            notifications.show({ title: 'Pickup Radius Required', message: 'Please specify pickup radius.', color: 'red' });
+            return;
+        }
+        if (dropoffRadius === '') {
+            notifications.show({ title: 'Drop-off Radius Required', message: 'Please specify drop-off radius.', color: 'red' });
+            return;
+        }
+        if (payWindow === '') {
+            notifications.show({ title: 'Pay Window Required', message: 'Please specify the pay window duration.', color: 'red' });
+            return;
+        }
+        if (cutoffEnabled && (cutoffHours === '' || cutoffHours === null || cutoffHours <= 0)) {
+            notifications.show({ title: 'Invalid Cutoff Time', message: 'Please enter a valid number of hours for booking cutoff.', color: 'red' });
             return;
         }
 
@@ -841,20 +847,20 @@ export function TripInputBar() {
             bigLuggage: Number(bigLuggage),
             smallLuggage: Number(smallLuggage),
             autoAccept,
-            flexibility: (flexibility !== '' && flexibility !== undefined) ? `${flexibility} hours` : null,
+            flexibility: (flexibility !== undefined) ? `${flexibility} hours` : '0 hours',
             pickupRadius: Number(pickupRadius),
             dropoffRadius: Number(dropoffRadius),
             pickupRules,
             cancellationPolicy,
-            cutoffTime: (cutoffEnabled && cutoffHours !== '') ? `${cutoffHours} hours` : null,
-            payWindow: (payWindow !== '' && payWindow !== undefined) ? `${payWindow} minutes` : '30 minutes',
+            cutoffTime: (cutoffEnabled && cutoffHours !== '' && cutoffHours !== null) ? `${cutoffHours} hours` : '0 hours',
+            payWindow: (payWindow !== undefined) ? `${payWindow} minutes` : '30 minutes',
             notes,
             saveTemplate,
             saveTripTemplate,
             linkTemplates,
             ruleTemplateName,
             tripTemplateName,
-            startCheckInHrs: (startCheckInHrs !== '' && startCheckInHrs !== undefined) ? `${startCheckInHrs} hours` : null,
+            startCheckInHrs: (startCheckInHrs !== '' && startCheckInHrs !== null && startCheckInHrs !== undefined) ? `${startCheckInHrs} hours` : null,
         };
 
         // Attach Car Info
@@ -995,17 +1001,32 @@ export function TripInputBar() {
                                                 setPaymentMethods(r.payment_methods || []);
                                                 setPaymentHandle(r.payment_handle || '');
                                                 setAutoAccept(r.auto_accept);
-                                                setFlexibility(r.departure_time_flexibility ? parseStrToHours(r.departure_time_flexibility) : 0.25);
+                                                setFlexibility(r.departure_time_flexibility ? parseFlexibility(r.departure_time_flexibility) : 0.25);
                                                 setPickupRadius(r.pickup_radius_meters || 1000);
                                                 setDropoffRadius(r.drop_off_radius_meters || 1000);
                                                 setPickupRules(r.pickup_rules || '');
                                                 setCancellationPolicy(r.cancellation_policy || '');
-                                                setCutoffHours(r.cutoff_time ? parseStrToHours(r.cutoff_time) : '');
-                                                setPayWindow(r.pay_window ? parseStrToMinutes(r.pay_window) : 30);
+                                                const ch = parseCutoffTimeNullable(r.cutoff_time);
+                                                if (ch !== null) {
+                                                    setCutoffEnabled(true);
+                                                    setCutoffHours(ch);
+                                                } else {
+                                                    setCutoffEnabled(false);
+                                                    setCutoffHours(null); // or 3 if we want default when re-enabling
+                                                }
+                                                setPayWindow(r.pay_window ? parsePayWindow(r.pay_window) : 60);
 
+                                                const sch = parseStartCheckInNullable(r.start_check_in_hrs_before_departure);
+                                                if (sch) {
+                                                    setStartCheckInEnabled(true);
+                                                    setStartCheckInHrs(sch);
+                                                } else {
+                                                    setStartCheckInEnabled(false);
+                                                    setStartCheckInHrs(3);
+                                                }
                                                 setFieldSourceTemplate([
                                                     'bigLuggage', 'smallLuggage', 'paymentMethods', 'paymentHandle', 'autoAccept',
-                                                    'flexibility', 'pickupRadius', 'dropoffRadius', 'pickupRules', 'cancellationPolicy', 'cutoffHours', 'payWindow'
+                                                    'flexibility', 'pickupRadius', 'dropoffRadius', 'pickupRules', 'cancellationPolicy', 'cutoffHours', 'payWindow', 'startCheckInHrs'
                                                 ], 'Trip', tName);
                                             }
 
@@ -1023,6 +1044,7 @@ export function TripInputBar() {
                             leftSection={<IconMapPin size={16} />}
                             data={startSuggestions}
                             value={startLocation}
+                            required
                             onChange={(val) => {
                                 handleStartChange(val);
                                 setFieldSourceManual(['startLocation']);
@@ -1043,6 +1065,7 @@ export function TripInputBar() {
                             leftSection={<IconMapPin size={16} />}
                             data={endSuggestions}
                             value={endLocation}
+                            required
                             onChange={(val) => {
                                 handleEndChange(val);
                                 setFieldSourceManual(['endLocation']);
@@ -1062,12 +1085,10 @@ export function TripInputBar() {
                             placeholder="Pick date & time"
                             leftSection={<IconCalendar size={16} />}
                             value={startTime}
+                            required
+                            valueFormat="MM/DD/YYYY HH:mm"
                             onChange={(val) => {
                                 setStartTime(val as Date | null);
-                                // updateFieldSource? Trip template doesn't usually save specific date/time unless repeated?
-                                // Schema has `departure_time`?
-                                // trip_templates table has NO departure_time. Just generic info.
-                                // So we probably don't prefill time from template.
                             }}
                         />
 
@@ -1202,36 +1223,18 @@ export function TripInputBar() {
                                         onChange={(e) => setCarPlate(e.currentTarget.value)}
                                     />
 
-                                    <Divider label="Check-in" labelPosition="center" />
 
-                                    <Switch
-                                        label="Enable Check-in Feature"
-                                        description="Allow passengers to check in before the trip starts"
-                                        checked={startCheckInHrs !== ''}
-                                        onChange={(e) => setStartCheckInHrs(e.currentTarget.checked ? 3 : '')}
-                                    />
-                                    {startCheckInHrs !== '' && (
-                                        <NumberInput
-                                            label="Start Check-in (Hours before departure)"
-                                            description="How many hours before departure can passengers check in?"
-                                            value={startCheckInHrs}
-                                            onChange={(val) => setStartCheckInHrs(val === '' ? '' : Number(val))}
-                                            min={1}
-                                        />
-                                    )}
 
                                     <Divider label="Templates" labelPosition="center" />
                                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                                         <NumberInput
-                                            label="Big Luggage Cap."
-                                            placeholder="Optional"
+                                            label="Total Big Luggage Cap."
                                             value={carBigLuggage}
                                             onChange={(val) => setCarBigLuggage(val === '' ? '' : Number(val))}
                                             min={0}
                                         />
                                         <NumberInput
-                                            label="Small Luggage Cap."
-                                            placeholder="Optional"
+                                            label="Total Small Luggage Cap."
                                             value={carSmallLuggage}
                                             onChange={(val) => setCarSmallLuggage(val === '' ? '' : Number(val))}
                                             min={0}
@@ -1285,27 +1288,43 @@ export function TripInputBar() {
                                             if (t.drop_off_radius_meters !== null) setDropoffRadius(t.drop_off_radius_meters);
 
                                             // Cutoff
-                                            if (t.cutoff_time) {
-                                                if (t.cutoff_time.hours) {
-                                                    setCutoffEnabled(true);
-                                                    setCutoffHours(parseStrToHours(t.cutoff_time));
-                                                }
+                                            const ch = parseCutoffTimeNullable(t.cutoff_time);
+                                            if (ch !== null) {
+                                                setCutoffEnabled(true);
+                                                setCutoffHours(ch);
+                                            } else {
+                                                setCutoffEnabled(false);
+                                                setCutoffHours(null);
                                             }
 
                                             // Pay Window
                                             if (t.pay_window) {
-                                                const pw = parseStrToMinutes(t.pay_window);
+                                                const pw = parsePayWindow(t.pay_window);
                                                 if (!isNaN(pw)) setPayWindow(pw);
+                                            }
+
+                                            // Start Check-in
+                                            if (t.start_check_in_hrs_before_departure) {
+                                                const sch = parseStartCheckInNullable(t.start_check_in_hrs_before_departure);
+                                                if (sch) {
+                                                    setStartCheckInEnabled(true);
+                                                    setStartCheckInHrs(sch);
+                                                } else {
+                                                    setStartCheckInEnabled(false);
+                                                    setStartCheckInHrs(3);
+                                                }
+                                            } else {
+                                                setStartCheckInEnabled(false);
+                                                setStartCheckInHrs(3);
                                             }
 
                                             // Flexibility
                                             if (t.departure_time_flexibility) {
-                                                setFlexibility(parseStrToHours(t.departure_time_flexibility));
-
+                                                setFlexibility(parseFlexibility(t.departure_time_flexibility));
 
                                                 setFieldSourceTemplate([
                                                     'paymentMethods', 'paymentHandle', 'pickupRules', 'cancellationPolicy', 'autoAccept',
-                                                    'bigLuggage', 'smallLuggage', 'pickupRadius', 'dropoffRadius', 'flexibility', 'cutoffHours', 'payWindow'
+                                                    'bigLuggage', 'smallLuggage', 'pickupRadius', 'dropoffRadius', 'flexibility', 'cutoffHours', 'payWindow', 'startCheckInHrs'
                                                 ], 'Rule', t.name || 'Rule Template');
 
                                                 notifications.show({ title: 'Template Loaded', message: 'Rules have been populated from template.', color: 'green' });
@@ -1319,7 +1338,7 @@ export function TripInputBar() {
 
                         <TagsInput
                             label={<Group gap="xs">Payment Methods {renderSourceBadge('paymentMethods')}</Group>}
-                            placeholder="Select accepted methods (Optional)"
+                            placeholder="Select or type accepted methods. Leaving empty = None accepted."
                             data={['Cash', 'Venmo', 'Zelle', 'WeChat', 'CashApp']}
                             value={paymentMethods}
                             onChange={(val) => {
@@ -1359,34 +1378,13 @@ export function TripInputBar() {
                             minRows={2}
                         />
 
-                        <Checkbox
-                            label="Enable Booking Cutoff"
-                            description="Stop accepting bookings X hours before departure"
-                            checked={cutoffEnabled}
-                            onChange={(e) => setCutoffEnabled(e.currentTarget.checked)}
-                            mt="sm"
-                        />
-                        {cutoffEnabled && (
-                            <NumberInput
-                                label={<Group gap="xs">Hours before departure {renderSourceBadge('cutoffHours')}</Group>}
-                                description="e.g. 1.5 for 1 hour 30 mins"
-                                placeholder="1"
-                                value={cutoffHours}
-                                onChange={(val) => {
-                                    setCutoffHours(val === '' ? '' : Number(val));
-                                    setFieldSourceManual(['cutoffHours']);
-                                }}
-                                min={0.1}
-                                step={0.5}
-                                decimalScale={2}
-                                required
-                            />
-                        )}
+
                         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                             <NumberInput
-                                label={<Group gap="xs">Big Luggage Cap. {renderSourceBadge('bigLuggage')}</Group>}
-                                placeholder="Large suitcases"
+                                label={<Group gap="xs">Big Luggage Cap. Per Person {renderSourceBadge('bigLuggage')}</Group>}
+                                description="Large suitcases"
                                 value={bigLuggage}
+                                required
                                 onChange={(val) => {
                                     setBigLuggage(val === '' ? '' : Number(val));
                                     setFieldSourceManual(['bigLuggage']);
@@ -1394,9 +1392,10 @@ export function TripInputBar() {
                                 min={0}
                             />
                             <NumberInput
-                                label={<Group gap="xs">Small Luggage Cap. {renderSourceBadge('smallLuggage')}</Group>}
-                                placeholder="Carry-ons / Backpacks"
+                                label={<Group gap="xs">Small Luggage Cap. Per Person {renderSourceBadge('smallLuggage')}</Group>}
+                                description="Carry-ons"
                                 value={smallLuggage}
+                                required
                                 onChange={(val) => {
                                     setSmallLuggage(val === '' ? '' : Number(val));
                                     setFieldSourceManual(['smallLuggage']);
@@ -1417,7 +1416,8 @@ export function TripInputBar() {
                         <Title order={4}>Advanced Settings</Title>
                         <NumberInput
                             label={<Group gap="xs">Departure Flexibility (Hours) {renderSourceBadge('flexibility')}</Group>}
-                            description="How long can you wait?"
+                            description="How long might you leave early or late? Riders will search and book within this time range."
+                            required
                             value={flexibility}
                             onChange={(val) => {
                                 setFlexibility(val === '' ? '' : Number(val));
@@ -1435,6 +1435,8 @@ export function TripInputBar() {
                                     setFieldSourceManual(['pickupRadius']);
                                 }}
                                 min={0}
+                                description="The area around your departure location where you are willing to pick up passengers"
+                                required
                                 step={100}
                             />
                             <NumberInput
@@ -1445,6 +1447,8 @@ export function TripInputBar() {
                                     setFieldSourceManual(['dropoffRadius']);
                                 }}
                                 min={0}
+                                description="The area around your arrival location where you are willing to drop off passengers"
+                                required
                                 step={100}
                             />
                         </SimpleGrid>
@@ -1462,6 +1466,55 @@ export function TripInputBar() {
                                                 setFieldSourceManual(['autoAccept']);
                                             }}
                                         />
+                                        <Switch
+                                            label={<Group gap="xs">Auto Start Check-in {renderSourceBadge('startCheckInHrs')}</Group>}
+                                            description="Automatically ask passengers to check-in before the trip starts. Upon departure, check-in will begin automatically."
+                                            checked={startCheckInEnabled}
+                                            onChange={(e) => {
+                                                setStartCheckInEnabled(e.currentTarget.checked);
+                                                setStartCheckInHrs(e.currentTarget.checked ? 3 : '');
+                                                setFieldSourceManual(['startCheckInHrs']);
+                                            }}
+                                        />
+                                        {startCheckInEnabled && (
+                                            <NumberInput
+                                                label="Start Check-in (Hours before departure)"
+                                                value={startCheckInHrs}
+                                                placeholder='3'
+                                                onChange={(val) => {
+                                                    setStartCheckInHrs(val === '' ? '' : Number(val));
+                                                    setFieldSourceManual(['startCheckInHrs']);
+                                                }}
+                                                min={1}
+                                            />
+                                        )}
+
+                                        <Switch
+                                            label="Enable Booking Cutoff"
+                                            description="Stop accepting bookings X hours before departure"
+                                            checked={cutoffEnabled}
+                                            onChange={(e) => {
+                                                setCutoffEnabled(e.currentTarget.checked);
+                                                setCutoffHours(e.currentTarget.checked ? 3 : null);
+                                            }}
+                                        />
+                                        {cutoffEnabled && (
+                                            <NumberInput
+                                                label={<Group gap="xs">Hours before departure {renderSourceBadge('cutoffHours')}</Group>}
+                                                description="e.g. 1.5 for 1 hour 30 mins"
+                                                placeholder="3"
+                                                value={cutoffHours === null ? '' : cutoffHours}
+                                                onChange={(val) => {
+                                                    setCutoffHours(val === '' ? '' : Number(val));
+                                                    setFieldSourceManual(['cutoffHours']);
+                                                }}
+                                                min={0.1}
+                                                decimalScale={2}
+                                            />
+                                        )}
+
+                                        <Divider />
+
                                         <NumberInput
                                             label={<Group gap="xs">Pay Window (Minutes) {renderSourceBadge('payWindow')}</Group>}
                                             description="Time allowed for rider to pay after approval"
@@ -1470,6 +1523,7 @@ export function TripInputBar() {
                                                 setPayWindow(val === '' ? '' : Number(val));
                                                 setFieldSourceManual(['payWindow']);
                                             }}
+                                            required
                                             min={5}
                                             step={5}
                                         />
