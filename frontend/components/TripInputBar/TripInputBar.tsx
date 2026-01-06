@@ -935,6 +935,9 @@ export function TripInputBar() {
 
             setPostedLink(getLocalizedHref(params, `/rides/${data.tripId}`));
 
+            // Trigger push permission prompt (might be nice to ask driver too)
+            window.dispatchEvent(new Event('show-push-permission-modal'));
+
             nextStep();
 
         } catch (error: any) {

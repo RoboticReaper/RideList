@@ -198,7 +198,8 @@ export async function createNotification({
                 // Minimal data for client handling if needed
                 type: type,
                 entityId: entityId,
-                entityType: entityType
+                entityType: entityType,
+                open_link: openLink
             }
         });
 

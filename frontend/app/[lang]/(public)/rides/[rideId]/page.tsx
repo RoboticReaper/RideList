@@ -3,14 +3,14 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-    Container, Title, Text, Card, Group, Badge, Stack, Grid, LoadingOverlay, Alert, Divider, Avatar, ThemeIcon, Progress, Tooltip, SimpleGrid, Paper, Button, Popover, Transition, NumberInput, Modal, Select, TextInput
+    Container, Title, Text, Card, Group, Badge, Stack, Grid, LoadingOverlay, Alert, Divider, Avatar, ThemeIcon, Progress, Tooltip, SimpleGrid, Paper, Button, Popover, Transition, NumberInput, Modal, Select, TextInput, ActionIcon
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/components/firebase/AuthContext';
-import { useMediaQuery, useIntersection, useInterval } from '@mantine/hooks';
+import { useMediaQuery, useIntersection, useInterval, useWindowEvent } from '@mantine/hooks';
 import {
-    IconMapPin, IconCalendar, IconArmchair, IconCoin, IconInfoCircle, IconLuggage, IconClock, IconCar, IconStar, IconCheck, IconUser, IconAlertCircle, IconDashboard, IconPhone
+    IconMapPin, IconCalendar, IconArmchair, IconCoin, IconInfoCircle, IconLuggage, IconClock, IconCar, IconStar, IconCheck, IconUser, IconAlertCircle, IconDashboard, IconPhone, IconRefresh
 } from '@tabler/icons-react';
 import { LocalizedLink } from '@/components/LocalizedLink';
 import dayjs from 'dayjs';
@@ -139,6 +139,11 @@ export default function RidePage() {
     };
 
     const interval = useInterval(fetchRide, 120000);
+
+    // Revalidate on focus (for PWA / Tab switching)
+    useWindowEvent('focus', () => {
+        fetchRide();
+    });
 
     useEffect(() => {
         fetchRide();
@@ -273,6 +278,12 @@ export default function RidePage() {
                 });
             }
 
+
+
+
+            // Trigger push permission prompt (respects cooldowns/policy)
+            window.dispatchEvent(new Event('show-push-permission-modal'));
+
             // Update local state to reflect booking immediately
             setRide((prev) => {
                 if (!prev) return null;
@@ -319,7 +330,12 @@ export default function RidePage() {
                                 {getTripStatusConfig(ride.status).label.toUpperCase()}
                             </Badge>
                         )}
-                        <Text size="xs" c="dimmed">Posted {dayjs(ride.created_at).fromNow()}</Text>
+                        <Group gap="xs">
+                            <Text size="xs" c="dimmed">Posted {dayjs(ride.created_at).fromNow()}</Text>
+                            <ActionIcon variant="transparent" color="gray" size="sm" onClick={fetchRide} loading={loading}>
+                                <IconRefresh size={18} />
+                            </ActionIcon>
+                        </Group>
                     </Group>
 
                     <Group justify="space-between" align="end">

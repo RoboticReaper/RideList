@@ -16,6 +16,15 @@ export async function POST(req: Request) {
         }
 
         // Register token logic:
+        // 1. Takeover: If this token exists for ANY other user, delete it.
+        //    This happens when User A logs out and User B logs in on the same browser/device.
+        //    Privacy violation if we don't do this.
+        await pool.query(`
+            DELETE FROM user_devices 
+            WHERE fcm_token = $1 AND user_id != $2
+        `, [token, user.uid]);
+
+        // 2. Upsert:
         // - Must match user_id + device_id
         // - Update fcm_token
         // - Set permission_state = 'granted'
@@ -24,29 +33,24 @@ export async function POST(req: Request) {
         // - Clear invalidated_at (in case it was previously invalid)
 
         const query = `
-            UPDATE user_devices
-            SET 
+            INSERT INTO user_devices (user_id, device_id, fcm_token, platform, permission_state, push_enabled, token_last_updated_at, last_seen_at)
+            VALUES ($1, $2, $3, 'web', 'granted', true, NOW(), NOW())
+            ON CONFLICT (user_id, device_id)
+            DO UPDATE SET 
                 fcm_token = $3,
                 permission_state = 'granted',
                 push_enabled = true,
                 token_last_updated_at = NOW(),
                 invalidated_at = NULL,
                 last_seen_at = NOW()
-            WHERE user_id = $1 AND device_id = $2
+            WHERE user_devices.fcm_token IS DISTINCT FROM $3
             RETURNING id
         `;
 
         const result = await pool.query(query, [user.uid, deviceId, token]);
 
-        if (result.rowCount === 0) {
-            // Device not found (maybe register-device wasn't called or failed silently?)
-            // We could upsert here, but strictly following separation of concerns, 
-            // register-device should have been called first. 
-            // However, to be robust, if we possess a token, we imply the device exists. 
-            // But let's stick to the rule: register-device is called on load.
-            // If it returns 0, it means device_id not found for this user.
-            return NextResponse.json({ error: 'Device not found' }, { status: 404 });
-        }
+        // if result.rowCount === 0, it means it was a no-op (token identical), which is fine.
+
 
         return NextResponse.json({ success: true });
 

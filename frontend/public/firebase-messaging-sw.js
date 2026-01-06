@@ -1,3 +1,4 @@
+self.__FIREBASE_SW_VERSION__ = 'v0.0.1';
 
 // Scripts for firebase-messaging-sw.js
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
@@ -18,6 +19,7 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
     // Customize notification here if needed
@@ -32,28 +34,37 @@ messaging.onBackgroundMessage((payload) => {
 });
 
 self.addEventListener('notificationclick', function (event) {
-    console.log('[firebase-messaging-sw.js] Notification click Received.', event.notification.data);
-
     event.notification.close();
 
     const link = event.notification.data?.open_link || event.notification.data?.fcm_options?.link || event.notification.data?.link || '/';
+    const urlToOpen = new URL(link, self.location.origin).href;
 
-    // This looks to see if the current is already open and focuses if it is
     event.waitUntil(
         clients.matchAll({
             type: 'window',
             includeUncontrolled: true
         }).then(function (windowClients) {
-            // Check if there is already a window/tab open with the target URL
+            // 1. Check if there is already a window/tab open with the EXACT target URL
             for (let i = 0; i < windowClients.length; i++) {
                 const client = windowClients[i];
-                if (client.url.includes(link) && 'focus' in client) {
+                if (client.url === urlToOpen && 'focus' in client) {
                     return client.focus();
                 }
             }
-            // If not, open a new window
+
+            // 2. If no exact match, but we have ANY client open, reuse it by navigating
+            // This ensures PWA stays in one window rather than spawning new ones
+            if (windowClients.length > 0) {
+                const client = windowClients[0];
+                if ('focus' in client && 'navigate' in client) {
+                    client.focus();
+                    return client.navigate(urlToOpen);
+                }
+            }
+
+            // 3. If no client is open, open a new window
             if (clients.openWindow) {
-                return clients.openWindow(link);
+                return clients.openWindow(urlToOpen);
             }
         })
     );

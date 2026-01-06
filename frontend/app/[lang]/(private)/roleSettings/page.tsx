@@ -5,8 +5,10 @@ import { useAuth } from '@/components/firebase/AuthContext';
 import { useState, useEffect } from 'react';
 import { Container, Title, Paper, Text, Stack, Switch, Button, Group, LoadingOverlay, Anchor } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconCheck, IconX } from '@tabler/icons-react';
+import { IconCheck, IconX, IconDeviceMobile, IconDownload } from '@tabler/icons-react';
 import { LocalizedLink } from '@/components/LocalizedLink';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { useNotifications } from '@/components/Notifications/NotificationContext';
 
 const DRIVER_NOTIFICATIONS = [
     { key: 'trip_full', label: 'Trip Full', description: 'Get notified when your trip has been fully booked.' },
@@ -24,44 +26,41 @@ import { IconBell, IconBellOff, IconBellRinging } from '@tabler/icons-react';
 export default function RoleSettingsPage() {
     const { role, setRole } = useDashboard();
     const { user } = useAuth();
-    // Push Permission State
-    const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
-
-    useEffect(() => {
-        if (typeof window !== 'undefined' && 'Notification' in window) {
-            setPushPermission(Notification.permission);
-        }
-    }, []);
-
-    const triggerPrompt = () => {
-        window.dispatchEvent(new Event('trigger-push-prompt'));
-        // Poll for change or wait for event? 
-        // Simple polling for UX/Testing
-        const check = setInterval(() => {
-            if (Notification.permission === 'granted') {
-                setPushPermission('granted');
-                clearInterval(check);
-            }
-        }, 1000);
-        setTimeout(() => clearInterval(check), 10000);
-    };
+    const { pushPermission, showPrompt } = useNotifications();
+    const { isIOS, isAndroid, isStandalone } = usePWAInstall();
 
     const PushStatusBadge = () => {
         if (pushPermission === 'granted') return <Badge color="green">Enabled</Badge>;
         if (pushPermission === 'denied') return <Badge color="red">Blocked</Badge>;
-        return <Badge color="yellow">Not Enabled</Badge>;
+        return <Badge color="yellow">{isIOS && !isStandalone ? 'Install Required' : 'Not Enabled'}</Badge>;
     };
 
     const PushEnableButton = () => {
+        // iOS Browser: Must Install First
+        if (isIOS && !isStandalone) {
+            return <Button size="xs" onClick={() => showPrompt()} leftSection={<IconDeviceMobile size={16} />}>Install App</Button>;
+        }
+
+        // Android: If Granted but not installed, suggest install
+        if (isAndroid && !isStandalone && pushPermission === 'granted') {
+            return <Button size="xs" onClick={() => showPrompt()} leftSection={<IconDownload size={16} />}>Install App</Button>;
+        }
+
         if (pushPermission === 'granted') return <ThemeIcon color="green" variant="light"><IconCheck size={20} /></ThemeIcon>;
+
         if (pushPermission === 'denied') {
             return <Button size="xs" color="red" variant="subtle" onClick={() => alert('Please unblock notifications in your browser settings.')}>Fix in Browser</Button>;
         }
-        return <Button size="xs" onClick={triggerPrompt} leftSection={<IconBell size={16} />}>Enable Push</Button>;
+
+        return <Button size="xs" onClick={() => showPrompt()} leftSection={<IconBell size={16} />}>Enable Push</Button>;
     };
 
     const getPushDescription = () => {
-        if (pushPermission === 'granted') return "You are all set to receive push notifications.";
+        if (isIOS && !isStandalone) return "Install to home screen to enable notifications.";
+        if (pushPermission === 'granted') {
+            if (isAndroid && !isStandalone) return "Notifications enabled. Install app for better experience.";
+            return "You are all set to receive push notifications.";
+        }
         if (pushPermission === 'denied') return "You have blocked notifications. You must enable them in your browser settings.";
         return "Enable notifications to stay updated.";
     };

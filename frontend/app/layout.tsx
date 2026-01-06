@@ -8,7 +8,7 @@ import { Notifications } from '@mantine/notifications';
 import '@mantine/dates/styles.css';
 import '@mantine/notifications/styles.css';
 
-import { NotificationManager } from '@/components/NotificationManager';
+import { PushPermissionModal } from '@/components/PushPermissionModal';
 
 export default function RootLayout({
   children,
@@ -26,7 +26,7 @@ export default function RootLayout({
             <LanguageSyncer />
             <NotificationProvider>
               <Notifications />
-              <NotificationManager />
+              <PushPermissionModal />
               {children}
             </NotificationProvider>
           </AuthProvider>
