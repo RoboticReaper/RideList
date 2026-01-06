@@ -103,7 +103,7 @@ export function TripCard({ trip }: TripCardProps) {
                                 Please add a phone number to <Anchor component={LocalizedLink} href={`/profile/${trip.driver_id}`} style={{ textDecoration: 'underline' }}>your profile</Anchor> to start this trip.
                             </Alert>
                         )}
-                        {!trip.make && (
+                        {!trip.id && (
                             <Alert color="red" variant="light" title="Action Required" icon={<IconAlertTriangle size={16} />}>
                                 Please <Anchor component={LocalizedLink} href={`/dashboard/${trip.id}?tab=edit`} style={{ textDecoration: 'underline' }}>assign a car</Anchor> to this trip.
                             </Alert>

@@ -4,6 +4,8 @@ import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
 import { checkAndProcessTripCutoff } from '@/app/api/lib/tripCutoff';
 import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
+import { createNotification } from '@/app/api/lib/createNotification';
+
 
 export async function GET(
     req: Request,
@@ -22,85 +24,139 @@ export async function GET(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // 2️⃣ Verify driver owns this trip
-        const tripCheck = await client.query(
-            `SELECT driver FROM trips WHERE id = $1`,
+        // 2️⃣ Fetch Trip Context (Status & End Time)
+        // We need to know WHEN the trip ended to calculate the 24h phone window.
+        const tripRes = await client.query(
+            `SELECT 
+                t.driver, 
+                t.status,
+                te.created_at as ended_at
+             FROM trips t
+             LEFT JOIN LATERAL (
+                SELECT created_at 
+                FROM trip_events 
+                WHERE trip = t.id 
+                AND event_type IN ('trip_completed', 'trip_cancelled', 'trip_aborted')
+                ORDER BY created_at DESC 
+                LIMIT 1
+             ) te ON true
+             WHERE t.id = $1`,
             [rideId]
         );
 
-        if (tripCheck.rowCount === 0) {
+        if (tripRes.rowCount === 0) {
             return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
         }
 
-        if (tripCheck.rows[0].driver !== user.uid) {
+        const trip = tripRes.rows[0];
+
+        // 3️⃣ Verify Ownership
+        if (trip.driver !== user.uid) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        // 3️⃣ Fetch bookings
+        // 4️⃣ Fetch Bookings
         const query = `
-      SELECT 
-        b.id,
-        b.status,
-        b.seats_booked,
-        b.big_luggage,
-        b.small_luggage,
-        b.picked_up,
-        b.picked_up_at,
-        b.ready,
-        b.ready_at,
-        b.created_at,
-        b.intended_payment_method,
+          SELECT 
+            b.id,
+            b.rider as rider_id,
+            b.status,
+            b.seats_booked,
+            b.paid,
+            b.big_luggage,
+            b.small_luggage,
+            b.picked_up,
+            b.picked_up_at,
+            b.ready,
+            b.ready_at,
+            b.created_at,
+            b.intended_payment_method,
 
-        pg.name as rider_name,
-        pg.photo_url as rider_photo_url,
-        pr.rating_cached as rider_rating,
-        pr.completed_rides as rider_completed_rides
+            pg.name as rider_name,
+            pg.photo_url as rider_photo_url,
+            pg.phone as rider_phone, -- Fetch phone to apply logic later
+            pr.rating_cached as rider_rating,
+            pr.completed_rides as rider_completed_rides,
 
-      FROM bookings b
-      JOIN profile_global pg ON b.rider = pg.id
-      LEFT JOIN profile_rider pr ON b.rider = pr.id
-      WHERE b.trip = $1
-      ORDER BY b.created_at ASC
-    `;
+            br.reason as removal_reason
+
+          FROM bookings b
+          JOIN profile_global pg ON b.rider = pg.id
+          LEFT JOIN profile_rider pr ON b.rider = pr.id
+          LEFT JOIN booking_removal br ON b.id = br.bid
+          WHERE b.trip = $1
+          ORDER BY b.created_at ASC
+        `;
 
         const res = await client.query(query, [rideId]);
 
-        // 4️⃣ Access logic helper
-        function getAccessLevel(status: string): 0 | 1 | 2 {
-            const fullAccess = [
-                'joined_with_pay_window',
-                'pending_pay_confirmation_from_driver',
-                'confirmed'
-            ];
+        // 5️⃣ Permission Logic
+        const now = new Date();
+        const GRACE_PERIOD_MS = 24 * 60 * 60 * 1000; // 24 Hours
 
-            const partialAccess = [
-                'completed',
-                'no_show'
-            ];
+        // Helper: Is the trip currently happening?
+        const isTripActive = ['bookable', 'locked', 'full', 'departed'].includes(trip.status);
 
-            if (fullAccess.includes(status)) return 2;
-            if (partialAccess.includes(status)) return 1;
-            return 0;
+        // Helper: Did the trip end recently?
+        let isTripRecent = false;
+        if (trip.ended_at) {
+            const timeSinceEnd = now.getTime() - new Date(trip.ended_at).getTime();
+            isTripRecent = timeSinceEnd < GRACE_PERIOD_MS;
         }
 
-        function getRiderPhoneAccess(status: string): boolean {
-            return [
-                'joined_with_pay_window',
-                'pending_pay_confirmation_from_driver',
-                'confirmed'
-            ].includes(status);
-        }
-
-
-        // 5️⃣ Redact per booking
         const bookings = res.rows.map(row => {
-            const accessLevel = getAccessLevel(row.status);
-            const phoneVisible = getRiderPhoneAccess(row.status);
+            // A. Identity Rules (Name, Photo, Stats)
+            // Rule: "The Receipt". If a booking existed and wasn't a glitch, 
+            // the driver should always see WHO it was, even years later.
+            // Includes: Joined, Confirmed, Completed, No-Show, Removed.
+            const identityVisible = [
+                'joined_with_pay_window',
+                'pending_pay_confirmation_from_driver',
+                'confirmed',
+                'completed',
+                'no_show',
+                'removed', // Driver needs to see who they removed
+                'left_paid',
+                'left_unpaid'
+            ].includes(row.status) || row.paid;
 
+            // B. Contact Rules (Phone)
+            // Rule: "Operational Window". Only visible if coordination is needed (Active)
+            // or immediately after drop-off (Recent).
+            // STRICTLY HIDDEN for Removed users.
+            const isBookingActive = [
+                'joined_with_pay_window',
+                'pending_pay_confirmation_from_driver',
+                'confirmed',
+                'no_show'
+            ].includes(row.status);
+
+            let phoneVisible = false;
+
+            if (row.status === 'removed') {
+                phoneVisible = false; // Hard privacy block
+            } else {
+                // Case 1: Active Booking in Active Trip
+                if (isBookingActive && isTripActive) {
+                    phoneVisible = true;
+                }
+                // Case 2: Grace Period (Trip recently ended)
+                // Applies to Active Bookings (e.g. Completed) AND Paid Cancellations (Refunds)
+                else if (isTripRecent) {
+                    if (isBookingActive) {
+                        phoneVisible = true;
+                    } else if (row.status === 'cancelled' && row.paid) {
+                        phoneVisible = true; // Refund Window logic
+                    }
+                }
+            }
+
+            // C. Apply Redaction
             let displayName: string;
-            if (accessLevel >= 1) {
+            if (identityVisible) {
                 displayName = row.rider_name;
             } else if (row.rider_name) {
+                // For 'waiting_approval' or weird states, partial redaction
                 displayName = row.rider_name.substring(0, 3) + '***';
             } else {
                 displayName = 'Anon';
@@ -118,19 +174,29 @@ export async function GET(
                 picked_up_at: row.picked_up_at,
                 created_at: row.created_at,
                 intended_payment_method: row.intended_payment_method,
+
+                rider_id: row.rider_id,
+
+                // Identity
                 rider_name: displayName,
-                rider_photo_url: row.rider_photo_url,
+                rider_photo_url: identityVisible ? row.rider_photo_url : null,
                 rider_rating: row.rider_rating ?? null,
                 rider_completed_rides: row.rider_completed_rides ?? 0,
+
+                // Contact
                 rider_phone: phoneVisible ? row.rider_phone : null,
-                rider_phone_visible: phoneVisible ? (row.rider_phone ? 'VISIBLE' : 'MISSING') : 'REDACTED'
+                rider_phone_visible: phoneVisible
+                    ? (row.rider_phone ? 'VISIBLE' : 'MISSING')
+                    : 'REDACTED',
+
+                removal_reason: row.removal_reason || null
             };
         });
 
         return NextResponse.json({ bookings });
 
     } catch (error: any) {
-        console.error('Fetch Bookings Error:', error);
+        console.error('Fetch Trip Bookings Error:', error);
         return NextResponse.json(
             { error: 'Internal Server Error' },
             { status: 500 }
@@ -428,7 +494,46 @@ export async function POST(
                     changes: { trip: { status: { old: 'bookable', new: 'full' } } },
                     notes: `status change due to rider join.`
                 });
+
+                await createNotification({
+                    client,
+                    type: 'trip_full',
+                    title: 'Trip Full',
+                    message: 'Your trip is now full.',
+                    userId: trip.driver,
+                    entityType: 'trips',
+                    entityId: rideId,
+                    openLink: `/dashboard/${rideId}`,
+                    role: 'driver'
+                })
             }
+        }
+
+        // Notify Driver of New Booking
+        if (status === 'joined_with_pay_window') {
+            await createNotification({
+                client,
+                type: 'new_booking',
+                title: 'New Rider Joined',
+                message: 'A rider has joined your trip.',
+                userId: trip.driver,
+                entityType: 'bookings',
+                entityId: bookingId,
+                openLink: `/dashboard/${rideId}`,
+                role: 'driver'
+            });
+        } else if (status === 'waiting_approval') {
+            await createNotification({
+                client,
+                type: 'new_booking',
+                title: 'New Booking Request',
+                message: 'A rider has requested to join your trip.',
+                userId: trip.driver,
+                entityType: 'bookings',
+                entityId: bookingId,
+                openLink: `/dashboard/${rideId}`,
+                role: 'driver'
+            });
         }
 
         // 8. Create initial log in booking status history

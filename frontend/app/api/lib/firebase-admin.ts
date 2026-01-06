@@ -10,5 +10,7 @@ if (!getApps().length) {
 }
 
 export const adminAuth = getAuth();
+export const adminMessaging = getMessaging(); // For FCM
+import { getMessaging } from 'firebase-admin/messaging';
 
 

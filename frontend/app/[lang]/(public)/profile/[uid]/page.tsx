@@ -189,10 +189,13 @@ export default function ProfilePage() {
                                 )}
 
                                 {profile.phone_privacy === 'REDACTED' && (
-                                    <Group gap="xs">
-                                        <IconPhone size={16} color="var(--mantine-color-dimmed)" />
-                                        <Text c="dimmed" size="sm">
-                                            Phone number hidden (booking required)
+                                    <Group gap="xs" align="flex-start">
+                                        <IconPhone size={16} color="var(--mantine-color-dimmed)" style={{ marginTop: 4 }} />
+                                        <Text c="dimmed" size="sm" style={{ flex: 1 }}>
+                                            Phone number hidden for privacy.
+                                            <Text span size="xs" display="block" mt={4} c="dimmed">
+                                                Contact details are only visible to users who share an active or recently completed trip with this person.
+                                            </Text>
                                         </Text>
                                     </Group>
                                 )}

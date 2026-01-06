@@ -2,9 +2,13 @@ import '@mantine/core/styles.css';
 
 import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from '@mantine/core';
 import { AuthProvider } from '@/components/firebase/AuthContext';
+import { LanguageSyncer } from '@/components/LanguageSyncer';
+import { NotificationProvider } from '@/components/Notifications/NotificationContext';
 import { Notifications } from '@mantine/notifications';
 import '@mantine/dates/styles.css';
 import '@mantine/notifications/styles.css';
+
+import { NotificationManager } from '@/components/NotificationManager';
 
 export default function RootLayout({
   children,
@@ -19,8 +23,12 @@ export default function RootLayout({
       <body>
         <MantineProvider>
           <AuthProvider>
-            <Notifications />
-            {children}
+            <LanguageSyncer />
+            <NotificationProvider>
+              <Notifications />
+              <NotificationManager />
+              {children}
+            </NotificationProvider>
           </AuthProvider>
         </MantineProvider>
       </body>

@@ -44,6 +44,7 @@ import classes from './DashboardHeaderMenu.module.css';
 import { getLocalizedHref, LocalizedLink } from '../LocalizedLink';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
+import { languages } from '@/app/i18n/settings';
 import { useAuth } from '../firebase/AuthContext';
 import { getAuth, signOut } from 'firebase/auth';
 import { app } from '../firebase/firebase';
@@ -101,6 +102,43 @@ export function DashboardHeaderMenu({ role, onRoleChange, drawerOpened, toggleDr
                     </Group>
 
                     <Group>
+                        <Menu shadow="md" width={200}>
+                            <Menu.Target>
+                                <ActionIcon variant="subtle" color="gray" visibleFrom="sm">
+                                    <IconWorld size={20} />
+                                </ActionIcon>
+                            </Menu.Target>
+
+                            <Menu.Dropdown>
+                                {languages.map((lng) => (
+                                    <Menu.Item key={lng} onClick={async () => {
+                                        if (user) {
+                                            try {
+                                                const token = await user.getIdToken();
+                                                await fetch('/api/account-settings', {
+                                                    method: 'POST',
+                                                    body: JSON.stringify({ language: lng }),
+                                                    headers: { 'Authorization': `Bearer ${token}` }
+                                                });
+                                            } catch (e) {
+                                                console.error(e);
+                                            }
+                                        }
+                                        const currentLang = pathname.split('/')[1];
+                                        let newPath = pathname;
+                                        if (languages.includes(currentLang)) {
+                                            newPath = pathname.replace(`/${currentLang}`, `/${lng}`);
+                                        } else {
+                                            newPath = `/${lng}${pathname === '/' ? '' : pathname}`;
+                                        }
+                                        router.push(newPath);
+                                    }}>
+                                        {lng === 'en' ? 'English' : lng === 'zh' ? '中文' : lng.toUpperCase()}
+                                    </Menu.Item>
+                                ))}
+                            </Menu.Dropdown>
+                        </Menu>
+
                         <Notifications />
                         {!loading && user ? (
                             <Menu shadow="md" width={200}>

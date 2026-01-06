@@ -91,6 +91,11 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Missing required fields (Location or PlaceID required)' }, { status: 400 });
         }
 
+        // Validate Departure Time
+        if (new Date(departureTime) < new Date()) {
+            return NextResponse.json({ error: 'Departure time cannot be in the past' }, { status: 400 });
+        }
+
         // Expanded Validation: Confirm place string and ID validity IF provided
         if (start.placeId && (typeof start.placeId !== 'string' || start.placeId.trim() === '')) {
             return NextResponse.json({ error: 'Invalid Start Location ID' }, { status: 400 });

@@ -1,4 +1,5 @@
 import { PoolClient } from 'pg';
+import { createNotification, NOTIFICATION_TYPES } from './createNotification';
 
 /**
  * Checks if a trip has passed its booking cutoff time.
@@ -16,6 +17,7 @@ export async function checkAndProcessTripCutoff(client: PoolClient, tripId: stri
             SELECT 
                 t.status,
                 tr.cutoff_time,
+                t.driver,
                 CASE 
                     WHEN tr.cutoff_time IS NOT NULL THEN (NOW() >= (t.departure_time + COALESCE(tr.departure_time_flexibility, '0 seconds'::interval) - tr.cutoff_time))
                     ELSE (NOW() >= (t.departure_time + COALESCE(tr.departure_time_flexibility, '0 seconds'::interval)))
@@ -32,7 +34,7 @@ export async function checkAndProcessTripCutoff(client: PoolClient, tripId: stri
             return 'not_found';
         }
 
-        const { status, cutoff_time, is_past_cutoff } = res.rows[0];
+        const { status, cutoff_time, is_past_cutoff, driver } = res.rows[0];
 
         // Only lock if currently bookable
         if (status !== 'bookable') {
@@ -56,6 +58,19 @@ export async function checkAndProcessTripCutoff(client: PoolClient, tripId: stri
                 eventType: 'trip_updated',
                 affectedEntities: ['trips'],
                 changes: { trip: { status: { old: 'bookable', new: 'locked' } } }
+            });
+
+            // Notify driver
+            await createNotification({
+                client,
+                type: 'trip_auto_locked',
+                title: 'Trip Locked',
+                message: 'Your trip has been locked due to booking cutoff.',
+                userId: driver,
+                entityType: 'trips',
+                entityId: tripId,
+                openLink: `/dashboard/${tripId}`,
+                role: 'driver'
             });
 
             return 'locked';

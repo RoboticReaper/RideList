@@ -3,6 +3,7 @@ import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
 import { checkAndProcessTripCutoff } from '@/app/api/lib/tripCutoff';
+import { createNotification } from '@/app/api/lib/createNotification';
 
 export async function POST(
     req: Request,
@@ -27,7 +28,7 @@ export async function POST(
 
         // Check booking ownership and current status
         const bookingQuery = `
-            SELECT b.id, b.rider, b.trip, b.status, b.seats_booked, b.paid, t.status as trip_status, t.seats_taken as trip_seats_taken
+            SELECT b.id, b.rider, b.trip, b.status, b.seats_booked, b.paid, t.status as trip_status, t.seats_taken as trip_seats_taken, t.driver
             FROM bookings b
             JOIN trips t ON b.trip = t.id
             WHERE b.id = $1
@@ -96,9 +97,6 @@ export async function POST(
                     if (updatedTrip.status === 'full') {
                         await client.query("UPDATE trips SET status = 'bookable' WHERE id = $1", [booking.trip]);
 
-                        // Check if we should lock it again immediately
-                        await checkAndProcessTripCutoff(client, booking.trip);
-
                         // Log Status Change (Full -> Bookable)
                         const { logTripEvent } = await import('@/app/api/lib/tripEvents');
                         await logTripEvent({
@@ -109,6 +107,35 @@ export async function POST(
                             affectedEntities: ['trips'],
                             changes: { trip: { status: { old: 'full', new: 'bookable' } } },
                             notes: `status change due to rider leave.`
+                        });
+
+                        // Notify driver
+                        await createNotification({
+                            client,
+                            type: 'rider_left',
+                            title: 'Rider Left',
+                            message: 'Your paid rider has left the trip and the trip is now bookable again.',
+                            userId: booking.driver,
+                            entityType: 'bookings',
+                            entityId: bookingId,
+                            openLink: `/dashboard/${booking.trip}`,
+                            role: 'driver'
+                        });
+
+                        // Check if we should lock it again immediately
+                        await checkAndProcessTripCutoff(client, booking.trip);
+                    } else {
+                        // Notify driver
+                        await createNotification({
+                            client,
+                            type: 'rider_left',
+                            title: 'Rider Left',
+                            message: 'Your paid rider has left the trip.',
+                            userId: booking.driver,
+                            entityType: 'bookings',
+                            entityId: bookingId,
+                            openLink: `/dashboard/${booking.trip}`,
+                            role: 'driver'
                         });
                     }
                 }
@@ -141,22 +168,50 @@ export async function POST(
                 `;
                 const releaseRes = await client.query(releaseSeatsQuery, [booking.seats_booked, booking.trip]);
 
-                if (releaseRes.rows.length > 0 && releaseRes.rows[0].status === 'full') {
-                    await client.query("UPDATE trips SET status = 'bookable' WHERE id = $1", [booking.trip]);
-                    // Check if we should lock it again immediately
-                    await checkAndProcessTripCutoff(client, booking.trip);
+                if (releaseRes.rows.length > 0) {
+                    if (releaseRes.rows[0].status === 'full') {
+                        await client.query("UPDATE trips SET status = 'bookable' WHERE id = $1", [booking.trip]);
+                        // Log Status Change (Full -> Bookable)
+                        const { logTripEvent } = await import('@/app/api/lib/tripEvents');
+                        await logTripEvent({
+                            client,
+                            tripId: booking.trip,
+                            actorId: user.uid,
+                            eventType: 'trip_updated',
+                            affectedEntities: ['trips'],
+                            changes: { trip: { status: { old: 'full', new: 'bookable' } } },
+                            notes: `status change due to rider leave.`
+                        });
 
-                    // Log Status Change (Full -> Bookable)
-                    const { logTripEvent } = await import('@/app/api/lib/tripEvents');
-                    await logTripEvent({
-                        client,
-                        tripId: booking.trip,
-                        actorId: user.uid,
-                        eventType: 'trip_updated',
-                        affectedEntities: ['trips'],
-                        changes: { trip: { status: { old: 'full', new: 'bookable' } } },
-                        notes: `status change due to rider leave.`
-                    });
+                        // Notify driver
+                        await createNotification({
+                            client,
+                            type: 'rider_left',
+                            title: 'Rider Left',
+                            message: 'Your unpaid rider has left the trip and the trip is now bookable again.',
+                            userId: booking.driver,
+                            entityType: 'bookings',
+                            entityId: bookingId,
+                            openLink: `/dashboard/${booking.trip}`,
+                            role: 'driver'
+                        });
+
+                        // Check if we should lock it again immediately
+                        await checkAndProcessTripCutoff(client, booking.trip);
+                    } else {
+                        // Notify driver
+                        await createNotification({
+                            client,
+                            type: 'rider_left',
+                            title: 'Rider Left',
+                            message: 'Your unpaid rider has left the trip.',
+                            userId: booking.driver,
+                            entityType: 'bookings',
+                            entityId: bookingId,
+                            openLink: `/dashboard/${booking.trip}`,
+                            role: 'driver'
+                        });
+                    }
                 }
             }
 

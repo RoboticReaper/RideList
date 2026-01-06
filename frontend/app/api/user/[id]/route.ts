@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
+import { createNotification } from '@/app/api/lib/createNotification';
+
 
 export async function GET(
     req: Request,
@@ -20,7 +22,7 @@ export async function GET(
             // Ignore auth errors, treat as guest
         }
 
-        // 2. Fetch Profile
+        // 2. Fetch Public Profile Stats
         const profileRes = await pool.query(
             `SELECT 
                 pg.id, pg.name, pg.verified, pg.created_at, pg.phone, pg.photo_url,
@@ -39,33 +41,31 @@ export async function GET(
 
         let profile = profileRes.rows[0];
 
-
-
         // 3. Determine Visibility
-        // Levels: 0 = NONE (Redacted Name, No Phone), 1 = PARTIAL (Full Name, No Phone), 2 = FULL (Full Name, Full Phone)
+        // Levels: 
+        // 0 = NONE (Redacted Name, No Phone, No Photo) -> "The Stranger/Past History" View
+        // 2 = FULL (Full Name, Full Phone, Photo) -> "The Active/Recent" View
         let accessLevel = 0;
 
         if (requesterUser) {
             if (requesterUser.uid === targetUserId) {
-                accessLevel = 2;
+                accessLevel = 2; // Owner always sees self
             } else {
-                // Fetch all shared trip/booking history
-                // We fetch trip status, booking status, and other flags to determine relationship
+                // Fetch shared history to determine "Active" or "Recent" status
+                // Added 'trip_completed' to the event lookup to handle normal trip grace periods
                 const historyRes = await pool.query(
                     `SELECT 
                         t.id as trip_id,
-                        t.driver as trip_driver,
                         t.status as trip_status,
-                        b.rider as booking_rider,
                         b.status as booking_status,
-                        b.paid as booking_paid,
                         te.created_at as trip_end_event_at
                      FROM bookings b
                      JOIN trips t ON b.trip = t.id
                      LEFT JOIN LATERAL (
                         SELECT created_at 
                         FROM trip_events 
-                        WHERE trip = t.id AND event_type IN ('trip_cancelled', 'trip_aborted')
+                        WHERE trip = t.id 
+                        AND event_type IN ('trip_cancelled', 'trip_aborted', 'trip_completed')
                         ORDER BY created_at DESC 
                         LIMIT 1
                      ) te ON true
@@ -75,69 +75,52 @@ export async function GET(
                 );
 
                 const records = historyRes.rows;
-                const activeTripStatuses = ['bookable', 'locked', 'full', 'departed'];
-                const completedBookingStatuses = ['completed', 'no_show']; // Treated as active for Rider access view
-                const activeBookingStatuses = ['joined_with_pay_window', 'pending_pay_confirmation_from_driver', 'confirmed', 'waiting_approval', ...completedBookingStatuses];
 
-                // Check for ANY 'removed' status - Immediate Blocker
+                // 1. Immediate Blocker: Removal
+                // If they were ever removed from a car, they get BLOCKED (Level 0), regardless of other active trips.
                 const hasRemoval = records.some(r => r.booking_status === 'removed');
 
                 if (!hasRemoval) {
+                    const now = new Date();
+                    const GRACE_PERIOD_MS = 24 * 60 * 60 * 1000; // 24 Hours
+
+                    // Status definitions
+                    const activeTripStatuses = ['bookable', 'locked', 'full', 'departed'];
+                    const activeBookingStatuses = [
+                        'joined_with_pay_window',
+                        'pending_pay_confirmation_from_driver',
+                        'confirmed',
+                        'waiting_approval'
+                    ];
+
                     for (const row of records) {
                         if (accessLevel === 2) break; // Already max access
 
-                        const isRequesterDriver = row.trip_driver === requesterUser.uid;
+                        // Check A: Is this an active, ongoing interaction?
+                        const isActiveTrip = activeTripStatuses.includes(row.trip_status);
+                        const isActiveBooking = activeBookingStatuses.includes(row.booking_status);
+                        const isCurrentlyActive = isActiveTrip && isActiveBooking;
 
-                        if (isRequesterDriver) {
-                            // Rule: Requester is Driver, Target is Rider
-                            // Ref: "if trip status is active... always grant full access. if trip status is done, cancelled, or aborted, grant partial access."
-                            // We assume 'active' implies the rider is actually ON the trip (not cancelled).
-
-
-                            const isTripActive = activeTripStatuses.includes(row.trip_status);
-                            const allowedBookingStatuses = [
-                                'joined_with_pay_window',
-                                'pending_pay_confirmation_from_driver',
-                                'confirmed'
-                            ];
-
-                            if (isTripActive && allowedBookingStatuses.includes(row.booking_status)) {
-                                accessLevel = 2;
-                            } else {
-                                accessLevel = 0;
-                            }
-
-                        } else {
-                            // Rule: Requester is Rider, Target is Driver
-                            // Ref: "use the same logic for determining finalAccess"
-
-                            const isFullAccessStatus = activeBookingStatuses.includes(row.booking_status);
-                            let cancelledPaidWithinGrace = false;
-
-                            if (row.booking_status === 'cancelled' && row.trip_end_event_at) {
-                                const isPaid = row.booking_paid;
-                                const isWithinGracePeriod = new Date(row.trip_end_event_at) > new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
-                                cancelledPaidWithinGrace = isPaid && isWithinGracePeriod;
-                            }
-
-                            if (isFullAccessStatus || cancelledPaidWithinGrace) {
-                                accessLevel = 2;
-                            }
-                            // Rider never gets Partial access to Driver, only Full or None.
+                        // Check B: Did it finish recently? (The "Left Item" / "Coordination" Window)
+                        let isRecent = false;
+                        if (row.trip_end_event_at) {
+                            const timeSinceEnd = now.getTime() - new Date(row.trip_end_event_at).getTime();
+                            isRecent = timeSinceEnd < GRACE_PERIOD_MS;
                         }
+
+                        if (isCurrentlyActive || isRecent) {
+                            accessLevel = 2;
+                        }
+                        // Note: We deliberately do NOT fall back to Level 1. 
+                        // If it's old (>24h), we want it to return to Level 0 (Anon) for profile browsing privacy.
                     }
-                } else {
-                    accessLevel = 0;
                 }
             }
         }
 
-        // 4. Construct Response
-        // Access Level 2: Unredacted Name, Unredacted Phone
-        // Access Level 1: Unredacted Name, Redacted Phone
-        // Access Level 0: Redacted Name, Redacted Phone
+        // 4. Construct Response (Redaction Logic)
 
-        const hasFullNameAccess = accessLevel >= 1;
+        const hasFullNameAccess = accessLevel >= 1; // Covered by Level 2
         const hasPhoneAccess = accessLevel >= 2;
 
         let phone_privacy: 'VISIBLE' | 'REDACTED' | 'MISSING' = 'MISSING';
@@ -150,53 +133,42 @@ export async function GET(
         }
 
         const isOwner = requesterUser?.uid === targetUserId;
+
+        // Redaction:
+        // Level 2/Owner: "John Smith"
+        // Level 0: "Joh***" (or "Anon" if short name)
         const displayName = hasFullNameAccess ? profile.name : (profile.name ? (profile.name.substring(0, 3) + '***') : 'Anon');
+
+        // Phone:
+        // Level 2/Owner: "+1555..."
+        // Level 0: null
         const displayPhone = hasPhoneAccess ? profile.phone : null;
 
-        if (accessLevel === 2 || isOwner) {
-            // Logic note: isOwner sets accessLevel to 2 above, but keeping explicit check for clarity/safety
-            // Return full profile
-            return NextResponse.json({
-                id: profile.id,
-                name: profile.name,
-                verified: profile.verified,
-                created_at: profile.created_at,
-                phone: profile.phone,
-                photo_url: profile.photo_url,
-                phone_privacy,
-                rider_profile: {
-                    default_big_luggage: isOwner ? (profile.default_big_luggage ?? 0) : null,
-                    default_small_luggage: isOwner ? (profile.default_small_luggage ?? 0) : null,
-                    rating: profile.rider_rating ?? null,
-                    completed_rides: profile.completed_rides ?? 0
-                },
-                driver_profile: {
-                    rating: profile.driver_rating ?? null,
-                    completed_trips: profile.completed_trips ?? 0
-                }
-            });
-        } else {
-            // Partial or None
-            return NextResponse.json({
-                id: profile.id,
-                name: displayName,
-                verified: profile.verified,
-                created_at: profile.created_at,
-                phone: displayPhone,
-                photo_url: profile.photo_url,
-                phone_privacy,
-                rider_profile: {
-                    default_big_luggage: null,
-                    default_small_luggage: null,
-                    rating: profile.rider_rating ?? null,
-                    completed_rides: profile.completed_rides ?? 0
-                },
-                driver_profile: {
-                    rating: profile.driver_rating ?? null,
-                    completed_trips: profile.completed_trips ?? 0
-                }
-            });
-        }
+        // Photo:
+        // Level 2/Owner: URL
+        // Level 0: null (Privacy)
+        const displayPhoto = (accessLevel === 2 || isOwner) ? profile.photo_url : null;
+
+        return NextResponse.json({
+            id: profile.id,
+            name: displayName,
+            verified: profile.verified,
+            created_at: profile.created_at, // Public info (member since) is usually safe
+            phone: displayPhone,
+            photo_url: displayPhoto,
+            phone_privacy,
+            // Stats are public, preferences are private
+            rider_profile: {
+                default_big_luggage: isOwner ? (profile.default_big_luggage ?? 0) : null,
+                default_small_luggage: isOwner ? (profile.default_small_luggage ?? 0) : null,
+                rating: profile.rider_rating ?? null,
+                completed_rides: profile.completed_rides ?? 0
+            },
+            driver_profile: {
+                rating: profile.driver_rating ?? null,
+                completed_trips: profile.completed_trips ?? 0
+            }
+        });
 
     } catch (error) {
         console.error("Get Global Profile Error:", error);
@@ -210,6 +182,7 @@ export async function PATCH(
 ) {
     const waitedParams = await params;
     const targetUserId = waitedParams.id;
+    const client = await pool.connect();
 
     try {
         const user = await verifyUserFromRequest(
@@ -228,8 +201,12 @@ export async function PATCH(
             return NextResponse.json({ error: 'Name cannot be empty' }, { status: 400 });
         }
 
+        // Fetch current phone to check for changes
+        const currentProfileRes = await client.query('SELECT phone FROM profile_global WHERE id = $1', [targetUserId]);
+        const oldPhone = currentProfileRes.rows[0]?.phone;
+
         // Update Global Profile
-        const updateGlobalRes = await pool.query(
+        const updateGlobalRes = await client.query(
             `UPDATE profile_global 
              SET name = $1, phone = $2 
              WHERE id = $3 
@@ -243,7 +220,7 @@ export async function PATCH(
 
         // Update Rider Profile (Upsert)
         if (rider_config) {
-            await pool.query(
+            await client.query(
                 `INSERT INTO profile_rider (id, default_big_luggage, default_small_luggage)
                  VALUES ($1, $2, $3)
                  ON CONFLICT (id) DO UPDATE 
@@ -252,9 +229,37 @@ export async function PATCH(
             );
         }
 
+        // Notify Riders if phone changed
+        const newPhone = phone || null;
+        if (newPhone?.trim() !== oldPhone?.trim()) {
+            // Find active trips and bookings
+            const activeBookingsRes = await client.query(`
+                SELECT b.rider, b.trip 
+                FROM bookings b
+                JOIN trips t ON b.trip = t.id
+                WHERE t.driver = $1
+                  AND t.status IN ('bookable', 'full', 'locked', 'departed')
+                  AND b.status IN ('confirmed', 'joined_with_pay_window', 'pending_pay_confirmation_from_driver')
+            `, [targetUserId]);
+
+            for (const row of activeBookingsRes.rows) {
+                await createNotification({
+                    client,
+                    type: 'driver_contact_changed',
+                    title: 'Driver Contact Updated',
+                    message: 'Your driver has updated their phone number.',
+                    userId: row.rider,
+                    openLink: `/rides/${row.trip}`,
+                    entityType: 'trips',
+                    entityId: row.trip,
+                    role: 'rider'
+                });
+            }
+        }
+
         // Fetch fresh full profile to return
         // We could reuse the GET logic but simpler to just fetch again to ensure consistency
-        const profileRes = await pool.query(
+        const profileRes = await client.query(
             `SELECT 
                 pg.id, pg.name, pg.verified, pg.created_at, pg.phone, pg.photo_url,
                 pr.default_big_luggage, pr.default_small_luggage, pr.rating_cached as rider_rating, pr.completed_rides,
@@ -290,5 +295,7 @@ export async function PATCH(
     } catch (error) {
         console.error("Update Global Profile Error:", error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    } finally {
+        client.release();
     }
 }

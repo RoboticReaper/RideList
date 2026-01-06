@@ -42,6 +42,8 @@ create type trip_event_type as enum (
   'system_cancelled'
 );
 
+create type language_types as enum ('en', 'zh');
+
 -- ======================
 -- USERS / PROFILES / SETTINGS
 -- ======================
@@ -58,7 +60,8 @@ create table profile_global (
   verified bool not null default false,
   created_at timestamptz not null default now(),
   phone text,                       -- relationship-gated in app layer
-  photo_url text
+  photo_url text,
+  language language_types
 );
 
 create table profile_rider (
@@ -72,7 +75,7 @@ create table profile_rider (
 create table profile_driver (
   id text primary key references users(id) on delete cascade,
   rating_cached double precision,
-  completed_trips int not null default 0
+  completed_trips int not null default 0 -- requires >= 1 completed bookings for each trip to count
 );
 
 create table settings_global (
@@ -329,6 +332,63 @@ create table trip_templates (
 );
 
 
+create table notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id text references users(id) on delete cascade,
+
+  type text not null, -- e.g. 'booking_confirmed'
+  title text not null,
+  body text not null,
+
+  entity_type text,   -- 'trip', 'booking'
+  entity_id uuid,
+
+  open_link text,
+
+  read bool not null default false,
+  created_at timestamptz not null default now()
+);
+
+
+CREATE TABLE user_devices (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    -- Ownership
+    user_id text references users(id),
+
+    -- Device identity (client-generated, stored in localStorage)
+    device_id TEXT NOT NULL,
+
+    -- Push delivery
+    fcm_token TEXT UNIQUE,
+    platform TEXT NOT NULL CHECK (platform IN ('web', 'ios', 'android')),
+
+    -- Permission state (mirrors browser / OS)
+    permission_state TEXT NOT NULL CHECK (
+        permission_state IN ('default', 'granted', 'denied')
+    ) DEFAULT 'default',
+
+    -- Prompt history (anti-spam logic)
+    last_prompted_at TIMESTAMPTZ,
+    last_prompt_result TEXT CHECK (
+        last_prompt_result IN ('accepted', 'denied', 'dismissed')
+    ),
+
+    -- Whether we are allowed to send push to this device
+    push_enabled BOOLEAN NOT NULL DEFAULT false,
+
+    -- Health & lifecycle
+    last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    token_last_updated_at TIMESTAMPTZ,
+    invalidated_at TIMESTAMPTZ,
+
+    -- Auditing
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    -- Prevent duplicate device rows per user
+    UNIQUE (user_id, device_id)
+);
+
 
 -- ======================
 -- Database Index
@@ -382,4 +442,7 @@ on trip_routes using gist (route_geog);
 create index idx_trips_active_departure
 on trips (departure_time)
 where status in ('bookable', 'full');
+
+create index idx_notifications_user_unread
+on notifications (user_id, read, created_at desc);
 

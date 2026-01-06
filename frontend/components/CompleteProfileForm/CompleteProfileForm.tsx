@@ -37,6 +37,24 @@ export function CompleteProfileForm() {
                 });
 
                 if (res.ok) {
+                    // Also save the language preference from the URL if present
+                    const lang = params.lang as string;
+                    if (lang) {
+                        try {
+                            await fetch('/api/account-settings', {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ language: lang })
+                            });
+                        } catch (err) {
+                            console.error("Failed to save language preference", err);
+                            // Non-blocking error
+                        }
+                    }
+
                     const targetUrl = returnUrl ? getLocalizedHref(params, returnUrl) : getLocalizedHref(params, "/dashboard");
                     // Force full reload to ensuring AuthContext re-checks registration status
                     window.location.href = targetUrl;

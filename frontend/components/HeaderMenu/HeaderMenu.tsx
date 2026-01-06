@@ -40,8 +40,9 @@ import {
 import { useDisclosure } from '@mantine/hooks';
 import classes from './HeaderMenu.module.css';
 import { LocalizedLink } from '../LocalizedLink';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
+import { languages } from '@/app/i18n/settings';
 import { useAuth } from '../firebase/AuthContext';
 import { getAuth, signOut } from 'firebase/auth';
 import { app } from '../firebase/firebase';
@@ -55,6 +56,7 @@ export function HeaderMenu() {
   const { t, i18n } = useTranslation('common')
   const { user, loading } = useAuth();
   const router = useRouter()
+  const pathname = usePathname();
 
   return (
     <Box>
@@ -90,8 +92,32 @@ export function HeaderMenu() {
               </Menu.Target>
 
               <Menu.Dropdown>
-                <Menu.Item onClick={() => router.push("/en")}>English</Menu.Item>
-                <Menu.Item onClick={() => router.push("/zh")}>中文</Menu.Item>
+                {languages.map((lng) => (
+                  <Menu.Item key={lng} onClick={async () => {
+                    if (user) {
+                      try {
+                        const token = await user.getIdToken();
+                        await fetch('/api/account-settings', {
+                          method: 'POST',
+                          body: JSON.stringify({ language: lng }),
+                          headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                      } catch (e) {
+                        console.error(e);
+                      }
+                    }
+                    const currentLang = pathname.split('/')[1];
+                    let newPath = pathname;
+                    if (languages.includes(currentLang)) {
+                      newPath = pathname.replace(`/${currentLang}`, `/${lng}`);
+                    } else {
+                      newPath = `/${lng}${pathname === '/' ? '' : pathname}`;
+                    }
+                    router.push(newPath);
+                  }}>
+                    {lng === 'en' ? 'English' : lng === 'zh' ? '中文' : lng.toUpperCase()}
+                  </Menu.Item>
+                ))}
               </Menu.Dropdown>
             </Menu>
 
@@ -200,12 +226,33 @@ export function HeaderMenu() {
             </Center>
           </UnstyledButton>
           <Collapse in={linksOpened}>
-            <UnstyledButton className={classes.mobileLink} style={{ paddingLeft: '2rem' }} onClick={() => { router.push("/en"); closeDrawer(); }}>
-              English
-            </UnstyledButton>
-            <UnstyledButton className={classes.mobileLink} style={{ paddingLeft: '2rem' }} onClick={() => { router.push("/zh"); closeDrawer(); }}>
-              中文
-            </UnstyledButton>
+            {languages.map((lng) => (
+              <UnstyledButton key={lng} className={classes.mobileLink} style={{ paddingLeft: '2rem' }} onClick={async () => {
+                if (user) {
+                  try {
+                    const token = await user.getIdToken();
+                    await fetch('/api/account-settings', {
+                      method: 'POST',
+                      body: JSON.stringify({ language: lng }),
+                      headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }
+                const currentLang = pathname.split('/')[1];
+                let newPath = pathname;
+                if (languages.includes(currentLang)) {
+                  newPath = pathname.replace(`/${currentLang}`, `/${lng}`);
+                } else {
+                  newPath = `/${lng}${pathname === '/' ? '' : pathname}`;
+                }
+                router.push(newPath);
+                closeDrawer();
+              }}>
+                {lng === 'en' ? 'English' : lng === 'zh' ? '中文' : lng.toUpperCase()}
+              </UnstyledButton>
+            ))}
           </Collapse>
 
           <Divider my="sm" />

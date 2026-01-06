@@ -416,15 +416,23 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                             <InfoItem
                                 label="Driver Contact"
                                 value={
-                                    trip.sensitive_info_access ? (
+                                    trip.access?.contact ? (
                                         trip.driver?.phone ? (
                                             <Group gap="xs">
                                                 <IconPhone size={16} style={{ opacity: 0.7 }} />
                                                 <span>{trip.driver.phone}</span>
                                             </Group>
-                                        ) : 'Contacts available before departure'
+                                        ) : 'Not provided by driver'
                                     ) : (
-                                        <Text size="sm" c="dimmed" fs="italic">Hidden until booking accepted by driver or due to booking no longer active</Text>
+                                        <Text size="sm" c="dimmed" fs="italic">
+                                            {(() => {
+                                                if (!trip.user_booking_status) return 'Book ride to view';
+                                                if (trip.user_booking_status === 'waiting_approval') return 'Contact hidden until approved';
+                                                if (['removed', 'rejected', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(trip.user_booking_status)) return 'Booking no longer active';
+                                                if (['done', 'cancelled', 'aborted'].includes(trip.status)) return 'Contact info expired';
+                                                return 'Booking not active';
+                                            })()}
+                                        </Text>
                                     )
                                 }
                             />
@@ -436,10 +444,12 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                             <IconSteeringWheel size={16} style={{ opacity: 0.7, marginTop: 3 }} />
                                             <Stack gap={0}>
                                                 <Text size="sm" fw={500}>{trip.car.color} {trip.car.year} {trip.car.make} {trip.car.model}</Text>
-                                                {trip.sensitive_info_access ? (
-                                                    trip.car.plate && <Text size="xs" c="dimmed">Plate: {trip.car.plate}</Text>
+                                                {trip.car.plate ? (
+                                                    <Text size="xs" c="dimmed">Plate: {trip.car.plate}</Text>
                                                 ) : (
-                                                    <Text size="xs" c="dimmed" fs="italic">Plate hidden</Text>
+                                                    <Text size="xs" c="dimmed" fs="italic">
+                                                        {trip.status === 'done' || trip.status === 'cancelled' || trip.status === 'aborted' ? 'Trip Ended' : 'Visible when departed'}
+                                                    </Text>
                                                 )}
                                             </Stack>
                                         </Group>
@@ -461,10 +471,18 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                             <InfoItem
                                 label="Payment Handle"
                                 value={
-                                    trip.sensitive_info_access ? (
-                                        rulesToDisplay?.payment?.handle || 'Ask driver'
+                                    trip.access?.contact ? (
+                                        rulesToDisplay?.payment?.handle || 'Not provided by driver'
                                     ) : (
-                                        <Text size="sm" c="dimmed" fs="italic">Hidden until booking accepted by driver or due to booking no longer active</Text>
+                                        <Text size="sm" c="dimmed" fs="italic">
+                                            {(() => {
+                                                if (!trip.user_booking_status) return 'Book ride to view';
+                                                if (trip.user_booking_status === 'waiting_approval') return 'Contact hidden until approved';
+                                                if (['removed', 'rejected', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(trip.user_booking_status)) return 'Booking no longer active';
+                                                if (['done', 'cancelled', 'aborted'].includes(trip.status)) return 'Contact info expired';
+                                                return 'Booking not active';
+                                            })()}
+                                        </Text>
                                     )
                                 }
                             />

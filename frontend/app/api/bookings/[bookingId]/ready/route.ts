@@ -3,6 +3,7 @@ import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
 import { checkAndProcessTripCutoff } from '@/app/api/lib/tripCutoff';
+import { createNotification } from '@/app/api/lib/createNotification';
 
 export async function POST(
     req: Request,
@@ -50,7 +51,7 @@ export async function POST(
 
         // Fetch fresh trip status
         const tripQuery = `
-            SELECT status, start_check_in, departure_time
+            SELECT status, start_check_in, departure_time, driver
             FROM trips
             WHERE id = $1
             FOR UPDATE
@@ -94,6 +95,18 @@ export async function POST(
             WHERE id = $1
         `;
         await client.query(updateQuery, [bookingId]);
+
+        await createNotification({
+            client,
+            type: 'rider_ready',
+            title: 'Rider Ready',
+            message: 'Your rider has checked in as ready.',
+            userId: trip.driver,
+            entityType: 'bookings',
+            entityId: bookingId,
+            openLink: `/dashboard/${booking.trip}`,
+            role: 'driver'
+        })
 
         await client.query('COMMIT');
 

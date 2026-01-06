@@ -671,6 +671,10 @@ export function TripInputBar() {
                 notifications.show({ title: 'Date Required', message: 'Please select a departure time.', color: 'red' });
                 return;
             }
+            if (startTime < new Date()) {
+                notifications.show({ title: 'Invalid Date', message: 'Departure time cannot be in the past.', color: 'red' });
+                return;
+            }
         }
 
         // Step 2 Validation (Details)
@@ -1086,6 +1090,7 @@ export function TripInputBar() {
                             leftSection={<IconCalendar size={16} />}
                             value={startTime}
                             required
+                            minDate={new Date()}
                             valueFormat="MM/DD/YYYY HH:mm"
                             onChange={(val) => {
                                 setStartTime(val as Date | null);

@@ -11,6 +11,7 @@ import { parsePostgresIntervalToMs } from './intervalUtils';
 
 
 import { PostgresInterval } from './intervalUtils';
+import { createNotification } from './createNotification';
 
 /**
  * Pure function determines if check-in should be started.
@@ -39,6 +40,7 @@ export async function checkAndProcessCheckInStart(client: PoolClient, tripId: st
             SELECT 
                 t.departure_time,
                 t.start_check_in,
+                t.driver,
                 tr.start_check_in_hrs_before_departure
             FROM trips t
             LEFT JOIN trip_rules tr ON t.id = tr.id
@@ -49,7 +51,7 @@ export async function checkAndProcessCheckInStart(client: PoolClient, tripId: st
 
         if (res.rowCount === 0) return false;
 
-        const { departure_time, start_check_in, start_check_in_hrs_before_departure } = res.rows[0];
+        const { departure_time, start_check_in, start_check_in_hrs_before_departure, driver } = res.rows[0];
 
         // If already started, nothing to do
         if (start_check_in) return true;
@@ -73,6 +75,40 @@ export async function checkAndProcessCheckInStart(client: PoolClient, tripId: st
                 affectedEntities: ['trips'],
                 changes: { trip: { start_check_in: { old: false, new: true } } }
             });
+
+            createNotification({
+                client,
+                type: 'check_in_started',
+                title: 'Check-in Started',
+                message: 'Check-in has been started for your trip.',
+                userId: driver,
+                entityType: 'trips',
+                entityId: tripId,
+                openLink: `/dashboard/${tripId}`,
+                role: 'driver'
+            });
+
+            // 5. Notify Riders
+            const bookingRes = await client.query(`
+                SELECT rider 
+                FROM bookings 
+                WHERE trip = $1 
+                AND status IN ('joined_with_pay_window', 'pending_pay_confirmation_from_driver', 'confirmed')
+            `, [tripId]);
+
+            for (const row of bookingRes.rows) {
+                await createNotification({
+                    client,
+                    type: 'check_in_started',
+                    title: 'Check-in Started',
+                    message: 'Check-in has been started for your trip.',
+                    userId: row.rider,
+                    entityType: 'trips',
+                    entityId: tripId,
+                    openLink: `/dashboard/${tripId}`,
+                    role: 'rider'
+                });
+            }
 
             return true;
         }

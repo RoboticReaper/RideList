@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Table, Avatar, Text, Group, Badge, Loader, Stack, Alert, Button, ActionIcon, Tooltip, Modal, Select, Textarea, Collapse, UnstyledButton, Anchor } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
-import { IconInfoCircle, IconCheck, IconX, IconTrash, IconCurrencyDollar, IconChevronRight, IconChevronDown, IconLock, IconLockOpen, IconUserCheck, IconSortAscending, IconSortDescending } from '@tabler/icons-react';
+import { IconInfoCircle, IconCheck, IconX, IconTrash, IconCurrencyDollar, IconChevronRight, IconChevronDown, IconLock, IconLockOpen, IconUserCheck, IconSortAscending, IconSortDescending, IconExternalLink } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { notifications } from '@mantine/notifications';
 import { getBookingStatusConfig, getTripStatusConfig } from '@/utils/statusUtils';
@@ -9,6 +9,7 @@ import { LocalizedLink } from '@/components/LocalizedLink';
 
 interface Booking {
     id: string;
+    rider_id: string;
     seats_booked: number;
     big_luggage: number;
     small_luggage: number;
@@ -25,6 +26,7 @@ interface Booking {
     intended_payment_method: string | null;
     rider_phone: string | null;
     rider_phone_visible: 'VISIBLE' | 'REDACTED' | 'MISSING';
+    removal_reason?: string | null;
 }
 
 interface ManageTripViewProps {
@@ -130,7 +132,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [inactiveOpen, setInactiveOpen] = useState(false);
 
-    const isReadOnly = tripStatus === 'cancelled' || tripStatus === 'done';
+    const isReadOnly = tripStatus === 'cancelled' || tripStatus === 'done' || tripStatus === 'aborted';
 
     // Removal Modal State
     const [riderToRemove, setRiderToRemove] = useState<Booking | null>(null);
@@ -588,9 +590,21 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                     <Group gap="xs" wrap="wrap"> {/* Allow wrap */}
                         <Avatar src={b.rider_photo_url} radius="xl" size="sm" />
                         <div style={{ minWidth: 0 }}>
-                            <Text size="sm" fw={500} style={{ overflowWrap: 'break-word', whiteSpace: 'normal' }}>
-                                {b.rider_name}
-                            </Text>
+                            <Group gap={4}>
+                                <Text size="sm" fw={500} style={{ overflowWrap: 'break-word', whiteSpace: 'normal' }}>
+                                    {b.rider_name}
+                                </Text>
+                                <ActionIcon
+                                    component={LocalizedLink}
+                                    href={`/profile/${b.rider_id}`}
+                                    target="_blank"
+                                    size="xs"
+                                    variant="subtle"
+                                    color="gray"
+                                >
+                                    <IconExternalLink size={14} />
+                                </ActionIcon>
+                            </Group>
                             <Text size="xs" c="dimmed" style={{ overflowWrap: 'break-word', whiteSpace: 'normal' }}>
                                 {b.rider_rating ? `★ ${b.rider_rating.toFixed(1)}` : 'New'} • {b.rider_completed_rides} rides
                             </Text>
@@ -603,17 +617,25 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                     </Group>
                 </Table.Td>
                 <Table.Td>
-                    {b.rider_phone_visible === 'MISSING' ? (
-                        <Text size="sm" c="dimmed">Missing</Text>
-                    ) : b.rider_phone_visible === 'REDACTED' ? (
-                        <Text size="sm" c="dimmed">Hidden</Text>
-                    ) : (
-                        <Text size="sm">{b.rider_phone}</Text>
-                    )}
+                    {(() => {
+                        if (b.rider_phone_visible === 'MISSING') {
+                            return <Text size="sm" c="dimmed">Missing<br /><Text span size="xs">(Not provided)</Text></Text>;
+                        }
+                        if (b.rider_phone_visible === 'REDACTED') {
+                            let reason = "Trip ended > 24h ago";
+                            if (b.status === 'removed') reason = "Rider removed";
+                            else if (b.status === 'waiting_approval') reason = "Not confirmed";
+                            else if (INACTIVE_STATUSES.includes(b.status)) reason = "Booking inactive";
+
+                            return <Text size="sm" c="dimmed">Hidden<br /><Text span size="xs">({reason})</Text></Text>;
+                        }
+                        return <Text size="sm">{b.rider_phone}</Text>;
+                    })()}
                 </Table.Td>
                 <Table.Td>
                     <Text size="sm" style={{ overflowWrap: 'break-word', whiteSpace: 'normal' }}>
                         {getBookingStatusConfig(b.status).label}
+                        {b.status === 'removed' && b.removal_reason && `, (reason: ${b.removal_reason})`}
                         {b.picked_up && ', picked up'}
                     </Text>
                 </Table.Td>

@@ -1,5 +1,6 @@
 
 import { PoolClient } from 'pg';
+import { createNotification } from './createNotification';
 
 /**
  * Checks if a booking has timed out its pay window.
@@ -22,11 +23,13 @@ export async function checkAndProcessPayWindowTimeout(client: PoolClient, bookin
             WITH booking_info AS (
                 SELECT 
                     b.id, 
+                    b.rider,
                     b.status, 
                     b.seats_booked, 
                     b.trip AS trip_id,
                     tr.pay_window,
-                    t.status as trip_status
+                    t.status as trip_status,
+                    t.driver
                 FROM bookings b
                 JOIN trip_rules tr ON b.trip = tr.id
                 JOIN trips t ON b.trip = t.id
@@ -57,7 +60,7 @@ export async function checkAndProcessPayWindowTimeout(client: PoolClient, bookin
             return 'not_found'; // Or throw
         }
 
-        const { status, seats_booked, trip_id, pay_window, start_time, current_time, trip_status } = res.rows[0];
+        const { driver, status, seats_booked, trip_id, pay_window, start_time, current_time, trip_status, rider } = res.rows[0];
 
         // optimization: if not in the target status, return immediately
         if (status !== 'joined_with_pay_window') {
@@ -121,11 +124,37 @@ export async function checkAndProcessPayWindowTimeout(client: PoolClient, bookin
                     affectedEntities: ['trips'],
                     changes: { trip: { status: { old: 'full', new: 'bookable' } } }
                 });
-
-                // Check cutoff immediately (might re-lock it if past cutoff)
-                const { checkAndProcessTripCutoff } = await import('@/app/api/lib/tripCutoff');
-                await checkAndProcessTripCutoff(client, trip_id);
             }
+
+            // Notify rider
+            await createNotification({
+                client,
+                type: 'pay_timeout',
+                title: 'Booking Pay Timeout',
+                message: 'Your booking is expired due to not paying on time.',
+                userId: rider,
+                entityType: 'bookings',
+                entityId: bookingId,
+                openLink: `/dashboard/${trip_id}`,
+                role: 'rider'
+            });
+
+            // Notify driver
+            await createNotification({
+                client,
+                type: 'pay_timeout',
+                title: 'Rider Pay Timeout',
+                message: 'Your rider has not paid on time and their booking has been expired.',
+                userId: driver,
+                entityType: 'bookings',
+                entityId: bookingId,
+                openLink: `/dashboard/${trip_id}`,
+                role: 'driver'
+            });
+
+            // Check cutoff immediately (might re-lock it if past cutoff)
+            const { checkAndProcessTripCutoff } = await import('@/app/api/lib/tripCutoff');
+            await checkAndProcessTripCutoff(client, trip_id);
 
             // 3. Log Trip Event (System Cancellation)
             const { logTripEvent } = await import('@/app/api/lib/tripEvents');

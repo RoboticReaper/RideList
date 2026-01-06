@@ -27,13 +27,13 @@ export function DashboardNavbar({ drawerOpened, toggleDrawer, closeDrawer }: { d
 
     const data = [
         { link: '/dashboard', label: 'Dashboard', icon: IconLayoutDashboard },
+        { link: '/history', label: 'History', icon: IconHistory },
+        { link: '/roleSettings', label: 'Role-based Settings', icon: IconSettings },
         ...(role === 'driver' ? [
             { link: '/trip-templates', label: 'Trip Templates', icon: IconMapPin },
             { link: '/rule-templates', label: 'Rule Templates', icon: IconReceipt2 },
             { link: '/cars', label: 'My Vehicles', icon: IconCar },
         ] : []),
-        { link: '/history', label: 'History', icon: IconHistory },
-        { link: '/roleSettings', label: 'Role-based Settings', icon: IconSettings },
     ];
 
     useEffect(() => {

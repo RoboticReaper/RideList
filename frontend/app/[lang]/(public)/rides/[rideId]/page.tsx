@@ -29,7 +29,10 @@ interface RideDetails {
     to_text: string;
     departure_time: string;
     price: string;
-    sensitive_info_access: boolean;
+    access: {
+        receipt: boolean;
+        contact: boolean;
+    };
     seats: {
         total: number;
         taken: number;
@@ -478,17 +481,25 @@ export default function RidePage() {
                                         </Group>
                                         <Text size="sm" c="dimmed">Member since {memberSinceYear}</Text>
 
-                                        {ride.sensitive_info_access ? (
+                                        {ride.access.contact ? (
                                             ride.driver.phone ? (
                                                 <Group gap="xs" mt={4}>
                                                     <IconPhone size={16} color="gray" />
                                                     <Text size="sm">{ride.driver.phone}</Text>
                                                 </Group>
                                             ) : (
-                                                <Text size="sm" c="dimmed" fs="italic" mt={4}>Contact details provided before departure</Text>
+                                                <Text size="sm" c="dimmed" fs="italic" mt={4}>Not provided by driver</Text>
                                             )
                                         ) : (
-                                            <Text size="sm" c="dimmed" fs="italic" mt={4}>Hidden until booking accepted by driver</Text>
+                                            <Text size="sm" c="dimmed" fs="italic" mt={4}>
+                                                {(() => {
+                                                    if (!ride.user_booking_status) return 'Book ride to view';
+                                                    if (ride.user_booking_status === 'waiting_approval') return 'Contact hidden until approved';
+                                                    if (['removed', 'rejected', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) return 'Booking no longer active';
+                                                    if (['done', 'cancelled', 'aborted'].includes(ride.status)) return 'Contact info expired';
+                                                    return 'Booking not active';
+                                                })()}
+                                            </Text>
                                         )}
 
                                         <Group mt="sm" gap="xl">
@@ -520,12 +531,22 @@ export default function RidePage() {
                                             <Text fw={600} size="lg">{ride.car.year} {ride.car.make} {ride.car.model}</Text>
                                             <Badge color="gray" variant="outline">{ride.car.color}</Badge>
 
-                                            {ride.sensitive_info_access ? (
+                                            {ride.access.receipt ? (
                                                 ride.car.plate ? (
                                                     <Badge color="blue" variant="light" ml="xs">{ride.car.plate}</Badge>
-                                                ) : null
+                                                ) : (
+                                                    <Badge color="gray" variant="light" ml="xs">
+                                                        {['done', 'cancelled', 'aborted'].includes(ride.status)
+                                                            ? 'Trip Ended'
+                                                            : (ride.status === 'departed' ? 'Not provided' : 'Visible when departed')}
+                                                    </Badge>
+                                                )
                                             ) : (
-                                                <Badge color="gray" variant="light" ml="xs">Plate Hidden</Badge>
+                                                <Badge color="gray" variant="light" ml="xs">
+                                                    {['departed', 'done', 'cancelled', 'aborted'].includes(ride.status)
+                                                        ? 'Hidden'
+                                                        : 'Book to view'}
+                                                </Badge>
                                             )}
                                         </div>
                                     </Group>
@@ -617,13 +638,19 @@ export default function RidePage() {
 
                                 <div>
                                     <Text size="xs" c="dimmed" mb={4}>Payment handle / contact</Text>
-                                    {ride.sensitive_info_access ? (
+                                    {ride.access.contact ? (
                                         <Text size="sm" c={ride.rules.payment.handle ? undefined : "dimmed"}>
-                                            {ride.rules.payment.handle || 'No special requirements'}
+                                            {ride.rules.payment.handle || 'Not provided by driver'}
                                         </Text>
                                     ) : (
                                         <Text size="sm" c="dimmed" fs="italic">
-                                            Hidden until booking accepted by driver
+                                            {(() => {
+                                                if (!ride.user_booking_status) return 'Book ride to view';
+                                                if (ride.user_booking_status === 'waiting_approval') return 'Contact hidden until approved';
+                                                if (['removed', 'rejected', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) return 'Booking no longer active';
+                                                if (['done', 'cancelled', 'aborted'].includes(ride.status)) return 'Contact info expired';
+                                                return 'Booking not active';
+                                            })()}
                                         </Text>
                                     )}
                                 </div>

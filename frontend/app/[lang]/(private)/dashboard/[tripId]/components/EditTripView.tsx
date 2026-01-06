@@ -295,6 +295,11 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
             return;
         }
 
+        if (values.departure_time < new Date()) {
+            notifications.show({ title: 'Invalid Departure Time', message: 'Departure time cannot be in the past.', color: 'red' });
+            return;
+        }
+
         // total_seats > 0
         if (!values.total_seats || values.total_seats < 1) {
             notifications.show({ title: 'Invalid Seats', message: 'Total seats must be at least 1.', color: 'red' });
@@ -499,6 +504,7 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                             placeholder="Pick date & time"
                             leftSection={<IconCalendar size={16} />}
                             valueFormat="MM/DD/YYYY HH:mm"
+                            minDate={new Date()}
                             {...form.getInputProps('departure_time')}
                         />
 

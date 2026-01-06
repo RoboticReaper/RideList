@@ -3,6 +3,7 @@ import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
 import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
+import { createNotification } from '../../lib/createNotification';
 
 export async function PATCH(
     req: Request,
@@ -99,6 +100,18 @@ export async function PATCH(
 
                 newStatus = 'joined_with_pay_window';
                 seatsChange = booking.seats_booked;
+
+                await createNotification({
+                    client,
+                    type: 'pay_window_started',
+                    title: 'Booking Accepted',
+                    message: 'Your booking has been accepted by the driver. Please complete payment within the pay window.',
+                    userId: booking.rider,
+                    entityType: 'bookings',
+                    entityId: bookingId,
+                    openLink: `/dashboard/${booking.trip_id}`,
+                    role: 'rider'
+                })
                 break;
 
             case 'reject':
@@ -108,6 +121,18 @@ export async function PATCH(
                 }
                 newStatus = 'removed';
                 seatsChange = 0; // Seats were never taken
+
+                await createNotification({
+                    client,
+                    type: 'booking_rejected',
+                    title: 'Booking Rejected',
+                    message: 'Your booking has been rejected by the driver.',
+                    userId: booking.rider,
+                    entityType: 'bookings',
+                    entityId: bookingId,
+                    openLink: `/dashboard/${booking.trip_id}`,
+                    role: 'rider'
+                })
                 break;
 
             case 'remove':
@@ -119,10 +144,34 @@ export async function PATCH(
                 if (booking.status === 'joined_with_pay_window' || booking.status === 'pending_pay_confirmation_from_driver' || booking.status === 'confirmed') {
                     newStatus = 'removed';
                     seatsChange = -booking.seats_booked; // Release seats
+
+                    await createNotification({
+                        client,
+                        type: 'booking_removed',
+                        title: 'Booking Removed',
+                        message: 'Your booking has been removed by the driver.',
+                        userId: booking.rider,
+                        entityType: 'bookings',
+                        entityId: bookingId,
+                        openLink: `/dashboard/${booking.trip_id}`,
+                        role: 'rider'
+                    })
                 } else if (booking.status === 'waiting_approval') {
                     // Similar to reject
                     newStatus = 'removed';
                     seatsChange = 0;
+
+                    await createNotification({
+                        client,
+                        type: 'booking_removed',
+                        title: 'Booking Removed',
+                        message: 'Your booking has been removed by the driver.',
+                        userId: booking.rider,
+                        entityType: 'bookings',
+                        entityId: bookingId,
+                        openLink: `/dashboard/${booking.trip_id}`,
+                        role: 'rider'
+                    })
                 } else {
                     await client.query('ROLLBACK');
                     return NextResponse.json({ error: 'Cannot remove booking in current status' }, { status: 400 });
@@ -136,6 +185,18 @@ export async function PATCH(
                 }
                 newStatus = 'confirmed';
                 seatsChange = 0; // Seats already taken
+
+                await createNotification({
+                    client,
+                    type: 'booking_confirmed',
+                    title: 'Booking Confirmed',
+                    message: 'Your payment and the booking has been confirmed by the driver.',
+                    userId: booking.rider,
+                    entityType: 'bookings',
+                    entityId: bookingId,
+                    openLink: `/dashboard/${booking.trip_id}`,
+                    role: 'rider'
+                })
                 break;
 
             case 'mark_picked_up':
@@ -158,6 +219,18 @@ export async function PATCH(
                     'UPDATE bookings SET picked_up = true, picked_up_at = NOW() WHERE id = $1',
                     [bookingId]
                 );
+
+                await createNotification({
+                    client,
+                    type: 'picked_up',
+                    title: 'Booking Picked Up',
+                    message: 'You have been picked up by the driver.',
+                    userId: booking.rider,
+                    entityType: 'bookings',
+                    entityId: bookingId,
+                    openLink: `/dashboard/${booking.trip_id}`,
+                    role: 'rider'
+                })
                 break;
         }
 
@@ -210,7 +283,7 @@ export async function PATCH(
         if (newStatus === 'removed') {
             let reasonText = reason;
             if (!reasonText) {
-                reasonText = action === 'reject' ? 'Rejected by driver' : 'Removed by driver';
+                reasonText = action === 'reject' ? 'Booking rejected by driver' : 'Removed by driver';
             }
             await client.query(
                 `INSERT INTO booking_removal (bid, actor_id, reason)

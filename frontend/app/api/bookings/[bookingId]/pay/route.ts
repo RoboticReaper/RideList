@@ -3,6 +3,7 @@ import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
 import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
+import { createNotification } from '@/app/api/lib/createNotification';
 
 export async function POST(
     req: Request,
@@ -28,9 +29,10 @@ export async function POST(
         // Check booking ownership and current status
         // Locking row for consistency
         const bookingQuery = `
-            SELECT id, rider, trip, status
-            FROM bookings
-            WHERE id = $1
+            SELECT b.id, b.rider, b.trip, b.status, t.driver
+            FROM bookings b
+            JOIN trips t ON b.trip = t.id
+            WHERE b.id = $1
             FOR UPDATE
         `;
         const bookingRes = await client.query(bookingQuery, [bookingId]);
@@ -68,6 +70,18 @@ export async function POST(
             VALUES ($1, $2, $3, $4)
         `;
         await client.query(statusHistoryQuery, [bookingId, user.uid, 'joined_with_pay_window', 'pending_pay_confirmation_from_driver']);
+
+        await createNotification({
+            client,
+            type: 'payment_marked',
+            title: 'Rider Paid',
+            message: 'Your rider has paid for the trip. Please confirm the payment.',
+            userId: booking.driver,
+            entityType: 'bookings',
+            entityId: bookingId,
+            openLink: `/dashboard/${booking.trip}`,
+            role: 'driver'
+        })
 
         await client.query('COMMIT');
 
