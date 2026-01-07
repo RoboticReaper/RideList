@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { createNotification } from '@/app/api/lib/createNotification';
+import { bucket, adminAuth } from '@/app/api/lib/firebase-admin'; // Add import
+import sharp from 'sharp';
 
 
 export async function GET(
@@ -194,24 +196,106 @@ export async function PATCH(
         }
 
         const body = await req.json();
-        const { name, phone, rider_config } = body;
+        const { name, phone, rider_config, profile_image_base64 } = body;
 
         // Basic validation
         if (!name || name.trim() === "") {
             return NextResponse.json({ error: 'Name cannot be empty' }, { status: 400 });
         }
 
+        let newPhotoUrl = null;
+        if (profile_image_base64) {
+            try {
+                // Feature: Delete old photo if exists
+                const existingProfile = await client.query('SELECT photo_url FROM profile_global WHERE id = $1', [targetUserId]);
+                const existingPhotoUrl = existingProfile.rows[0]?.photo_url;
+
+                if (existingPhotoUrl) {
+                    try {
+                        // Extract path from URL
+                        // Format: https://storage.googleapis.com/[BUCKET]/[PATH]
+                        // OR if using standard firebase pattern
+                        const bucketName = bucket.name;
+                        // Simple check: does it contain our bucket name?
+                        if (existingPhotoUrl.includes(bucketName)) {
+                            // Split by bucket name and grab the rest
+                            // URL: https://storage.googleapis.com/ridelist-e9048.firebasestorage.app/profile_photos/user/123.jpg
+                            // Split: ...app/ -> profile_photos/user/123.jpg
+                            const parts = existingPhotoUrl.split(`${bucketName}/`);
+                            if (parts.length > 1) {
+                                const oldFilePath = decodeURIComponent(parts[1]);
+                                await bucket.file(oldFilePath).delete();
+                            }
+                        }
+                    } catch (deleteErr) {
+                        console.warn("Failed to delete old profile photo:", deleteErr);
+                        // Continue ensuring new photo is uploaded
+                    }
+                }
+
+                // Expecting data:image/jpeg;base64,...
+                const matches = profile_image_base64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+
+                if (matches && matches.length === 3) {
+                    let contentType = matches[1];
+                    let imageBuffer: any = Buffer.from(matches[2], 'base64');
+
+                    // Compression Logic for large files (> 5MB)
+                    if (imageBuffer.byteLength > 5 * 1024 * 1024) {
+                        console.log(`Compressing image (Original: ${(imageBuffer.byteLength / 1024 / 1024).toFixed(2)}MB)`);
+                        try {
+                            imageBuffer = await sharp(imageBuffer)
+                                .resize({
+                                    width: 1920,
+                                    height: 1920,
+                                    fit: 'inside',
+                                    withoutEnlargement: true
+                                })
+                                .jpeg({ quality: 80 })
+                                .toBuffer();
+                            contentType = 'image/jpeg';
+                            console.log(`Compression complete (New: ${(imageBuffer.byteLength / 1024 / 1024).toFixed(2)}MB)`);
+                        } catch (compErr) {
+                            console.error("Compression failed, proceeding with original:", compErr);
+                            // If compression fails, we try to proceed with original or could throw
+                        }
+                    }
+
+                    const filename = `profile_photos/${targetUserId}/${Date.now()}.jpg`; // Force jpg extension or derive? keeping simple for now
+                    const file = bucket.file(filename);
+
+                    await file.save(imageBuffer as any, {
+                        metadata: { contentType: contentType },
+                        public: true, // Make public
+                    });
+
+                    // Construct public URL
+                    // "https://storage.googleapis.com/[BUCKET_NAME]/[OBJECT_NAME]" is standard public link
+                    // Or use file.publicUrl() if available (bucket.file object sometimes implies authenticated access only unless properly configured)
+                    // The standard firebase pattern:
+                    newPhotoUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
+                }
+            } catch (uploadError) {
+                console.error("Image upload failed:", uploadError);
+                // Non-blocking? Or fail? Let's fail for now to alert user
+                return NextResponse.json({ error: 'Image upload failed' }, { status: 500 });
+            }
+        }
+
         // Fetch current phone to check for changes
-        const currentProfileRes = await client.query('SELECT phone FROM profile_global WHERE id = $1', [targetUserId]);
+        const currentProfileRes = await client.query('SELECT phone, photo_url FROM profile_global WHERE id = $1', [targetUserId]);
         const oldPhone = currentProfileRes.rows[0]?.phone;
+        const currentPhotoUrl = currentProfileRes.rows[0]?.photo_url;
+
+        const photoUrlToSave = newPhotoUrl || currentPhotoUrl;
 
         // Update Global Profile
         const updateGlobalRes = await client.query(
             `UPDATE profile_global 
-             SET name = $1, phone = $2 
-             WHERE id = $3 
+             SET name = $1, phone = $2, photo_url = $3
+             WHERE id = $4 
              RETURNING id, name, phone, verified, created_at, photo_url`,
-            [name, phone || null, targetUserId]
+            [name, phone || null, photoUrlToSave, targetUserId]
         );
 
         if (updateGlobalRes.rowCount === 0) {
@@ -227,6 +311,18 @@ export async function PATCH(
                  SET default_big_luggage = $2, default_small_luggage = $3`,
                 [targetUserId, rider_config.default_big_luggage || 0, rider_config.default_small_luggage || 0]
             );
+        }
+
+        // Sync Photo URL to Firebase Auth
+        if (photoUrlToSave) {
+            try {
+                await adminAuth.updateUser(targetUserId, {
+                    photoURL: photoUrlToSave
+                });
+            } catch (authErr) {
+                console.error("Failed to sync photo URL to Firebase Auth:", authErr);
+                // Non-blocking, just log it
+            }
         }
 
         // Notify Riders if phone changed

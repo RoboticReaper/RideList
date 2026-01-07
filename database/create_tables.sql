@@ -60,8 +60,7 @@ create table profile_global (
   verified bool not null default false,
   created_at timestamptz not null default now(),
   phone text,                       -- relationship-gated in app layer
-  photo_url text,
-  language language_types
+  photo_url text
 );
 
 create table profile_rider (
@@ -83,7 +82,7 @@ create table settings_global (
   -- global = channels/quiet hours/etc. (role-specific toggles live below)
   notifications jsonb not null default '{}'::jsonb,
   timezone text,
-  language text
+  language language_types
 );
 
 create table settings_rider (
@@ -156,8 +155,8 @@ create table trip_rules (
   small_luggage_lim int not null check (small_luggage_lim >= 0),
 
   pickup_rules text,
-  pickup_radius_meters int not null default 1000 check (pickup_radius_meters > 0),
-  drop_off_radius_meters int not null default 1000 check (drop_off_radius_meters > 0),
+  pickup_radius_meters int not null default 5000 check (pickup_radius_meters > 0),
+  drop_off_radius_meters int not null default 5000 check (drop_off_radius_meters > 0),
 
   departure_time_flexibility interval not null,
   payment_methods text[],
@@ -445,4 +444,38 @@ where status in ('bookable', 'full');
 
 create index idx_notifications_user_unread
 on notifications (user_id, read, created_at desc);
+
+-- Booking lookups
+CREATE INDEX idx_bookings_trip_rider_created
+ON bookings (trip, rider, created_at DESC);
+
+CREATE INDEX idx_bookings_rider_active
+ON bookings (rider, created_at DESC)
+WHERE status IN (
+  'waiting_approval',
+  'joined_with_pay_window',
+  'pending_pay_confirmation_from_driver',
+  'confirmed'
+);
+
+CREATE INDEX idx_bookings_trip_active
+ON bookings (trip)
+WHERE status IN (
+  'joined_with_pay_window',
+  'pending_pay_confirmation_from_driver',
+  'confirmed'
+);
+
+-- Notifications
+CREATE INDEX idx_notifications_user_created
+ON notifications (user_id, created_at DESC);
+
+-- Push devices
+CREATE INDEX idx_user_devices_pushable
+ON user_devices (user_id)
+WHERE permission_state = 'granted'
+  AND push_enabled = true
+  AND invalidated_at IS NULL;
+
+
 

@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { Container, Paper, Avatar, Text, Group, Stack, Badge, Loader, Center, Title, Button, TextInput, ActionIcon, Box, Tabs, NumberInput, Divider } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
-import { IconCheck, IconPhone, IconCalendar, IconPencil, IconX, IconDeviceFloppy, IconCar, IconSteeringWheel } from '@tabler/icons-react';
+import { IconCheck, IconPhone, IconCalendar, IconPencil, IconX, IconDeviceFloppy, IconCar, IconSteeringWheel, IconCamera } from '@tabler/icons-react';
 
 interface UserProfile {
     id: string;
@@ -41,6 +41,8 @@ export default function ProfilePage() {
     const [editSmallLuggage, setEditSmallLuggage] = useState(0);
     const [nameError, setNameError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
+    const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const isOwner = user?.uid === uid;
 
@@ -51,7 +53,19 @@ export default function ProfilePage() {
             setEditBigLuggage(profile.rider_profile?.default_big_luggage || 0);
             setEditSmallLuggage(profile.rider_profile?.default_small_luggage || 0);
             setNameError(null);
+            setPendingPhoto(null);
             setIsEditing(true);
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPendingPhoto(reader.result as string);
+            };
+            reader.readAsDataURL(file);
         }
     };
 
@@ -80,6 +94,7 @@ export default function ProfilePage() {
                 body: JSON.stringify({
                     name: editName,
                     phone: editPhone,
+                    profile_image_base64: pendingPhoto,
                     rider_config: {
                         default_big_luggage: editBigLuggage,
                         default_small_luggage: editSmallLuggage
@@ -137,7 +152,28 @@ export default function ProfilePage() {
         <Container size="sm" py="xl">
             <Paper radius="md" withBorder p="lg" bg="var(--mantine-color-body)">
                 <Group align="flex-start">
-                    <Avatar src={profile.photo_url} size={120} radius={120} mx="auto" />
+                    <Stack align="center" gap="xs">
+                        <Avatar src={pendingPhoto || profile.photo_url} size={120} radius={120} />
+                        {isEditing && (
+                            <>
+                                <Button
+                                    size="xs"
+                                    variant="light"
+                                    leftSection={<IconCamera size={14} />}
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
+                                    Change Photo
+                                </Button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    style={{ display: 'none' }}
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                />
+                            </>
+                        )}
+                    </Stack>
                     <Stack gap="xs" style={{ flex: 1 }}>
                         <Group justify="space-between" align="start">
                             <Box style={{ flex: 1 }}>

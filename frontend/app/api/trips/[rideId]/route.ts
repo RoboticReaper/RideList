@@ -41,6 +41,9 @@ export async function GET(
         t.id, t.price, t.notes, t.from_text, t.to_text, t.departure_time,
         t.total_seats, t.seats_taken, t.status, t.start_check_in,
         t.created_at, t.modified_at,
+        ST_X(t.origin_geog::geometry) as origin_lng, ST_Y(t.origin_geog::geometry) as origin_lat,
+        ST_X(t.destination_geog::geometry) as dest_lng, ST_Y(t.destination_geog::geometry) as dest_lat,
+
         
         -- Event Info (End Time)
         tc.created_at as trip_end_event_at,
@@ -195,6 +198,15 @@ export async function GET(
                 taken: row.seats_taken
             },
             notes: row.notes,
+            origin: {
+                lat: row.origin_lat,
+                lng: row.origin_lng
+            },
+            destination: {
+                lat: row.dest_lat,
+                lng: row.dest_lng
+            },
+
 
             car: row.car_id ? {
                 id: row.car_id,

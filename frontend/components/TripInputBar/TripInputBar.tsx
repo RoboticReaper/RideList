@@ -158,8 +158,8 @@ export function TripInputBar() {
     // --- Step 5: Rules State ---
     const [autoAccept, setAutoAccept] = useState(true);
     const [flexibility, setFlexibility] = useState<number | ''>(0.25);
-    const [pickupRadius, setPickupRadius] = useState<number | ''>(1000);
-    const [dropoffRadius, setDropoffRadius] = useState<number | ''>(1000);
+    const [pickupRadius, setPickupRadius] = useState<number | ''>(5000);
+    const [dropoffRadius, setDropoffRadius] = useState<number | ''>(5000);
     const [pickupRules, setPickupRules] = useState('');
     const [cancellationPolicy, setCancellationPolicy] = useState('');
     const [cutoffEnabled, setCutoffEnabled] = useState(true);
@@ -382,8 +382,8 @@ export function TripInputBar() {
                     (draft.smallLuggage !== 0 && draft.smallLuggage !== '' && draft.smallLuggage !== undefined) ||
                     (draft.autoAccept === false) || // Default is true
                     (draft.flexibility !== 0.25 && !!draft.flexibility) ||
-                    (draft.pickupRadius !== 1000 && draft.pickupRadius !== '' && draft.pickupRadius !== undefined) ||
-                    (draft.dropoffRadius !== 1000 && draft.dropoffRadius !== '' && draft.dropoffRadius !== undefined) ||
+                    (draft.pickupRadius !== 5000 && draft.pickupRadius !== '' && draft.pickupRadius !== undefined) ||
+                    (draft.dropoffRadius !== 5000 && draft.dropoffRadius !== '' && draft.dropoffRadius !== undefined) ||
                     (!!draft.pickupRules) ||
                     (!!draft.cancellationPolicy) ||
                     (draft.cutoffEnabled !== true) ||
@@ -439,8 +439,8 @@ export function TripInputBar() {
         setSmallLuggage(0);
         setAutoAccept(true);
         setFlexibility(0.25);
-        setPickupRadius(1000);
-        setDropoffRadius(1000);
+        setPickupRadius(5000);
+        setDropoffRadius(5000);
         setPickupRules('');
         setCancellationPolicy('');
         setCutoffEnabled(true);
@@ -1009,8 +1009,8 @@ export function TripInputBar() {
                                                 setPaymentHandle(r.payment_handle || '');
                                                 setAutoAccept(r.auto_accept);
                                                 setFlexibility(r.departure_time_flexibility ? parseFlexibility(r.departure_time_flexibility) : 0.25);
-                                                setPickupRadius(r.pickup_radius_meters || 1000);
-                                                setDropoffRadius(r.drop_off_radius_meters || 1000);
+                                                setPickupRadius(r.pickup_radius_meters || 5000);
+                                                setDropoffRadius(r.drop_off_radius_meters || 5000);
                                                 setPickupRules(r.pickup_rules || '');
                                                 setCancellationPolicy(r.cancellation_policy || '');
                                                 const ch = parseCutoffTimeNullable(r.cutoff_time);

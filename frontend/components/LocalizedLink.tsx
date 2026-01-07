@@ -13,31 +13,31 @@ interface LocalizedLinkProps extends LinkProps {
 }
 
 export const getLocalizedHref = (params: any, href: string) => {
-  const lang = (params?.lang as string) || 'en';
+  // const lang = (params?.lang as string) || 'en';
 
-  let finalHref = href;
+  // let finalHref = href;
 
-  if (!href.startsWith('http') && !href.startsWith(`/${lang}`)) {
-      finalHref = `/${lang}${href.startsWith('/') ? '' : '/'}${href}`;
-    }
+  // if (!href.startsWith('http') && !href.startsWith(`/${lang}`)) {
+  //     finalHref = `/${lang}${href.startsWith('/') ? '' : '/'}${href}`;
+  //   }
 
-  return finalHref
+  return href
 }
 
 
 export const LocalizedLink = forwardRef<HTMLAnchorElement, LocalizedLinkProps>(
   ({ children, href, ...props }, ref) => {
     const params = useParams()
-    
+
     let finalHref = getLocalizedHref(params, href)
 
     return (
-      <Link 
-        href={finalHref} 
-        ref={ref} 
+      <Link
+        href={finalHref}
+        ref={ref}
         {...props}
-        
-        suppressHydrationWarning 
+
+        suppressHydrationWarning
       >
         {children}
       </Link>

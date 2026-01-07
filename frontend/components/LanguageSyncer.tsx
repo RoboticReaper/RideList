@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useAuth } from './firebase/AuthContext';
 import { usePathname, useRouter } from 'next/navigation';
-import { languages } from '@/app/i18n/settings';
+import { languages, cookieName } from '@/app/i18n/settings';
 
 export function LanguageSyncer() {
     const { user, loading } = useAuth();
@@ -24,21 +24,30 @@ export function LanguageSyncer() {
                     const preferredLanguage = data.language; // 'en' or 'zh'
 
                     if (preferredLanguage) {
-                        const currentLang = pathname.split('/')[1];
+                        // Get current cookie value
+                        const currentCookie = document.cookie
+                            .split('; ')
+                            .find(row => row.startsWith(`${cookieName}=`))
+                            ?.split('=')[1];
 
-                        // Check if preferredLanguage is valid and different from current
-                        if (currentLang !== preferredLanguage && languages.includes(preferredLanguage)) {
-                            // Replace the language segment in the URL
-                            // We assume the first segment is the language if it is in the supported languages list
-                            let newPath = pathname;
-                            if (languages.includes(currentLang)) {
-                                newPath = pathname.replace(`/${currentLang}`, `/${preferredLanguage}`);
+                        // If cookie doesn't match preference, update it
+                        if (currentCookie !== preferredLanguage && languages.includes(preferredLanguage)) {
+                            // Set cookie
+                            document.cookie = `${cookieName}=${preferredLanguage}; path=/; max-age=31536000; SameSite=Lax`;
+
+                            // Check URL state
+                            const pathSegments = pathname.split('/');
+                            const currentLangPrefix = languages.includes(pathSegments[1]) ? pathSegments[1] : null;
+
+                            if (currentLangPrefix) {
+                                // If we have a language prefix (e.g. /zh/...), explicitly remove or replace it
+                                // We prefer removing it to use the "clean" URL and let middleware handle it
+                                const newPath = pathname.replace(`/${currentLangPrefix}`, '') || '/';
+                                router.push(newPath);
                             } else {
-                                // If current path doesn't start with a supported language, prepend it
-                                // (Logic similar to middleware or localized link handling)
-                                newPath = `/${preferredLanguage}${pathname === '/' ? '' : pathname}`;
+                                // If no prefix (clean URL), just refresh to pick up the new cookie
+                                router.refresh();
                             }
-                            router.push(newPath);
                         }
                     }
                 } catch (err) {

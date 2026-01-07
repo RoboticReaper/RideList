@@ -102,6 +102,7 @@ export default function Notifications() {
                                     position: 'relative' as const,
                                     borderBottom: '1px solid var(--mantine-color-default-border)',
                                     backgroundColor: isRead ? undefined : 'var(--mantine-color-blue-light)',
+                                    borderRadius: 0,
                                 };
 
                                 if (n.open_link) {

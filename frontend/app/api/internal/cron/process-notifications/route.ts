@@ -35,6 +35,7 @@ export async function POST(req: Request) {
                 JOIN booking_rule_snapshot r ON b.id = r.id
                 WHERE b.status = 'joined_with_pay_window'
                 AND NOW() > b.created_at + r.pay_window
+                AND t.status NOT IN ('cancelled', 'aborted')
                 FOR UPDATE SKIP LOCKED
             ),
             updated_bookings AS (
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
                 SET status = 'pay_timeout'
                 FROM expired_bookings
                 WHERE bookings.id = expired_bookings.id
-                RETURNING bookings.id, bookings.rider, bookings.trip, expired_bookings.driver
+                RETURNING bookings.id, bookings.rider, bookings.trip, expired_bookings.driver as driver
             )
             SELECT * FROM updated_bookings
         `);
@@ -141,7 +142,14 @@ export async function POST(req: Request) {
 
         const processedCount = timeoutRows.rowCount! + tripsStartingCheckIn.rowCount!;
 
-        return NextResponse.json({ success: true, processed: processedCount });
+        return NextResponse.json({
+            success: true,
+            processed: {
+                pay_timeouts: timeoutRows.rowCount,
+                checkins_started: tripsStartingCheckIn.rowCount
+            }
+        });
+
 
     } catch (error) {
         await client.query('ROLLBACK');

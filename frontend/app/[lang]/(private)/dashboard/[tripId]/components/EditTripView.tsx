@@ -7,6 +7,7 @@ import { useAuth } from '@/components/firebase/AuthContext';
 import { IconCheck, IconAlertTriangle, IconCalendar, IconCar, IconMapPin, IconCurrencyDollar, IconScript, IconX, IconLock } from '@tabler/icons-react';
 import { parseFlexibility, parsePayWindow, parseCutoffTimeNullable, parseStartCheckInNullable, parseFlexibilityNullable, parseCutoffTime } from '@/utils/intervalParsers';
 import { LocalizedLink } from '@/components/LocalizedLink';
+import { RadiusMap } from '@/components/Rides/RadiusMap';
 
 interface EditTripViewProps {
     trip: any; // Using any for simplicity as Trip type is large
@@ -103,8 +104,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
         smallLuggage: Number(t.rules.luggage.small ?? 0),
 
         pickupRules: t.rules.pickup.rules || '',
-        pickupRadius: Number(t.rules.pickup.radius ?? 1000),
-        dropoffRadius: Number(t.rules.pickup.dropoff_radius ?? 1000),
+        pickupRadius: Number(t.rules.pickup.radius ?? 5000),
+        dropoffRadius: Number(t.rules.pickup.dropoff_radius ?? 5000),
 
         flexibility: parseFlexibility(t.rules.flexibility),
         autoAccept: t.rules.auto_accept,
@@ -499,6 +500,45 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                                 rightSection={renderRightSection(loadingEnd, form.values.to_text, clearEnd)}
                             />
                         </SimpleGrid>
+
+                        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                            <Stack gap="xs">
+                                <NumberInput
+                                    label="Pickup Radius (m)"
+                                    description="The area around your departure location where you are willing to pick up passengers"
+                                    min={0}
+                                    step={100}
+                                    {...form.getInputProps('pickupRadius')}
+                                />
+                                {trip.origin && (
+                                    <RadiusMap
+                                        lat={trip.origin.lat}
+                                        lng={trip.origin.lng}
+                                        radiusMeters={form.values.pickupRadius || 0}
+                                        type="pickup"
+                                    />
+                                )}
+                            </Stack>
+
+                            <Stack gap="xs">
+                                <NumberInput
+                                    label="Dropoff Radius (m)"
+                                    description="The area around your arrival location where you are willing to drop off passengers"
+                                    min={0}
+                                    step={100}
+                                    {...form.getInputProps('dropoffRadius')}
+                                />
+                                {trip.destination && (
+                                    <RadiusMap
+                                        lat={trip.destination.lat}
+                                        lng={trip.destination.lng}
+                                        radiusMeters={form.values.dropoffRadius || 0}
+                                        type="dropoff"
+                                    />
+                                )}
+                            </Stack>
+                        </SimpleGrid>
+
                         <DateTimePicker
                             label="Departure Time"
                             placeholder="Pick date & time"
@@ -605,22 +645,6 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                             {...form.getInputProps('flexibility')}
                         />
 
-                        <SimpleGrid cols={{ base: 1, sm: 2 }}>
-                            <NumberInput
-                                label="Pickup Radius (m)"
-                                description="The area around your departure location where you are willing to pick up passengers"
-                                min={0}
-                                step={100}
-                                {...form.getInputProps('pickupRadius')}
-                            />
-                            <NumberInput
-                                label="Dropoff Radius (m)"
-                                description="The area around your arrival location where you are willing to drop off passengers"
-                                min={0}
-                                step={100}
-                                {...form.getInputProps('dropoffRadius')}
-                            />
-                        </SimpleGrid>
 
                         <Accordion variant="separated" defaultValue="settings">
                             <Accordion.Item value="settings">
