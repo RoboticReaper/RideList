@@ -7,6 +7,7 @@ import { ReactNode, forwardRef } from 'react';
 interface LocalizedLinkProps extends LinkProps {
   children: ReactNode;
   href: string;
+  target?: string;
   className?: string;
   // Allow any other prop (aria-*, styles, etc)
   [key: string]: any;
@@ -26,7 +27,7 @@ export const getLocalizedHref = (params: any, href: string) => {
 
 
 export const LocalizedLink = forwardRef<HTMLAnchorElement, LocalizedLinkProps>(
-  ({ children, href, ...props }, ref) => {
+  ({ children, href, target, ...props }, ref) => {
     const params = useParams()
 
     let finalHref = getLocalizedHref(params, href)
@@ -35,6 +36,7 @@ export const LocalizedLink = forwardRef<HTMLAnchorElement, LocalizedLinkProps>(
       <Link
         href={finalHref}
         ref={ref}
+        target={target}
         {...props}
 
         suppressHydrationWarning

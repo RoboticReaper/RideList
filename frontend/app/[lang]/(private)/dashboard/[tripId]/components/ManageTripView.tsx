@@ -618,11 +618,11 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                                 </ActionIcon>
                             </Group>
                             <Text size="xs" c="dimmed" style={{ overflowWrap: 'break-word', whiteSpace: 'normal' }}>
-                                {b.rider_rating ? `★ ${b.rider_rating.toFixed(1)}` : 'New'} • {b.rider_completed_rides} rides
+                                {b.rider_rating ? `★ ${b.rider_rating.toFixed(1)}` : t('common.new')} • {t('tripDetails.manage.rides', { count: b.rider_completed_rides })}
                             </Text>
                             {trip.start_check_in && b.ready && (
                                 <Badge color="green" size="sm" variant="light" mt={4}>
-                                    Ready
+                                    {t('common.ready')}
                                 </Badge>
                             )}
                         </div>
@@ -662,7 +662,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                 </Table.Td>
                 <Table.Td>
                     <Text size="sm" style={{ overflowWrap: 'break-word', whiteSpace: 'normal' }}>
-                        {b.intended_payment_method || 'None'}
+                        {b.intended_payment_method || t('common.none')}
                     </Text>
                 </Table.Td>
                 <Table.Td>
@@ -1067,7 +1067,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                         <UnstyledButton onClick={() => setInactiveOpen(!inactiveOpen)} mt="md">
                             <Group>
                                 {inactiveOpen ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
-                                <Text size="sm" fw={500}>Inactive Bookings ({inactiveBookings.length})</Text>
+                                <Text size="sm" fw={500}>{t('tripDetails.manage.inactiveBookingsCount', { count: inactiveBookings.length })}</Text>
                             </Group>
                         </UnstyledButton>
                         <Collapse in={inactiveOpen}>

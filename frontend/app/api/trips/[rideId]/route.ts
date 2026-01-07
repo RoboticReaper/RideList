@@ -5,6 +5,7 @@ import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
 import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
 import { checkAndProcessTripCutoff } from '@/app/api/lib/tripCutoff';
 import { createNotification } from '@/app/api/lib/createNotification';
+import { extractPublicArea } from '@/app/api/lib/extractPublicArea';
 
 
 export async function GET(
@@ -40,7 +41,7 @@ export async function GET(
         -- Trip Info
         t.id, t.price, t.notes, t.from_text, t.to_text, t.departure_time,
         t.total_seats, t.seats_taken, t.status, t.start_check_in,
-        t.created_at, t.modified_at,
+        t.created_at, t.modified_at, t.from_input_text, t.to_input_text,
         ST_X(t.origin_geog::geometry) as origin_lng, ST_Y(t.origin_geog::geometry) as origin_lat,
         ST_X(t.destination_geog::geometry) as dest_lng, ST_Y(t.destination_geog::geometry) as dest_lat,
 
@@ -189,7 +190,10 @@ export async function GET(
                 contact: canViewContact
             },
 
+            // only return exact address for driver.
+            from_input_text: isDriver ? row.from_input_text : null,
             from_text: row.from_text,
+            to_input_text: isDriver ? row.to_input_text : null,
             to_text: row.to_text,
             departure_time: row.departure_time,
             price: row.price,
@@ -198,13 +202,15 @@ export async function GET(
                 taken: row.seats_taken
             },
             notes: row.notes,
+
+            // only show lat lng to driver as it may expose private information
             origin: {
-                lat: row.origin_lat,
-                lng: row.origin_lng
+                lat: isDriver ? row.origin_lat : null,
+                lng: isDriver ? row.origin_lng : null
             },
             destination: {
-                lat: row.dest_lat,
-                lng: row.dest_lng
+                lat: isDriver ? row.dest_lat : null,
+                lng: isDriver ? row.dest_lng : null
             },
 
 
@@ -302,6 +308,27 @@ async function fetchPlaceDetails(placeId: string, sessionToken: string) {
         const txt = await res.text();
         console.error(`Google Places Details Error (${placeId}):`, txt);
         throw new Error(`Failed to fetch place details for ${placeId}`);
+    }
+
+    const data = await res.json();
+    return data;
+}
+
+async function fetchGeocodeResult(lat: number, lng: number) {
+    const apiKey = process.env.SERVER_PLACES_KEY; // Server-side key
+    if (!apiKey) throw new Error("SERVER_PLACES_KEY not configured");
+
+    // Fields: location (lat/lng), formattedAddress
+    const fields = 'location,formattedAddress';
+
+    // Using the NEW Places API (v1)
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
+
+    const res = await fetch(url);
+    if (!res.ok) {
+        const txt = await res.text();
+        console.error(`Google Geocode Error (${lat},${lng}):`, txt);
+        throw new Error(`Failed to fetch geocode result for ${lat},${lng}`);
     }
 
     const data = await res.json();
@@ -534,12 +561,20 @@ export async function PATCH(
                 const details = await fetchPlaceDetails(body.from_place_id, body.from_session_token || '');
                 const lat = details.location.latitude;
                 const lng = details.location.longitude;
-                const text = details.formattedAddress || body.from_text;
+                const geocodeResult = await fetchGeocodeResult(lat, lng);
+                const publicArea = extractPublicArea(geocodeResult);
+
+                // store the approximate neighborhood to from_text
+                // store exact address to from_input_text
+                const text = publicArea;
+                const inputText = body.from_input_text;
 
                 newFromText = text;
 
                 updates.push(`from_text = $${idx++}`);
                 values.push(text);
+                updates.push(`from_input_text = $${idx++}`);
+                values.push(inputText);
                 updates.push(`origin_geog = ST_SetSRID(ST_MakePoint($${idx++}, $${idx++}), 4326)`);
                 values.push(lng);
                 values.push(lat);
@@ -548,9 +583,9 @@ export async function PATCH(
                     await client.query('ROLLBACK');
                     return NextResponse.json({ error: 'Start location text cannot be empty' }, { status: 400 });
                 }
-                newFromText = body.from_text;
-                updates.push(`from_text = $${idx++}`);
-                values.push(body.from_text);
+                newFromText = body.from_input_text;
+                updates.push(`from_input_text = $${idx++}`);
+                values.push(body.from_input_text);
             }
 
             // Handle End Location (Place ID -> Geog AND Text)
@@ -558,11 +593,17 @@ export async function PATCH(
                 const details = await fetchPlaceDetails(body.to_place_id, body.to_session_token || '');
                 const lat = details.location.latitude;
                 const lng = details.location.longitude;
-                const text = details.formattedAddress || body.to_text;
+                // store the approximate neighborhood to to_text
+                // store exact address to to_input_text
+                const text = body.to_input_text;
+                const geocodeResult = await fetchGeocodeResult(lat, lng);
+                const publicArea = extractPublicArea(geocodeResult);
 
-                newToText = text;
+                newToText = publicArea;
 
                 updates.push(`to_text = $${idx++}`);
+                values.push(publicArea);
+                updates.push(`to_input_text = $${idx++}`);
                 values.push(text);
                 updates.push(`destination_geog = ST_SetSRID(ST_MakePoint($${idx++}, $${idx++}), 4326)`);
                 values.push(lng);
@@ -572,9 +613,9 @@ export async function PATCH(
                     await client.query('ROLLBACK');
                     return NextResponse.json({ error: 'Destination text cannot be empty' }, { status: 400 });
                 }
-                newToText = body.to_text;
-                updates.push(`to_text = $${idx++}`);
-                values.push(body.to_text);
+                newToText = body.to_input_text;
+                updates.push(`to_input_text = $${idx++}`);
+                values.push(body.to_input_text);
             }
 
 

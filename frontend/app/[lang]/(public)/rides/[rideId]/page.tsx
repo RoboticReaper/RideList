@@ -364,12 +364,12 @@ export default function RidePage() {
                                             if (typeof f === 'object' && f !== null) {
                                                 const h = f.hours || 0;
                                                 const m = f.minutes || 0;
-                                                if (h === 0 && m === 0) return '(Exact time)';
+                                                if (h === 0 && m === 0) return t('rides.detail.time.exact');
 
                                                 const parts = [];
-                                                if (h > 0) parts.push(`${h} hr${h > 1 ? 's' : ''}`);
-                                                if (m > 0) parts.push(`${m} min${m > 1 ? 's' : ''}`);
-                                                return `(+/- ${parts.join(' ')})`;
+                                                if (h > 0) parts.push(t('rides.detail.time.hours', { count: h }));
+                                                if (m > 0) parts.push(t('rides.detail.time.minutes', { count: m }));
+                                                return t('rides.detail.time.flexibility', { time: parts.join(' ') });
                                             }
                                             return '';
                                         })()}
@@ -382,14 +382,16 @@ export default function RidePage() {
                         <Group gap={6} mt={4}>
                             <IconAlertCircle size={18} color="orange" />
                             <Text size="sm" c="orange">
-                                Booking closes {(() => {
-                                    const c = ride.rules.cutoff_time;
-                                    const parts = [];
-                                    if (c?.days) parts.push(`${c.days} day${c.days > 1 ? 's' : ''}`);
-                                    if (c?.hours) parts.push(`${c.hours} hr${c.hours > 1 ? 's' : ''}`);
-                                    if (c?.minutes) parts.push(`${c.minutes} min${c.minutes > 1 ? 's' : ''}`);
-                                    return parts.join(' ');
-                                })()} before departure
+                                {t('rides.detail.time.bookingClosesIn', {
+                                    time: (() => {
+                                        const c = ride.rules.cutoff_time;
+                                        const parts = [];
+                                        if (c?.days) parts.push(t('rides.detail.time.days', { count: c.days }));
+                                        if (c?.hours) parts.push(t('rides.detail.time.hours', { count: c.hours }));
+                                        if (c?.minutes) parts.push(t('rides.detail.time.minutes', { count: c.minutes }));
+                                        return parts.join(' ');
+                                    })()
+                                })}
                             </Text>
                         </Group>
                     )}
@@ -524,7 +526,7 @@ export default function RidePage() {
                                             <div>
                                                 <Group gap={4}>
                                                     <IconStar size={16} fill="orange" color="orange" />
-                                                    <Text fw={600}>{ride.driver.rating?.toFixed(1) || 'New'}</Text>
+                                                    <Text fw={600}>{ride.driver.rating?.toFixed(1) || t('common.new')}</Text>
                                                 </Group>
                                                 <Text size="xs" c="dimmed">{t('rides.detail.driver.rating')}</Text>
                                             </div>
@@ -827,9 +829,9 @@ export default function RidePage() {
                                     if (h === 0 && m === 0) return t('rides.detail.booking.exactTimeOnly');
 
                                     const parts = [];
-                                    if (h > 0) parts.push(`${h} hr${h > 1 ? 's' : ''}`);
-                                    if (m > 0) parts.push(`${m} min${m > 1 ? 's' : ''}`);
-                                    return `Flexibility: +/- ${parts.join(' ')}`;
+                                    if (h > 0) parts.push(t('rides.detail.time.hours', { count: h }));
+                                    if (m > 0) parts.push(t('rides.detail.time.minutes', { count: m }));
+                                    return t('rides.detail.booking.flexibilityLabel', { time: parts.join(' ') });
                                 }
                                 return t('rides.detail.booking.optional');
                             })()}

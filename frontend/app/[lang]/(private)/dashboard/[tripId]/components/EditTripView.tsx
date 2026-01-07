@@ -87,8 +87,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
 
     const mapTripToValues = (t: any) => ({
         // Trip Details
-        from_text: t.from_text || '',
-        to_text: t.to_text || '',
+        from_input_text: t.from_input_text || '',
+        to_input_text: t.to_input_text || '',
         departure_time: t.departure_time ? new Date(t.departure_time) : null,
         price: Number(t.price),
         total_seats: Number(t.seats.total),
@@ -211,7 +211,7 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
     };
 
     const handleStartChange = (val: string) => {
-        form.setFieldValue('from_text', val);
+        form.setFieldValue('from_input_text', val);
 
         // Check if the typed/selected value matches a known prediction
         const knownId = predictionsMap.current.get(val);
@@ -225,7 +225,7 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
     };
 
     const handleEndChange = (val: string) => {
-        form.setFieldValue('to_text', val);
+        form.setFieldValue('to_input_text', val);
 
         const knownId = predictionsMap.current.get(val);
         if (knownId) {
@@ -239,14 +239,14 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
 
     // Clear handlers
     const clearStart = () => {
-        form.setFieldValue('from_text', '');
+        form.setFieldValue('from_input_text', '');
         setStartPlaceId(null);
         setStartSuggestions([]);
         startSessionToken.current = crypto.randomUUID();
     };
 
     const clearEnd = () => {
-        form.setFieldValue('to_text', '');
+        form.setFieldValue('to_input_text', '');
         setEndPlaceId(null);
         setEndSuggestions([]);
         endSessionToken.current = crypto.randomUUID();
@@ -269,23 +269,23 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
         if (!user) return;
 
         // VALIDATION: Ensure From/To are not empty
-        if (!values.from_text?.trim()) {
+        if (!values.from_input_text?.trim()) {
             notifications.show({ title: t('tripDetails.edit.notifications.missingStart.title'), message: t('tripDetails.edit.notifications.missingStart.message'), color: 'red' });
             return;
         }
-        if (!values.to_text?.trim()) {
+        if (!values.to_input_text?.trim()) {
             notifications.show({ title: t('tripDetails.edit.notifications.missingDest.title'), message: t('tripDetails.edit.notifications.missingDest.message'), color: 'red' });
             return;
         }
 
         // VALIDATION: Ensure From/To are valid Place IDs if changed
-        if (form.isDirty('from_text')) {
+        if (form.isDirty('from_input_text')) {
             if (!startPlaceId) {
                 notifications.show({ title: t('tripDetails.edit.notifications.invalidStart.title'), message: t('tripDetails.edit.notifications.invalidStart.message'), color: 'red' });
                 return;
             }
         }
-        if (form.isDirty('to_text')) {
+        if (form.isDirty('to_input_text')) {
             if (!endPlaceId) {
                 notifications.show({ title: t('tripDetails.edit.notifications.invalidDest.title'), message: t('tripDetails.edit.notifications.invalidDest.message'), color: 'red' });
                 return;
@@ -318,7 +318,7 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
 
 
         // pickup/dropoff radius > 0 (DB check: > 0)
-        // Although DB default is 1000, form might send 0 or empty?
+        // Although DB default is 5000, form might send 0 or empty?
         // NumberInput with empty value sends '' or 0? 
         // We cast to Number() in initialValues, but onChange handles it. 
         if (!values.pickupRadius || values.pickupRadius <= 0) {
@@ -478,28 +478,29 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                                 placeholder={t('tripDetails.edit.placeholders.from')}
                                 leftSection={<IconMapPin size={16} />}
                                 data={startSuggestions}
-                                value={form.values.from_text}
+                                value={form.values.from_input_text}
                                 onChange={handleStartChange}
                                 onOptionSubmit={(val) => {
-                                    form.setFieldValue('from_text', val);
+                                    form.setFieldValue('from_input_text', val);
                                     const pid = predictionsMap.current.get(val);
                                     if (pid) setStartPlaceId(pid);
+                                    console.log(pid)
                                 }}
-                                rightSection={renderRightSection(loadingStart, form.values.from_text, clearStart)}
+                                rightSection={renderRightSection(loadingStart, form.values.from_input_text, clearStart)}
                             />
                             <Autocomplete
                                 label={t('tripDetails.edit.labels.to')}
                                 placeholder={t('tripDetails.edit.placeholders.to')}
                                 leftSection={<IconMapPin size={16} />}
                                 data={endSuggestions}
-                                value={form.values.to_text}
+                                value={form.values.to_input_text}
                                 onChange={handleEndChange}
                                 onOptionSubmit={(val) => {
-                                    form.setFieldValue('to_text', val);
+                                    form.setFieldValue('to_input_text', val);
                                     const pid = predictionsMap.current.get(val);
                                     if (pid) setEndPlaceId(pid);
                                 }}
-                                rightSection={renderRightSection(loadingEnd, form.values.to_text, clearEnd)}
+                                rightSection={renderRightSection(loadingEnd, form.values.to_input_text, clearEnd)}
                             />
                         </SimpleGrid>
 

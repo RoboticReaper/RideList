@@ -1,15 +1,11 @@
 'use client';
-import { Paper, Text, Group, Avatar, Stack, Badge, Button, ThemeIcon, Tooltip, Progress } from '@mantine/core';
+import { Paper, Text, Group, Avatar, Stack, Badge, Button, ThemeIcon, Progress } from '@mantine/core';
 import {
     IconClock,
     IconMapPin,
     IconLuggage,
     IconCreditCard,
-    IconCash,
     IconBolt,
-    IconBuildingBank,
-    IconCurrencyBitcoin,
-    IconBrandPaypal,
     IconLock, // Keep imports
     IconForbid, // Keep imports
     IconCheck, // Keep imports
@@ -44,14 +40,7 @@ interface RideCardProps {
     };
 }
 
-const getPaymentIcon = (method: string) => {
-    const m = method.toLowerCase();
-    if (m.includes('cash')) return <IconCash size={14} />;
-    if (m.includes('transfer')) return <IconBuildingBank size={14} />;
-    if (m.includes('crypto')) return <IconCurrencyBitcoin size={14} />;
-    if (m.includes('paypal')) return <IconBrandPaypal size={14} />;
-    return <IconCreditCard size={14} />;
-};
+
 
 const formatFlexibility = (flex: string | undefined) => {
     if (!flex) return null;
@@ -112,11 +101,9 @@ export function RideCard({ ride }: RideCardProps) {
                         <Text size="sm" c="dimmed">
                             <Text span fw={500} c="dark">{dateStr} · {timeStr}</Text>
                             {flexText && (
-                                <Tooltip label={`Departure time flexibility: ${flexText}`}>
-                                    <Text span size="xs" ml={6} c="blue.6" style={{ cursor: 'help', borderBottom: '1px dotted' }}>
-                                        ({flexText})
-                                    </Text>
-                                </Tooltip>
+                                <Text span size="xs" ml={6} c="blue.6">
+                                    ({flexText})
+                                </Text>
                             )}
                             {relativeTime && <Text span size="xs" ml={6}>· {relativeTime}</Text>}
                         </Text>
@@ -178,38 +165,33 @@ export function RideCard({ ride }: RideCardProps) {
                 <Group gap="lg" mt={4}>
                     {/* Auto Accept */}
                     {ride.auto_accept && (
-                        <Tooltip label={t('rides.card.autoAcceptTooltip')}>
-                            <Group gap={4}>
-                                <ThemeIcon size="xs" variant="transparent" color="yellow">
-                                    <IconBolt size={16} />
-                                </ThemeIcon>
-                                <Text size="xs" c="dimmed">{t('rides.card.instant')}</Text>
-                            </Group>
-                        </Tooltip>
+                        <Group gap={4}>
+                            <ThemeIcon size="xs" variant="transparent" color="yellow">
+                                <IconBolt size={16} />
+                            </ThemeIcon>
+                            <Text size="xs" c="dimmed">{t('rides.card.instant')}</Text>
+                        </Group>
                     )}
 
                     {/* Luggage */}
-                    <Tooltip label={t('rides.card.luggageTooltip', { big: ride.big_luggage_lim, small: ride.small_luggage_lim })}>
-                        <Group gap={4}>
-                            <ThemeIcon size="xs" variant="transparent" color="gray">
-                                <IconLuggage size={16} />
-                            </ThemeIcon>
-                            <Text size="xs" c="dimmed">
-                                {ride.big_luggage_lim}L / {ride.small_luggage_lim}S
-                            </Text>
-                        </Group>
-                    </Tooltip>
+                    <Group gap={4}>
+                        <ThemeIcon size="xs" variant="transparent" color="gray">
+                            <IconLuggage size={16} />
+                        </ThemeIcon>
+                        <Text size="xs" c="dimmed">
+                            {ride.big_luggage_lim}L / {ride.small_luggage_lim}S
+                        </Text>
+                    </Group>
 
                     {/* Payment Methods */}
                     {ride.payment_methods && ride.payment_methods.length > 0 && (
                         <Group gap={4} ml="auto">
-                            {ride.payment_methods.map((pm) => (
-                                <Tooltip key={pm} label={pm}>
-                                    <ThemeIcon size="xs" variant="transparent" color="gray">
-                                        {getPaymentIcon(pm)}
-                                    </ThemeIcon>
-                                </Tooltip>
-                            ))}
+                            <ThemeIcon size="xs" variant="transparent" color="gray">
+                                <IconCreditCard size={16} />
+                            </ThemeIcon>
+                            <Text size="xs" c="dimmed">
+                                {ride.payment_methods.join(', ')}
+                            </Text>
                         </Group>
                     )}
                 </Group>

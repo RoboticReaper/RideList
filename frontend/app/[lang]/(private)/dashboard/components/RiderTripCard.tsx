@@ -130,6 +130,7 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
                                 <ActionIcon
                                     component={LocalizedLink}
                                     href={`/rides/${trip.id}`}
+                                    target="_blank"
                                     variant="subtle"
                                     color="gray"
                                     size="sm"

@@ -127,9 +127,13 @@ create table trips (
   price decimal(8, 2),
   notes text,
 
-  -- display text
+  -- public-facing sanitized-into-neighborhood display text
   from_text text not null,
   to_text text not null,
+
+  -- exact address that the driver typed. only show to driver themselves
+  from_input_text text not null,
+  to_input_text text not null,
 
   -- GIS fields (authoritative for search)
   origin_geog geography(Point, 4326) not null,
@@ -216,6 +220,12 @@ create table bookings (
   status booking_status not null,
 
   intended_payment_method text not null,
+
+
+  -- 3 fields below are available after driver accepts booking.
+  pickup_geog geography(Point, 4326),
+  driver_note text, -- driver note to rider
+  rider_note text, -- rider pick up note
 
   ready bool not null default false,
   ready_at timestamptz,

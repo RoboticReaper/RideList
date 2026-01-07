@@ -23,6 +23,8 @@ interface Trip {
     start_check_in?: boolean;
     driver_phone?: string;
     driver_id?: string;
+    from_input_text?: string;
+    to_input_text?: string;
 }
 
 interface TripCardProps {
@@ -41,18 +43,18 @@ export function TripCard({ trip }: TripCardProps) {
                     <Stack gap={4}>
                         <Group gap="xs">
                             <IconMapPin size={18} style={{ color: 'var(--mantine-color-blue-6)' }} />
-                            <Text fw={600} size="lg" lineClamp={1} title={trip.from_text}>
-                                {trip.from_text.split(',')[0]}
+                            <Text fw={600} size="lg" lineClamp={1} title={trip.from_input_text}>
+                                {trip.from_input_text?.split(',')[0]}
                             </Text>
                             <Text size="lg" c="dimmed">
                                 &rarr;
                             </Text>
-                            <Text fw={600} size="lg" lineClamp={1} title={trip.to_text}>
-                                {trip.to_text.split(',')[0]}
+                            <Text fw={600} size="lg" lineClamp={1} title={trip.to_input_text}>
+                                {trip.to_input_text?.split(',')[0]}
                             </Text>
                         </Group>
                         <Text size="xs" c="dimmed" ml={28}>
-                            {trip.from_text} &rarr; {trip.to_text}
+                            {trip.from_input_text} &rarr; {trip.to_input_text}
                         </Text>
                     </Stack>
                     <Group gap="xs">

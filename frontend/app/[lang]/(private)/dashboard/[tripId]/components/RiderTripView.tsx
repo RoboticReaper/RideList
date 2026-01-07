@@ -232,7 +232,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                     <Alert color="red" icon={<IconAlertTriangle />} title={t('tripDetails.rider.alerts.cancelledTrip.title')}>
                         <Trans
                             i18nKey="tripDetails.rider.alerts.cancelledTrip.description"
-                            values={{ phone: trip.driver?.phone || 'Unknown' }}
+                            values={{ phone: trip.driver?.phone || t('common.unknown') }}
                             components={{ 1: <Text span fw={700} /> }}
                         />
                     </Alert>
@@ -312,7 +312,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                                 <Text size="sm" fw={500}>{trip.user_booking?.ready ? t('tripDetails.rider.ready') : t('tripDetails.rider.notReady')}</Text>
                                             </Group>
                                             {trip.user_booking?.ready && trip.user_booking?.ready_at && (
-                                                <Text size="xs" c="dimmed">at {dayjs(trip.user_booking.ready_at).format('MMM D, h:mm A')}</Text>
+                                                <Text size="xs" c="dimmed">{t('dashboard.common.at')} {dayjs(trip.user_booking.ready_at).format('MMM D, h:mm A')}</Text>
                                             )}
                                         </Stack>
                                     );
@@ -322,7 +322,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                     const startTime = dayjs(trip.departure_time).subtract(hrs, 'hour');
                                     content = (
                                         <Text size="sm" c="dimmed" fs="italic">
-                                            Check-in begins {startTime.format('MMM D, h:mm A')}
+                                            {t('tripDetails.rider.values.checkInBegins', { time: startTime.format('MMM D, h:mm A') })}
                                         </Text>
                                     );
                                 }

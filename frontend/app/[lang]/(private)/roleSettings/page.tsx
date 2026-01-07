@@ -55,9 +55,9 @@ export default function RoleSettingsPage() {
     };
 
     const getPushDescription = () => {
-        if (isIOS && !isStandalone) return "Install to home screen to enable notifications.";
+        if (isIOS && !isStandalone) return t('roleSettings.push.iosInstall');
         if (pushPermission === 'granted') {
-            if (isAndroid && !isStandalone) return "Notifications enabled. Install app for better experience.";
+            if (isAndroid && !isStandalone) return t('roleSettings.push.androidInstall');
             return t('roleSettings.push.allSet');
         }
         if (pushPermission === 'denied') return t('roleSettings.push.blockedDesc');

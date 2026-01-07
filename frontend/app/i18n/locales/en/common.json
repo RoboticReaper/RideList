@@ -40,7 +40,17 @@
         },
         "common": {
             "refresh": "Refresh",
-            "loadMore": "Load More"
+            "loadMore": "Load More",
+            "big": "Big",
+            "small": "Small",
+            "none": "None",
+            "plate": "Plate",
+            "standard": "Standard",
+            "noneProvided": "None provided",
+            "notProvidedByDriver": "Not provided by driver",
+            "notAssigned": "Not assigned",
+            "at": "at",
+            "noVehicle": "No Vehicle / Walking"
         },
         "tripCard": {
             "seatsLeft": "seats left",
@@ -256,7 +266,16 @@
             },
             "time": {
                 "exact": "(Exact time)",
-                "flexibility": "(+/- {{time}})"
+                "exactTime": "Exact time",
+                "flexibilityFormat": "+/- {{time}}",
+                "hours": "{{count}} hr",
+                "hours_plural": "{{count}} hrs",
+                "minutes": "{{count}} min",
+                "minutes_plural": "{{count}} mins",
+                "days": "{{count}} day",
+                "days_plural": "{{count}} days",
+                "flexibility": "(+/- {{time}})",
+                "bookingClosesIn": "Booking closes {{time}} before departure"
             },
             "cutoff": {
                 "bookingCloses": "Booking closes {{time}} before departure"
@@ -462,7 +481,11 @@
                 "color": "Optional (e.g. White)",
                 "year": "Optional (e.g. 2022)",
                 "optional": "Optional",
-                "seats": "Required (e.g. 5)"
+                "seats": "Required (e.g. 5)",
+                "selectRuleTemplate": "Select a rule template to prefill",
+                "paymentHandle": "Venmo: @user, WeChat: user123",
+                "ruleTemplateName": "e.g. Standard Rules",
+                "tripTemplateName": "e.g. Daily Commute"
             },
             "errors": {
                 "flexibilityRequired": "Please specify departure flexibility.",
@@ -479,6 +502,32 @@
             "loading": {
                 "title": "Posting Trip",
                 "message": "Please wait..."
+            },
+            "completion": {
+                "title": "Trip Posted!",
+                "subtitle": "Your trip is now live and bookable.",
+                "redirecting": "Redirecting to your post in {{countdown}}s...",
+                "startNewDraft": "Start New Draft",
+                "viewPost": "View Post"
+            },
+            "modals": {
+                "auth": {
+                    "title": "Login Required",
+                    "message": "Your trip details have been saved temporarily. Please log in or create an account to publish your trip. We will restore your progress when you return.",
+                    "cancel": "Cancel",
+                    "login": "Log In & Continue"
+                },
+                "profile": {
+                    "title": "Complete Your Profile",
+                    "message": "Your progress has been saved. Please complete your profile to publish your trip.",
+                    "cancel": "Cancel",
+                    "goToProfile": "Go to Profile"
+                }
+            },
+            "defaults": {
+                "untitledTrip": "Untitled Trip",
+                "tripTemplate": "Trip Template",
+                "unnamedTemplate": "Unnamed Template"
             }
         }
     },
@@ -487,7 +536,13 @@
         "edit": "Edit",
         "delete": "Delete",
         "save": "Save",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "new": "New",
+        "none": "None",
+        "ready": "Ready",
+        "selectOrType": "Select or type...",
+        "eg": "e.g.",
+        "unknown": "Unknown"
     },
     "status": {
         "trip": {
@@ -517,6 +572,14 @@
         "tabs": {
             "manage": "Manage Trip",
             "edit": "Edit Trip"
+        },
+        "status": {
+            "paid": "Paid",
+            "unpaid": "Unpaid",
+            "tripEnded": "Trip Ended"
+        },
+        "success": {
+            "title": "Success"
         },
         "alerts": {
             "incorrectRole": "Incorrect Role",
@@ -552,7 +615,27 @@
                     "message": "You must add a phone number to your <1>profile</1> before you can start pickup."
                 },
                 "statusUpdateSuccess": "Trip status updated",
-                "statusUpdateError": "Failed to update status"
+                "statusUpdateError": "Failed to update status",
+                "fetchError": "Failed to fetch bookings",
+                "actionFailed": "Action failed",
+                "updateStatusFailed": "Failed to update status",
+                "startCheckInFailed": "Failed to start check-in",
+                "checkInStarted": "Check-in has been enabled",
+                "success": {
+                    "title": "Success"
+                },
+                "error": {
+                    "title": "Error"
+                },
+                "removeSuccess": {
+                    "message": "Rider removed successfully"
+                },
+                "pickedUpSuccess": {
+                    "message": "Rider marked as picked up"
+                },
+                "updateSuccess": {
+                    "message": "Booking updated successfully"
+                }
             },
             "table": {
                 "rider": "Rider",
@@ -568,14 +651,16 @@
             "activeBookings": "Active Booking",
             "activeBookings_plural": "Active Bookings",
             "inactiveBookings": "Inactive Bookings",
+            "inactiveBookingsCount": "Inactive Bookings ({{count}})",
+            "rides": "{{count}} rides",
             "sort": {
                 "label": "Sort by",
                 "placeholder": "Sort...",
                 "ascending": "Ascending",
                 "descending": "Descending",
-                "createdAt": "Booked At",
+                "bookedAt": "Booked At",
                 "riderName": "Rider Name",
-                "ready": "Rider Ready",
+                "riderReady": "Rider Ready",
                 "status": "Status",
                 "pickedUp": "Picked Up",
                 "seats": "Seats",
@@ -595,7 +680,11 @@
                 "unlockTrip": "Unlock Trip",
                 "lockTrip": "Lock Trip",
                 "cancelTrip": "Cancel Trip",
-                "back": "Back"
+                "back": "Back",
+                "cancel": "Cancel",
+                "markPaymentSent": "Mark Payment Sent",
+                "checkInNow": "Check-in Now",
+                "cancelBooking": "Cancel Booking"
             },
             "modals": {
                 "removeRider": {
@@ -876,7 +965,56 @@
                     "cancel": "Cancel",
                     "confirm": "Confirm"
                 }
-            }
+            },
+            "sections": {
+                "bookingDetails": "Booking Details",
+                "tripDetails": "Trip Details"
+            },
+            "notifications": {
+                "updateStatusFailed": "Failed to update status",
+                "cancelBookingFailed": "Failed to cancel booking",
+                "success": {
+                    "title": "Success"
+                },
+                "error": {
+                    "title": "Error"
+                },
+                "markedPaid": {
+                    "message": "Payment marked as sent"
+                },
+                "markedReady": {
+                    "message": "You have checked in successfully"
+                },
+                "bookingCancelled": {
+                    "message": "Booking cancelled ({{status}})"
+                }
+            },
+            "alerts": {
+                "bookingRemoved": {
+                    "title": "Booking Removed",
+                    "description": "Your booking has been removed by the driver. Please contact them at {{phone}} for more information."
+                },
+                "manageState": "You are viewing your booking for this trip. Manage your booking status here.",
+                "cancelledTrip": {
+                    "title": "Trip Cancelled",
+                    "description": "This trip was cancelled by the driver. Please contact them at <1>{{phone}}</1> for more information."
+                }
+            },
+            "snapshot": {
+                "switchLabel": "View Booking Snapshot",
+                "alertTitle": "Viewing Snapshot",
+                "alertMessage": "You are viewing the trip rules at the time of your booking. The driver may have updated the rules since then."
+            },
+            "statusMessages": {
+                "bookToView": "Book ride to view",
+                "contactHidden": "Contact hidden until approved",
+                "bookingNotActive": "Booking no longer active",
+                "contactExpired": "Contact info expired",
+                "visibleWhenDeparted": "Visible when departed"
+            },
+            "ready": "Ready",
+            "notReady": "Not marked ready",
+            "departureTime": "Departure Time"
         },
         "validation": {
             "missingStart": "Missing Start Location",
@@ -1087,7 +1225,9 @@
             "androidInstall": "Notifications enabled. Install app for better experience.",
             "allSet": "You are all set to receive push notifications.",
             "blockedDesc": "You have blocked notifications. You must enable them in your browser settings.",
-            "enableDesc": "Enable notifications to stay updated."
+            "enableDesc": "Enable notifications to stay updated.",
+            "unblockBrowser": "To enable notifications, go to your browser settings and allow notifications for this site.",
+            "fixBrowser": "Fix in Browser"
         },
         "preferences": {
             "title": "Notification Preferences",

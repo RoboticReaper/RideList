@@ -8,6 +8,8 @@ import { useTranslation } from 'react-i18next';
 
 interface Trip {
     id: string;
+    from_input_text: string;
+    to_input_text: string;
     from_text: string;
     to_text: string;
     departure_time: string;

@@ -25,8 +25,8 @@ export async function GET(req: Request) {
         let query = `
             SELECT 
                 t.id,
-                t.from_text,
-                t.to_text,
+                t.from_input_text,
+                t.to_input_text,
                 t.departure_time,
                 t.status,
                 t.driver as driver_id,

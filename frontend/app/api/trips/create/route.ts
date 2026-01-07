@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
+import { extractPublicArea } from '@/app/api/lib/extractPublicArea';
 
 // Helper to fetch Place Details from Google (New API)
 async function fetchPlaceDetails(placeId: string, sessionToken: string) {
@@ -24,6 +25,24 @@ async function fetchPlaceDetails(placeId: string, sessionToken: string) {
 
     const data = await res.json();
     return data;
+}
+
+// Reverse geocode to get address components for neighborhood extraction
+async function fetchGeocodeResult(lat: number, lng: number) {
+    const apiKey = process.env.SERVER_PLACES_KEY;
+    if (!apiKey) throw new Error("SERVER_PLACES_KEY not configured");
+
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
+
+    const res = await fetch(url);
+    if (!res.ok) {
+        const txt = await res.text();
+        console.error(`Google Geocode Error (${lat},${lng}):`, txt);
+        throw new Error(`Failed to fetch geocode result for ${lat},${lng}`);
+    }
+
+    const data = await res.json();
+    return data.results?.[0] || null;
 }
 
 export async function POST(req: Request) {
@@ -136,8 +155,32 @@ export async function POST(req: Request) {
         const endLat = endDetails.location.latitude;
         const endLng = endDetails.location.longitude;
 
-        const fromText = startDetails.formattedAddress || start.text;
-        const toText = endDetails.formattedAddress || end.text;
+        // Get exact addresses (driver-only: from_input_text, to_input_text)
+        const fromInputText = startDetails.formattedAddress || start.text;
+        const toInputText = endDetails.formattedAddress || end.text;
+        console.log(endDetails.formattedAddress)
+
+
+        // Use reverse geocoding to extract neighborhood names for public-facing from_text/to_text
+        let fromText = fromInputText; // fallback
+        let toText = toInputText; // fallback
+
+        try {
+            const [fromGeocode, toGeocode] = await Promise.all([
+                fetchGeocodeResult(startLat, startLng),
+                fetchGeocodeResult(endLat, endLng)
+            ]);
+
+            if (fromGeocode) {
+                fromText = extractPublicArea(fromGeocode);
+            }
+            if (toGeocode) {
+                toText = extractPublicArea(toGeocode);
+            }
+        } catch (geocodeError) {
+            // If geocoding fails, use the full address as fallback
+            console.warn('Geocoding failed, using full address:', geocodeError);
+        }
 
         // 3. Database Transaction
         await client.query('BEGIN');
@@ -267,7 +310,9 @@ export async function POST(req: Request) {
                 price, 
                 notes, 
                 from_text, 
-                to_text, 
+                to_text,
+                from_input_text,
+                to_input_text,
                 origin_geog, 
                 destination_geog, 
                 departure_time, 
@@ -275,10 +320,10 @@ export async function POST(req: Request) {
                 status,
                 start_check_in
             ) VALUES (
-                $1, $2, $3, $4, $5, $6,
-                ST_SetSRID(ST_MakePoint($7, $8), 4326), 
+                $1, $2, $3, $4, $5, $6, $7, $8,
                 ST_SetSRID(ST_MakePoint($9, $10), 4326), 
-                $11, $12, 'bookable', false
+                ST_SetSRID(ST_MakePoint($11, $12), 4326), 
+                $13, $14, 'bookable', false
             ) RETURNING id`,
             [
                 user.uid,
@@ -287,6 +332,8 @@ export async function POST(req: Request) {
                 notes,
                 fromText,
                 toText,
+                fromInputText,
+                toInputText,
                 startLng, startLat,
                 endLng, endLat,
                 departureTime,

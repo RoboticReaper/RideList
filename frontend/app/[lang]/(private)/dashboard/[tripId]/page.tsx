@@ -148,7 +148,7 @@ export default function TripManagementPage({ params }: { params: Promise<{ tripI
                         <Button component={LocalizedLink} href={backLink} variant="subtle" leftSection={<IconArrowLeft size={16} />} pr="xs" size="xs" pl={0}>
                             {t('tripDetails.manage.actions.back')}
                         </Button>
-                        <Button component={LocalizedLink} href={`/rides/${tripId}`} variant="outline" leftSection={<IconExternalLink size={16} />} px="xs" size="xs">
+                        <Button component={LocalizedLink} href={`/rides/${tripId}`} target="_blank" variant="outline" leftSection={<IconExternalLink size={16} />} px="xs" size="xs">
                             {t('dashboard.tripCard.viewPosting')}
                         </Button>
                         <Button variant="outline" leftSection={<IconRefresh size={16} />} onClick={refreshTrip} px="xs" size="xs">
@@ -167,7 +167,7 @@ export default function TripManagementPage({ params }: { params: Promise<{ tripI
                     <Button component={LocalizedLink} href={backLink} variant="subtle" leftSection={<IconArrowLeft size={16} />} pr="xs" size="xs" pl={0}>
                         {t('tripDetails.manage.actions.back')}
                     </Button>
-                    <Button component={LocalizedLink} href={`/rides/${tripId}`} variant="outline" leftSection={<IconExternalLink size={16} />} px="xs" size="xs">
+                    <Button component={LocalizedLink} href={`/rides/${tripId}`} target="_blank" variant="outline" leftSection={<IconExternalLink size={16} />} px="xs" size="xs">
                         {t('dashboard.tripCard.viewPosting')}
                     </Button>
                     <Button variant="outline" leftSection={<IconRefresh size={16} />} onClick={refreshTrip} px="xs" size="xs">
@@ -177,7 +177,7 @@ export default function TripManagementPage({ params }: { params: Promise<{ tripI
 
                 <Stack gap={0} mb="lg">
                     <Title order={2}>
-                        {trip.from_text.split(',')[0]} &rarr; {trip.to_text.split(',')[0]}
+                        {trip.from_input_text?.split(',')[0]} &rarr; {trip.to_input_text?.split(',')[0]}
                     </Title>
                     <Group gap="md" align="center">
                         <Group gap="xs">

@@ -216,7 +216,7 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
                     {startCheckInHrs !== '' && (
                         <NumberInput
                             label={t('templates.rules.form.cutoffHrs')}
-                            placeholder="e.g. 3"
+                            placeholder={`${t('common.eg')} 3`}
                             value={startCheckInHrs}
                             onChange={(val) => setStartCheckInHrs(val === '' ? '' : Number(val))}
                             min={1}
@@ -230,7 +230,7 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
                         value={paymentMethods}
                         onChange={setPaymentMethods}
                         clearable
-                        placeholder="Select or type..."
+                        placeholder={t('common.selectOrType')}
                     />
                     <TextInput label={t('templates.rules.form.paymentHandle')} placeholder={t('templates.rules.form.paymentHandlePlaceholder')} value={paymentHandle} onChange={(e) => setPaymentHandle(e.target.value)} />
 

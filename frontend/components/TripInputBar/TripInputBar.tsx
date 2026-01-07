@@ -944,42 +944,42 @@ export function TripInputBar() {
                             <Select
                                 label={t('rides.create.labels.loadTemplate')}
                                 placeholder={t('rides.create.placeholders.selectTemplate')}
-                                data={tripTemplates.map(t => ({ value: t.id, label: t.name || 'Untitled Trip' }))}
+                                data={tripTemplates.map(tmpl => ({ value: tmpl.id, label: tmpl.name || t('rides.create.defaults.untitledTrip') }))}
                                 value={selectedTripTemplate}
                                 onChange={(val) => {
                                     setSelectedTripTemplate(val);
                                     if (val) {
-                                        const t = tripTemplates.find(x => x.id === val);
-                                        if (t) {
-                                            const tName = t.name || 'Trip Template';
+                                        const tmpl = tripTemplates.find(x => x.id === val);
+                                        if (tmpl) {
+                                            const tName = tmpl.name || t('rides.create.defaults.tripTemplate');
                                             // Prefill Logic
 
-                                            if (t.from_text && t.from_text !== '') {
-                                                setStartLocation(t.from_text);
-                                                setStartCoords({ lat: t.origin_lat, lng: t.origin_lng });
+                                            if (tmpl.from_text && tmpl.from_text !== '') {
+                                                setStartLocation(tmpl.from_text);
+                                                setStartCoords({ lat: tmpl.origin_lat, lng: tmpl.origin_lng });
                                                 setIsStartSelected(true);
-                                                setStartPlaceId(t.from_place_id);
+                                                setStartPlaceId(tmpl.from_place_id);
                                             }
 
-                                            if (t.to_text && t.to_text !== '') {
-                                                setEndLocation(t.to_text);
-                                                setEndCoords({ lat: t.dest_lat, lng: t.dest_lng });
+                                            if (tmpl.to_text && tmpl.to_text !== '') {
+                                                setEndLocation(tmpl.to_text);
+                                                setEndCoords({ lat: tmpl.dest_lat, lng: tmpl.dest_lng });
                                                 setIsEndSelected(true);
-                                                setEndPlaceId(t.to_place_id);
+                                                setEndPlaceId(tmpl.to_place_id);
                                             }
 
-                                            setPrice(Number(t.price));
-                                            setSeats(Number(t.total_seats));
-                                            setNotes(t.notes);
+                                            setPrice(Number(tmpl.price));
+                                            setSeats(Number(tmpl.total_seats));
+                                            setNotes(tmpl.notes);
 
                                             setLoadingStart(false);
                                             setLoadingEnd(false);
 
-                                            if (t.car) setSelectedCarId(t.car);
+                                            if (tmpl.car) setSelectedCarId(tmpl.car);
 
                                             // Rule Prefill if exists
-                                            if (t.rule_details) {
-                                                const r = t.rule_details;
+                                            if (tmpl.rule_details) {
+                                                const r = tmpl.rule_details;
                                                 setBigLuggage(r.big_luggage_lim ?? '');
                                                 setSmallLuggage(r.small_luggage_lim ?? '');
                                                 setPaymentMethods(r.payment_methods || []);
@@ -1254,25 +1254,25 @@ export function TripInputBar() {
                             <Paper withBorder p="sm" bg="gray.0">
                                 <Select
                                     label={t('rides.create.labels.loadSavedTemplate')}
-                                    placeholder="Select a rule template to prefill"
-                                    data={templates.map(t => ({ value: t.id, label: t.name || 'Unnamed Template' }))}
+                                    placeholder={t('rides.create.placeholders.selectRuleTemplate')}
+                                    data={templates.map(tmpl => ({ value: tmpl.id, label: tmpl.name || t('rides.create.defaults.unnamedTemplate') }))}
                                     value={selectedTemplate}
                                     onChange={(val) => {
                                         setSelectedTemplate(val);
-                                        const t = templates.find(temp => temp.id === val);
-                                        if (t) {
-                                            if (t.payment_methods) setPaymentMethods(t.payment_methods);
-                                            if (t.payment_handle) setPaymentHandle(t.payment_handle);
-                                            if (t.pickup_rules) setPickupRules(t.pickup_rules);
-                                            if (t.cancellation_policy) setCancellationPolicy(t.cancellation_policy);
-                                            if (t.auto_accept !== undefined) setAutoAccept(t.auto_accept);
-                                            if (t.big_luggage_lim !== null) setBigLuggage(t.big_luggage_lim);
-                                            if (t.small_luggage_lim !== null) setSmallLuggage(t.small_luggage_lim);
-                                            if (t.pickup_radius_meters !== null) setPickupRadius(t.pickup_radius_meters);
-                                            if (t.drop_off_radius_meters !== null) setDropoffRadius(t.drop_off_radius_meters);
+                                        const tmpl = templates.find(temp => temp.id === val);
+                                        if (tmpl) {
+                                            if (tmpl.payment_methods) setPaymentMethods(tmpl.payment_methods);
+                                            if (tmpl.payment_handle) setPaymentHandle(tmpl.payment_handle);
+                                            if (tmpl.pickup_rules) setPickupRules(tmpl.pickup_rules);
+                                            if (tmpl.cancellation_policy) setCancellationPolicy(tmpl.cancellation_policy);
+                                            if (tmpl.auto_accept !== undefined) setAutoAccept(tmpl.auto_accept);
+                                            if (tmpl.big_luggage_lim !== null) setBigLuggage(tmpl.big_luggage_lim);
+                                            if (tmpl.small_luggage_lim !== null) setSmallLuggage(tmpl.small_luggage_lim);
+                                            if (tmpl.pickup_radius_meters !== null) setPickupRadius(tmpl.pickup_radius_meters);
+                                            if (tmpl.drop_off_radius_meters !== null) setDropoffRadius(tmpl.drop_off_radius_meters);
 
                                             // Cutoff
-                                            const ch = parseCutoffTimeNullable(t.cutoff_time);
+                                            const ch = parseCutoffTimeNullable(tmpl.cutoff_time);
                                             if (ch !== null) {
                                                 setCutoffEnabled(true);
                                                 setCutoffHours(ch);
@@ -1282,14 +1282,14 @@ export function TripInputBar() {
                                             }
 
                                             // Pay Window
-                                            if (t.pay_window) {
-                                                const pw = parsePayWindow(t.pay_window);
+                                            if (tmpl.pay_window) {
+                                                const pw = parsePayWindow(tmpl.pay_window);
                                                 if (!isNaN(pw)) setPayWindow(pw);
                                             }
 
                                             // Start Check-in
-                                            if (t.start_check_in_hrs_before_departure) {
-                                                const sch = parseStartCheckInNullable(t.start_check_in_hrs_before_departure);
+                                            if (tmpl.start_check_in_hrs_before_departure) {
+                                                const sch = parseStartCheckInNullable(tmpl.start_check_in_hrs_before_departure);
                                                 if (sch) {
                                                     setStartCheckInEnabled(true);
                                                     setStartCheckInHrs(sch);
@@ -1303,13 +1303,13 @@ export function TripInputBar() {
                                             }
 
                                             // Flexibility
-                                            if (t.departure_time_flexibility) {
-                                                setFlexibility(parseFlexibility(t.departure_time_flexibility));
+                                            if (tmpl.departure_time_flexibility) {
+                                                setFlexibility(parseFlexibility(tmpl.departure_time_flexibility));
 
                                                 setFieldSourceTemplate([
                                                     'paymentMethods', 'paymentHandle', 'pickupRules', 'cancellationPolicy', 'autoAccept',
                                                     'bigLuggage', 'smallLuggage', 'pickupRadius', 'dropoffRadius', 'flexibility', 'cutoffHours', 'payWindow', 'startCheckInHrs'
-                                                ], 'Rule', t.name || 'Rule Template');
+                                                ], 'Rule', tmpl.name || t('rides.create.defaults.unnamedTemplate'));
 
                                                 notifications.show({ title: t('rides.errors.templateLoadedTitle'), message: t('rides.errors.templateLoaded'), color: 'green' });
                                             }
@@ -1334,7 +1334,7 @@ export function TripInputBar() {
                         <TextInput
                             label={<Group gap="xs">{t('rides.create.labels.paymentHandle')} {renderSourceBadge('paymentHandle')}</Group>}
                             description={t('rides.create.labels.paymentHandleDesc')}
-                            placeholder="Venmo: @user, WeChat: user123"
+                            placeholder={t('rides.create.placeholders.paymentHandle')}
                             value={paymentHandle}
                             onChange={(e) => {
                                 setPaymentHandle(e.currentTarget.value);
@@ -1553,7 +1553,7 @@ export function TripInputBar() {
                         {saveTemplate && (
                             <TextInput
                                 label={t('rides.create.labels.ruleTemplateName')}
-                                placeholder="e.g. Standard Rules"
+                                placeholder={t('rides.create.placeholders.ruleTemplateName')}
                                 value={ruleTemplateName}
                                 onChange={(e) => setRuleTemplateName(e.currentTarget.value)}
                                 required
@@ -1563,7 +1563,7 @@ export function TripInputBar() {
                         {saveTripTemplate && (
                             <TextInput
                                 label={t('rides.create.labels.tripTemplateName')}
-                                placeholder="e.g. Daily Commute"
+                                placeholder={t('rides.create.placeholders.tripTemplateName')}
                                 value={tripTemplateName}
                                 onChange={(e) => setTripTemplateName(e.currentTarget.value)}
                                 required
@@ -1579,25 +1579,24 @@ export function TripInputBar() {
 
                 <Stepper.Completed>
                     <Stack align="center" mt="lg" gap="md">
-                        <Title order={3}>Trip Posted!</Title>
-                        <Text>Your trip is now live and bookable.</Text>
-                        <Text size="sm" c="dimmed">Redirecting to your post in {redirectCountdown}s...</Text>
+                        <Title order={3}>{t('rides.create.completion.title')}</Title>
+                        <Text>{t('rides.create.completion.subtitle')}</Text>
+                        <Text size="sm" c="dimmed">{t('rides.create.completion.redirecting', { countdown: redirectCountdown })}</Text>
                         <Group>
-                            <Button variant="outline" onClick={resetForm}>Start New Draft</Button>
-                            <Button onClick={() => { localStorage.removeItem('trip_draft'); router.push(postedLink) }}>View Post</Button>
+                            <Button variant="outline" onClick={resetForm}>{t('rides.create.completion.startNewDraft')}</Button>
+                            <Button onClick={() => { localStorage.removeItem('trip_draft'); router.push(postedLink) }}>{t('rides.create.completion.viewPost')}</Button>
                         </Group>
                     </Stack>
                 </Stepper.Completed>
             </Stepper>
 
-            <Modal opened={authModalOpen} onClose={() => setAuthModalOpen(false)} title="Login Required" centered>
+            <Modal opened={authModalOpen} onClose={() => setAuthModalOpen(false)} title={t('rides.create.modals.auth.title')} centered>
                 <Stack gap="md">
                     <Text>
-                        Your trip details have been saved temporarily. Please log in or create an account to publish your trip.
-                        We will restore your progress when you return.
+                        {t('rides.create.modals.auth.message')}
                     </Text>
                     <Group justify="flex-end">
-                        <Button variant="default" onClick={() => setAuthModalOpen(false)}>Cancel</Button>
+                        <Button variant="default" onClick={() => setAuthModalOpen(false)}>{t('rides.create.modals.auth.cancel')}</Button>
                         <Button onClick={() => {
                             if (user) {
                                 setAuthModalOpen(false);
@@ -1605,24 +1604,24 @@ export function TripInputBar() {
                                 handleProtectedAction();
                             }
                         }}>
-                            Log In & Continue
+                            {t('rides.create.modals.auth.login')}
                         </Button>
                     </Group>
 
                 </Stack>
             </Modal>
 
-            <Modal opened={profileModalOpen} onClose={() => setProfileModalOpen(false)} title="Complete Your Profile" centered>
+            <Modal opened={profileModalOpen} onClose={() => setProfileModalOpen(false)} title={t('rides.create.modals.profile.title')} centered>
                 <Stack gap="md">
                     <Text>
-                        Your progress has been saved. Please complete your profile to publish your trip.
+                        {t('rides.create.modals.profile.message')}
                     </Text>
                     <Group justify="flex-end">
-                        <Button variant="default" onClick={() => setProfileModalOpen(false)}>Cancel</Button>
+                        <Button variant="default" onClick={() => setProfileModalOpen(false)}>{t('rides.create.modals.profile.cancel')}</Button>
                         <Button onClick={() => {
                             router.push('/complete-profile?returnUrl=/newRide');
                         }}>
-                            Go to Profile
+                            {t('rides.create.modals.profile.goToProfile')}
                         </Button>
                     </Group>
                 </Stack>
