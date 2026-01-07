@@ -1,11 +1,13 @@
 'use client';
 import { Button, Paper, Text, TextInput, Title, Stack } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { getLocalizedHref } from '../LocalizedLink';
 import { useAuth } from '../firebase/AuthContext';
 
 export function CompleteProfileForm() {
+    const { t } = useTranslation('common');
     const [loading, setLoading] = useState(false);
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
@@ -18,7 +20,7 @@ export function CompleteProfileForm() {
 
     const handleSubmit = async () => {
         if (!name.trim()) {
-            setError('Name is required');
+            setError(t('auth.nameRequired'));
             return;
         }
 
@@ -60,7 +62,7 @@ export function CompleteProfileForm() {
                     window.location.href = targetUrl;
                 } else {
                     console.error("Failed to save profile");
-                    alert("Failed to save profile");
+                    alert(t('auth.saveProfileError'));
                 }
             }
         } catch (error) {
@@ -73,13 +75,13 @@ export function CompleteProfileForm() {
     return (
         <Paper radius="md" p="xl" withBorder>
             <Title order={2} ta="center" mt="md" mb={50}>
-                Complete your Profile
+                {t('auth.completeProfileTitle')}
             </Title>
 
             <Stack>
                 <TextInput
-                    label="Full Name"
-                    placeholder="Your name"
+                    label={t('auth.fullNameLabel')}
+                    placeholder={t('auth.fullNamePlaceholder')}
                     required
                     value={name}
                     onChange={(e) => {
@@ -89,14 +91,14 @@ export function CompleteProfileForm() {
                     error={error}
                 />
                 <TextInput
-                    label="Phone Number"
-                    placeholder="Optional"
+                    label={t('auth.phoneLabel')}
+                    placeholder={t('auth.phonePlaceholder')}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                 />
 
                 <Button fullWidth mt="xl" onClick={handleSubmit} loading={loading}>
-                    Save Profile
+                    {t('auth.saveProfile')}
                 </Button>
             </Stack>
         </Paper>

@@ -5,7 +5,10 @@ import { Container, Loader, Text } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 
+import { useTranslation } from 'react-i18next';
+
 export default function TripTemplateEditorPage() {
+    const { t } = useTranslation('common');
     const params = useParams();
     const templateId = params.templateId as string;
     const { user } = useAuth();
@@ -20,14 +23,14 @@ export default function TripTemplateEditorPage() {
                     headers: { 'Authorization': `Bearer ${token}` }
                 })
                     .then(res => {
-                        if (!res.ok) throw new Error('Failed to load template');
+                        if (!res.ok) throw new Error(t('templates.trips.errors.loadFailed'));
                         return res.json();
                     })
                     .then(data => {
                         if (data.template) {
                             setInitialData(data.template);
                         } else {
-                            setError('Template not found');
+                            setError(t('templates.trips.errors.notFound'));
                         }
                     })
                     .catch(err => {
@@ -39,7 +42,7 @@ export default function TripTemplateEditorPage() {
         } else if (templateId === 'new') {
             setLoading(false);
         }
-    }, [templateId, user]);
+    }, [templateId, user, t]);
 
     if (loading) return <Container py="xl"><Loader /></Container>;
     if (error) return <Container py="xl"><Text c="red">{error}</Text></Container>;

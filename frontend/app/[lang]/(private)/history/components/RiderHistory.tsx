@@ -1,8 +1,10 @@
+'use client'
 import { useEffect, useState, useCallback } from 'react';
 import { Stack, Text, Loader, Center, Button, Group } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { RiderTripCard } from '../../dashboard/components/RiderTripCard';
 import { IconRefresh } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 
 interface Trip {
     id: string;
@@ -19,6 +21,7 @@ interface Trip {
 }
 
 export function RiderHistory() {
+    const { t } = useTranslation('common');
     const { user } = useAuth();
     const [trips, setTrips] = useState<Trip[]>([]);
     const [loading, setLoading] = useState(true);
@@ -85,18 +88,18 @@ export function RiderHistory() {
     return (
         <Stack gap="lg">
             <Group>
-                <Text size="xl" fw={600}>Past Rides</Text>
+                <Text size="xl" fw={600}>{t('history.rider.pastRides')}</Text>
                 <Button
                     variant="subtle"
                     leftSection={<IconRefresh size={16} />}
                     onClick={handleRefresh}
                     size="xs"
                 >
-                    Refresh
+                    {t('history.refresh')}
                 </Button>
             </Group>
             {trips.length === 0 ? (
-                <Text c="dimmed" ta="center">You have no past rides.</Text>
+                <Text c="dimmed" ta="center">{t('history.rider.noRides')}</Text>
             ) : (
                 <Stack gap="md">
                     {trips.map(trip => (
@@ -106,7 +109,7 @@ export function RiderHistory() {
                     {nextCursor && (
                         <Center mt="md">
                             <Button variant="light" onClick={handleLoadMore} loading={loadingMore}>
-                                Load More
+                                {t('history.loadMore')}
                             </Button>
                         </Center>
                     )}

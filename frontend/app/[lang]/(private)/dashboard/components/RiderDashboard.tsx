@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Stack, Text, Loader, Center, Button, Group } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { RiderTripCard } from './RiderTripCard';
 import { IconRefresh, IconPlus } from '@tabler/icons-react';
 import { LocalizedLink } from '@/components/LocalizedLink';
@@ -21,6 +22,7 @@ interface Trip {
 }
 
 export function RiderDashboard() {
+    const { t } = useTranslation('common');
     const { user } = useAuth();
     const [trips, setTrips] = useState<Trip[]>([]);
     const [loading, setLoading] = useState(true);
@@ -95,7 +97,7 @@ export function RiderDashboard() {
     return (
         <Stack gap="lg">
             <Group>
-                <Text size="xl" fw={600}>Upcoming Rides</Text>
+                <Text size="xl" fw={600}>{t('dashboard.rider.title')}</Text>
                 <Group gap={0}>
                     <Button
                         variant="subtle"
@@ -103,7 +105,7 @@ export function RiderDashboard() {
                         onClick={handleRefresh}
                         size="xs"
                     >
-                        Refresh
+                        {t('dashboard.common.refresh')}
                     </Button>
                     <Button
                         component={LocalizedLink}
@@ -112,12 +114,12 @@ export function RiderDashboard() {
                         size="xs"
                         variant="subtle"
                     >
-                        Find Ride
+                        {t('dashboard.rider.findRide')}
                     </Button>
                 </Group>
             </Group>
             {trips.length === 0 ? (
-                <Text c="dimmed" ta="center">You have no upcoming trips.</Text>
+                <Text c="dimmed" ta="center">{t('dashboard.rider.noTrips')}</Text>
             ) : (
                 <Stack gap="md">
                     {trips.map(trip => (
@@ -127,7 +129,7 @@ export function RiderDashboard() {
                     {nextCursor && (
                         <Center mt="md">
                             <Button variant="light" onClick={handleLoadMore} loading={loadingMore}>
-                                Load More
+                                {t('dashboard.common.loadMore')}
                             </Button>
                         </Center>
                     )}

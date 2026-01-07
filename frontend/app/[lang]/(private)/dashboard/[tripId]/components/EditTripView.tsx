@@ -8,6 +8,7 @@ import { IconCheck, IconAlertTriangle, IconCalendar, IconCar, IconMapPin, IconCu
 import { parseFlexibility, parsePayWindow, parseCutoffTimeNullable, parseStartCheckInNullable, parseFlexibilityNullable, parseCutoffTime } from '@/utils/intervalParsers';
 import { LocalizedLink } from '@/components/LocalizedLink';
 import { RadiusMap } from '@/components/Rides/RadiusMap';
+import { useTranslation, Trans } from 'react-i18next';
 
 interface EditTripViewProps {
     trip: any; // Using any for simplicity as Trip type is large
@@ -41,6 +42,7 @@ interface PlacePrediction {
 }
 
 export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
+    const { t } = useTranslation('common');
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
 
@@ -268,49 +270,49 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
 
         // VALIDATION: Ensure From/To are not empty
         if (!values.from_text?.trim()) {
-            notifications.show({ title: 'Missing Start Location', message: 'Please select a start location.', color: 'red' });
+            notifications.show({ title: t('tripDetails.edit.notifications.missingStart.title'), message: t('tripDetails.edit.notifications.missingStart.message'), color: 'red' });
             return;
         }
         if (!values.to_text?.trim()) {
-            notifications.show({ title: 'Missing Destination', message: 'Please select a destination.', color: 'red' });
+            notifications.show({ title: t('tripDetails.edit.notifications.missingDest.title'), message: t('tripDetails.edit.notifications.missingDest.message'), color: 'red' });
             return;
         }
 
         // VALIDATION: Ensure From/To are valid Place IDs if changed
         if (form.isDirty('from_text')) {
             if (!startPlaceId) {
-                notifications.show({ title: 'Invalid Start Location', message: 'Please select a valid start location from the suggestions.', color: 'red' });
+                notifications.show({ title: t('tripDetails.edit.notifications.invalidStart.title'), message: t('tripDetails.edit.notifications.invalidStart.message'), color: 'red' });
                 return;
             }
         }
         if (form.isDirty('to_text')) {
             if (!endPlaceId) {
-                notifications.show({ title: 'Invalid Destination', message: 'Please select a valid destination from the suggestions.', color: 'red' });
+                notifications.show({ title: t('tripDetails.edit.notifications.invalidDest.title'), message: t('tripDetails.edit.notifications.invalidDest.message'), color: 'red' });
                 return;
             }
         }
 
         // VALIDATION: Database NOT NULL checks
         if (!values.departure_time) {
-            notifications.show({ title: 'Missing Departure Time', message: 'Please select a departure time.', color: 'red' });
+            notifications.show({ title: t('tripDetails.edit.notifications.missingDeparture.title'), message: t('tripDetails.edit.notifications.missingDeparture.message'), color: 'red' });
             return;
         }
 
         if (values.departure_time < new Date()) {
-            notifications.show({ title: 'Invalid Departure Time', message: 'Departure time cannot be in the past.', color: 'red' });
+            notifications.show({ title: t('tripDetails.edit.notifications.invalidDeparture.title'), message: t('tripDetails.edit.notifications.invalidDeparture.message'), color: 'red' });
             return;
         }
 
         // total_seats > 0
         if (!values.total_seats || values.total_seats < 1) {
-            notifications.show({ title: 'Invalid Seats', message: 'Total seats must be at least 1.', color: 'red' });
+            notifications.show({ title: t('tripDetails.edit.notifications.invalidSeats.title'), message: t('tripDetails.edit.notifications.invalidSeats.message'), color: 'red' });
             return;
         }
 
         // Validate Price (Must be number >= 0, not empty)
         // Check for undefined, null, or empty string (though initialValues casts to Number, clearing input might make it '')
         if ((values.price as any) === '' || values.price === undefined || values.price === null || Number(values.price) < 0) {
-            notifications.show({ title: 'Invalid Price', message: 'Please enter a valid price (0 or greater).', color: 'red' });
+            notifications.show({ title: t('tripDetails.edit.notifications.invalidPrice.title'), message: t('tripDetails.edit.notifications.invalidPrice.message'), color: 'red' });
             return;
         }
 
@@ -320,11 +322,11 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
         // NumberInput with empty value sends '' or 0? 
         // We cast to Number() in initialValues, but onChange handles it. 
         if (!values.pickupRadius || values.pickupRadius <= 0) {
-            notifications.show({ title: 'Invalid Pickup Radius', message: 'Pickup radius must be greater than 0 meters.', color: 'red' });
+            notifications.show({ title: t('tripDetails.edit.notifications.invalidPickupRadius.title'), message: t('tripDetails.edit.notifications.invalidPickupRadius.message'), color: 'red' });
             return;
         }
         if (!values.dropoffRadius || values.dropoffRadius <= 0) {
-            notifications.show({ title: 'Invalid Dropoff Radius', message: 'Dropoff radius must be greater than 0 meters.', color: 'red' });
+            notifications.show({ title: t('tripDetails.edit.notifications.invalidDropoffRadius.title'), message: t('tripDetails.edit.notifications.invalidDropoffRadius.message'), color: 'red' });
             return;
         }
 
@@ -334,7 +336,7 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
         // But let's ensure it's not empty text if that's possible.
         // It's a number input. 0 is valid "no flexibility".
         if ((values.flexibility as any) === '' || values.flexibility === undefined || values.flexibility === null) {
-            notifications.show({ title: 'Invalid Flexibility', message: 'Please specify flexibility (0 for none).', color: 'red' });
+            notifications.show({ title: t('tripDetails.edit.notifications.invalidFlexibility.title'), message: t('tripDetails.edit.notifications.invalidFlexibility.message'), color: 'red' });
             return;
         }
 
@@ -345,8 +347,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                 // Check Seats
                 if ((selectedCar.seats || 0) > 0 && Number(values.total_seats) > (selectedCar.seats || 0)) {
                     notifications.show({
-                        title: 'Capacity Exceeded',
-                        message: `Total seats (${values.total_seats}) cannot exceed car capacity (${selectedCar.seats}).`,
+                        title: t('tripDetails.edit.notifications.capacityExceeded.title'),
+                        message: t('tripDetails.edit.notifications.capacityExceeded.message', { total: values.total_seats, capacity: selectedCar.seats }),
                         color: 'red'
                     });
                     return;
@@ -356,8 +358,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                 if (selectedCar.big_luggage !== undefined && selectedCar.big_luggage !== null) {
                     if (Number(values.bigLuggage || 0) > selectedCar.big_luggage) {
                         notifications.show({
-                            title: 'Big Luggage Limit',
-                            message: `Big luggage limit (${values.bigLuggage}) exceeds car capacity (${selectedCar.big_luggage}). Please adjust the luggage limits to avoid overloading the car.`,
+                            title: t('tripDetails.edit.notifications.bigLuggageExceeded.title'),
+                            message: t('tripDetails.edit.notifications.bigLuggageExceeded.message', { limit: values.bigLuggage, capacity: selectedCar.big_luggage }),
                             color: 'yellow',
                             autoClose: false,
                         });
@@ -366,8 +368,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                 if (selectedCar.small_luggage !== undefined && selectedCar.small_luggage !== null) {
                     if (Number(values.smallLuggage || 0) > selectedCar.small_luggage) {
                         notifications.show({
-                            title: 'Small Luggage Limit',
-                            message: `Small luggage limit (${values.smallLuggage}) exceeds car capacity (${selectedCar.small_luggage}). Please adjust the luggage limits to avoid overloading the car.`,
+                            title: t('tripDetails.edit.notifications.smallLuggageExceeded.title'),
+                            message: t('tripDetails.edit.notifications.smallLuggageExceeded.message', { limit: values.smallLuggage, capacity: selectedCar.small_luggage }),
                             color: 'yellow',
                             autoClose: false,
                         });
@@ -431,18 +433,18 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
 
             if (!res.ok) {
                 const err = await res.json();
-                throw new Error(err.error || 'Update failed');
+                throw new Error(err.error || t('tripDetails.edit.notifications.updateFailed'));
             }
 
             notifications.show({
-                title: 'Success',
-                message: 'Trip updated successfully',
+                title: t('tripDetails.edit.notifications.success.title'),
+                message: t('tripDetails.edit.notifications.success.message'),
                 color: 'green',
                 icon: <IconCheck size={16} />
             });
         } catch (error: any) {
             notifications.show({
-                title: 'Error',
+                title: t('tripDetails.edit.notifications.error.title'),
                 message: error.message,
                 color: 'red',
                 icon: <IconAlertTriangle size={16} />
@@ -458,22 +460,22 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
         <form onSubmit={form.onSubmit(handleSubmit)}>
             <Stack gap="lg" maw={800} mx="auto">
                 {isReadOnly ? (
-                    <Alert title="Read Only" color="gray" icon={<IconLock size={16} />}>
-                        This trip has been {trip.status === 'done' ? 'completed' : 'cancelled'} and cannot be modified.
+                    <Alert title={t('tripDetails.edit.alerts.readOnly.title')} color="gray" icon={<IconLock size={16} />}>
+                        {trip.status === 'done' ? t('tripDetails.edit.alerts.readOnly.completed') : t('tripDetails.edit.alerts.readOnly.cancelled')}
                     </Alert>
                 ) : (
-                    <Alert title="Editing Mode" color="blue" icon={<IconAlertTriangle size={16} />}>
-                        Modifying and saving changes will update the listing immediately.
+                    <Alert title={t('tripDetails.edit.alerts.editingMode.title')} color="blue" icon={<IconAlertTriangle size={16} />}>
+                        {t('tripDetails.edit.alerts.editingMode.description')}
                     </Alert>
                 )}
 
                 <fieldset disabled={isReadOnly} style={{ border: 'none', padding: 0, margin: 0 }}>
                     <Stack gap="lg">
-                        <Title order={4} td="underline">Trip Details</Title>
+                        <Title order={4} td="underline">{t('tripDetails.edit.sections.tripDetails')}</Title>
                         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                             <Autocomplete
-                                label="From"
-                                placeholder="Starting Location"
+                                label={t('tripDetails.edit.labels.from')}
+                                placeholder={t('tripDetails.edit.placeholders.from')}
                                 leftSection={<IconMapPin size={16} />}
                                 data={startSuggestions}
                                 value={form.values.from_text}
@@ -486,8 +488,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                                 rightSection={renderRightSection(loadingStart, form.values.from_text, clearStart)}
                             />
                             <Autocomplete
-                                label="To"
-                                placeholder="Destination"
+                                label={t('tripDetails.edit.labels.to')}
+                                placeholder={t('tripDetails.edit.placeholders.to')}
                                 leftSection={<IconMapPin size={16} />}
                                 data={endSuggestions}
                                 value={form.values.to_text}
@@ -504,8 +506,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                             <Stack gap="xs">
                                 <NumberInput
-                                    label="Pickup Radius (m)"
-                                    description="The area around your departure location where you are willing to pick up passengers"
+                                    label={t('tripDetails.edit.labels.pickupRadius')}
+                                    description={t('tripDetails.edit.descriptions.pickupRadius')}
                                     min={0}
                                     step={100}
                                     {...form.getInputProps('pickupRadius')}
@@ -522,8 +524,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
 
                             <Stack gap="xs">
                                 <NumberInput
-                                    label="Dropoff Radius (m)"
-                                    description="The area around your arrival location where you are willing to drop off passengers"
+                                    label={t('tripDetails.edit.labels.dropoffRadius')}
+                                    description={t('tripDetails.edit.descriptions.dropoffRadius')}
                                     min={0}
                                     step={100}
                                     {...form.getInputProps('dropoffRadius')}
@@ -540,8 +542,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                         </SimpleGrid>
 
                         <DateTimePicker
-                            label="Departure Time"
-                            placeholder="Pick date & time"
+                            label={t('tripDetails.edit.labels.departureTime')}
+                            placeholder={t('tripDetails.edit.placeholders.pickDate')}
                             leftSection={<IconCalendar size={16} />}
                             valueFormat="MM/DD/YYYY HH:mm"
                             minDate={new Date()}
@@ -550,7 +552,7 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
 
                         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                             <NumberInput
-                                label="Price ($)"
+                                label={t('tripDetails.edit.labels.price')}
                                 placeholder="0.00"
                                 min={0}
                                 decimalScale={2}
@@ -558,7 +560,7 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                                 {...form.getInputProps('price')}
                             />
                             <NumberInput
-                                label="Total Seats"
+                                label={t('tripDetails.edit.labels.totalSeats')}
                                 placeholder="1"
                                 min={1}
                                 {...form.getInputProps('total_seats')}
@@ -566,22 +568,25 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                         </SimpleGrid>
 
                         <Select
-                            label="Vehicle"
-                            placeholder="Select a car"
+                            label={t('tripDetails.edit.labels.vehicle')}
+                            placeholder={t('tripDetails.edit.placeholders.selectCar')}
                             data={[
-                                { value: 'none', label: 'No Vehicle / Walking' },
+                                { value: 'none', label: t('dashboard.common.noVehicle') },
                                 ...cars.map(c => ({ value: c.id, label: `${c.year} ${c.make} ${c.model}` }))
                             ]}
                             leftSection={<IconCar size={16} />}
                             {...form.getInputProps('car')}
                         />
                         <Text size="xs" c="dimmed" mt={-10} mb="xs">
-                            Save changes and go to <Anchor component={LocalizedLink} href="/cars" style={{ textDecoration: 'underline' }}>My Vehicles</Anchor> to add new vehicle
+                            <Trans
+                                i18nKey="tripDetails.edit.notes.addVehicle"
+                                components={{ 1: <Anchor component={LocalizedLink} href="/cars" style={{ textDecoration: 'underline' }} /> }}
+                            />
                         </Text>
 
                         <Textarea
-                            label="Trip Notes"
-                            placeholder="Additional details..."
+                            label={t('tripDetails.edit.labels.tripNotes')}
+                            placeholder={t('tripDetails.edit.placeholders.tripNotes')}
                             autosize
                             minRows={4}
                             leftSection={<IconScript size={16} />}
@@ -589,34 +594,34 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                         />
 
                         <Divider />
-                        <Title order={4} td="underline">Rules & Logistics</Title>
+                        <Title order={4} td="underline">{t('tripDetails.edit.sections.rulesLogistics')}</Title>
 
                         {/* Logistics Step */}
                         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                             <TagsInput
-                                label="Payment Methods"
+                                label={t('tripDetails.edit.labels.paymentMethods')}
                                 data={['Cash', 'Venmo', 'Zelle', 'WeChat', 'CashApp']}
-                                placeholder="Select or type methods"
+                                placeholder={t('tripDetails.edit.placeholders.paymentMethods')}
                                 {...form.getInputProps('paymentMethods')}
                             />
                             <TextInput
-                                label="Payment Handle"
-                                placeholder="e.g. @user"
+                                label={t('tripDetails.edit.labels.paymentHandle')}
+                                placeholder={t('tripDetails.edit.placeholders.paymentHandle')}
                                 {...form.getInputProps('paymentHandle')}
                             />
                         </SimpleGrid>
 
                         <Textarea
-                            label="Pickup Rules"
-                            placeholder="e.g. Wait at main entrance"
+                            label={t('tripDetails.edit.labels.pickupRules')}
+                            placeholder={t('tripDetails.edit.placeholders.pickupRules')}
                             autosize
                             minRows={2}
                             {...form.getInputProps('pickupRules')}
                         />
 
                         <Textarea
-                            label="Cancellation Policy"
-                            placeholder="e.g. Free cancellation up to 24h before departure"
+                            label={t('tripDetails.edit.labels.cancellationPolicy')}
+                            placeholder={t('tripDetails.edit.placeholders.cancellationPolicy')}
                             minRows={2}
                             autosize
                             {...form.getInputProps('cancellationPolicy')}
@@ -624,23 +629,23 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
 
                         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                             <NumberInput
-                                label="Big Luggage Limit"
+                                label={t('tripDetails.edit.labels.bigLuggageLimit')}
                                 min={0}
                                 {...form.getInputProps('bigLuggage')}
                             />
                             <NumberInput
-                                label="Small Luggage Limit"
+                                label={t('tripDetails.edit.labels.smallLuggageLimit')}
                                 min={0}
                                 {...form.getInputProps('smallLuggage')}
                             />
                         </SimpleGrid>
 
-                        <Divider label="Settings" labelPosition="center" />
+                        <Divider label={t('tripDetails.edit.sections.settings')} labelPosition="center" />
 
                         {/* Settings Step */}
                         <NumberInput
-                            label="Departure Flexibility (Hours)"
-                            description="How long might you leave early or late? Riders will search and book within this time range."
+                            label={t('tripDetails.edit.labels.departureFlexibility')}
+                            description={t('tripDetails.edit.descriptions.departureFlexibility')}
                             min={0}
                             {...form.getInputProps('flexibility')}
                         />
@@ -648,12 +653,12 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
 
                         <Accordion variant="separated" defaultValue="settings">
                             <Accordion.Item value="settings">
-                                <Accordion.Control>Advanced Rules</Accordion.Control>
+                                <Accordion.Control>{t('tripDetails.edit.sections.advancedRules')}</Accordion.Control>
                                 <Accordion.Panel>
                                     <Stack gap="md">
                                         <Switch
-                                            label="Auto Accept Bookings"
-                                            description="Automatically approve requests that meet your criteria"
+                                            label={t('tripDetails.edit.labels.autoAccept')}
+                                            description={t('tripDetails.edit.descriptions.autoAccept')}
                                             checked={form.values.autoAccept}
                                             onChange={(e) => {
                                                 form.setFieldValue('autoAccept', e.currentTarget.checked);
@@ -662,8 +667,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
 
                                         <Stack gap="xs">
                                             <Switch
-                                                label="Auto Start Check-in"
-                                                description="Automatically ask passengers to check-in before the trip starts. Upon departure, check-in will begin automatically."
+                                                label={t('tripDetails.edit.labels.autoStartCheckIn')}
+                                                description={t('tripDetails.edit.descriptions.autoStartCheckIn')}
                                                 checked={form.values.startCheckInEnabled}
                                                 onChange={(e) => {
                                                     form.setFieldValue('startCheckInEnabled', e.currentTarget.checked);
@@ -672,8 +677,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                                             />
                                             {form.values.startCheckInEnabled && (
                                                 <NumberInput
-                                                    label="Start Check-in (Hours before departure)"
-                                                    placeholder="e.g. 3"
+                                                    label={t('tripDetails.edit.labels.startCheckInTime')}
+                                                    placeholder="3"
                                                     min={0.1}
                                                     decimalScale={2}
                                                     {...form.getInputProps('startCheckInHrs')}
@@ -683,8 +688,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
 
                                         <Stack gap="xs">
                                             <Switch
-                                                label="Enable Booking Cutoff"
-                                                description="Stop accepting bookings X hours before departure"
+                                                label={t('tripDetails.edit.labels.bookingCutoff')}
+                                                description={t('tripDetails.edit.descriptions.bookingCutoff')}
                                                 checked={form.values.cutoffEnabled}
                                                 onChange={(e) => {
                                                     form.setFieldValue('cutoffEnabled', e.currentTarget.checked);
@@ -693,8 +698,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                                             />
                                             {form.values.cutoffEnabled && (
                                                 <NumberInput
-                                                    label="Hours before departure"
-                                                    description="e.g. 1.5 for 1 hour 30 mins"
+                                                    label={t('tripDetails.edit.labels.cutoffHours')}
+                                                    description={t('tripDetails.edit.descriptions.cutoffHours')}
                                                     placeholder="1"
                                                     min={0.1}
                                                     step={0.5}
@@ -708,8 +713,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                                         <Divider />
 
                                         <NumberInput
-                                            label="Pay Window (Minutes)"
-                                            description="Time allowed for rider to pay after approval"
+                                            label={t('tripDetails.edit.labels.payWindow')}
+                                            description={t('tripDetails.edit.descriptions.payWindow')}
                                             {...form.getInputProps('payWindow')}
                                             min={5}
                                             step={5}
@@ -721,7 +726,7 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
 
                         {!isReadOnly && (
                             <Button type="submit" loading={loading} fullWidth mt="md">
-                                Save Changes
+                                {t('tripDetails.edit.actions.saveChanges')}
                             </Button>
                         )}
                     </Stack>

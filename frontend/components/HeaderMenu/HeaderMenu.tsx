@@ -13,6 +13,7 @@ import {
   IconUser,
   IconSettings,
   IconBell,
+  IconHistory,
 } from '@tabler/icons-react';
 import {
   ActionIcon,
@@ -138,7 +139,7 @@ export function HeaderMenu() {
                 </Menu.Target>
 
                 <Menu.Dropdown>
-                  <Menu.Label>Account</Menu.Label>
+                  <Menu.Label>{t('headerMenu.account')}</Menu.Label>
                   <Text size="sm" truncate px="sm">
                     {user?.email}
                   </Text>
@@ -148,21 +149,28 @@ export function HeaderMenu() {
                     href="/dashboard"
                     leftSection={<IconLayoutDashboard size={14} />}
                   >
-                    Dashboard
+                    {t('headerMenu.dashboard')}
                   </Menu.Item>
                   <Menu.Item
                     component={LocalizedLink}
                     href={"/profile/" + user?.uid}
                     leftSection={<IconUser size={14} />}
                   >
-                    Profile
+                    {t('headerMenu.profile')}
+                  </Menu.Item>
+                  <Menu.Item
+                    component={LocalizedLink}
+                    href="/history"
+                    leftSection={<IconHistory size={14} />}
+                  >
+                    {t('headerMenu.history')}
                   </Menu.Item>
                   <Menu.Item
                     component={LocalizedLink}
                     href="/settings"
                     leftSection={<IconSettings size={14} />}
                   >
-                    Settings
+                    {t('headerMenu.settings')}
                   </Menu.Item>
                   <Menu.Divider />
                   <Menu.Item
@@ -172,7 +180,7 @@ export function HeaderMenu() {
                       signOut(getAuth(app));
                     }}
                   >
-                    Logout
+                    {t('headerMenu.logout')}
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
@@ -217,7 +225,7 @@ export function HeaderMenu() {
           <UnstyledButton className={classes.mobileLink} onClick={toggleLinks}>
             <Center inline>
               <Box component="span" mr={5}>
-                Language
+                {t('headerMenu.language')}
               </Box>
               <IconChevronDown
                 style={{ width: 16, height: 16, transform: linksOpened ? 'rotate(180deg)' : 'none' }}
@@ -258,7 +266,7 @@ export function HeaderMenu() {
           <Divider my="sm" />
 
           <Group justify="center" grow pb="xl" px="md">
-            {loading ? <Text>Loading...</Text> : null}
+            {loading ? <Text>{t('common.loading')}</Text> : null}
             {!loading && !user ? (
               <LocalizedLink
                 href="/auth"
@@ -286,7 +294,7 @@ export function HeaderMenu() {
                   href="/dashboard"
                   onClick={closeDrawer}
                 >
-                  Dashboard
+                  {t('headerMenu.dashboard')}
                 </Button>
                 <Button
                   fullWidth
@@ -298,8 +306,21 @@ export function HeaderMenu() {
                   href={"/profile/" + user?.uid}
                   onClick={closeDrawer}
                 >
-                  Profile
+                  {t('headerMenu.profile')}
                 </Button>
+                <Button
+                  fullWidth
+                  variant="subtle"
+                  leftSection={<IconHistory size={14} />}
+                  justify="start"
+                  mb="xs"
+                  component={LocalizedLink}
+                  href="/history"
+                  onClick={closeDrawer}
+                >
+                  {t('headerMenu.history')}
+                </Button>
+
                 <Button
                   fullWidth
                   variant="subtle"
@@ -310,7 +331,7 @@ export function HeaderMenu() {
                   href="/settings"
                   onClick={closeDrawer}
                 >
-                  Settings
+                  {t('headerMenu.settings')}
                 </Button>
                 <Button
                   fullWidth
@@ -321,7 +342,7 @@ export function HeaderMenu() {
                     closeDrawer();
                   }}
                 >
-                  Logout
+                  {t('headerMenu.logout')}
                 </Button>
               </Box>
             )}

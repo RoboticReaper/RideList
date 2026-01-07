@@ -2,36 +2,12 @@
 
 import { useState, useRef, useEffect } from 'react';
 import {
-    Paper,
-    Button,
-    Box,
-    Autocomplete,
-    Loader as MantineLoader,
-    Stack,
-    ActionIcon,
-    Stepper,
-    NumberInput,
-    MultiSelect,
-    TagsInput,
-    TextInput,
-    Group,
-    Switch,
-    Select,
-    Accordion,
-    Textarea,
-    Title,
-    Text,
-    Card,
-    Radio,
-    Badge,
-    Checkbox,
-    Modal,
-    Divider,
-    SimpleGrid
+    ActionIcon, Autocomplete, Badge, Box, Button, Card, Checkbox, Collapse, Divider, Grid, Group, Loader as MantineLoader, Modal, NumberInput, Paper, Radio, Select, SimpleGrid, Stack, Stepper, Switch, TagsInput, Text, TextInput, Textarea, Title, Accordion
 } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'next/navigation';
 import { DateTimePicker } from '@mantine/dates';
-import { IconMapPin, IconCalendar, IconX, IconCar } from '@tabler/icons-react';
+import { IconMapPin, IconCalendar, IconX, IconCar, IconCheck } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../firebase/AuthContext';
@@ -65,6 +41,7 @@ interface Car {
 }
 
 export function TripInputBar() {
+    const { t } = useTranslation('common');
     const { user, handleProtectedAction } = useAuth();
     const router = useRouter();
     const params = useParams();
@@ -396,8 +373,8 @@ export function TripInputBar() {
                 if (isMeaningful) {
                     notifications.show({
                         id: 'draft-restored',
-                        title: 'Restored Draft',
-                        message: 'We restored your previous trip details.',
+                        title: t('rides.create.restoredDraftTitle'),
+                        message: t('rides.create.restoredDraftMessage'),
                         color: 'blue',
                         autoClose: 3000
                     });
@@ -660,19 +637,19 @@ export function TripInputBar() {
         // Step 1 Validation
         if (active === 0) {
             if (!isStartSelected || (!startPlaceId && !startCoords)) {
-                notifications.show({ title: 'Invalid Start', message: 'Please select a valid start location from the dropdown menu.', color: 'red' });
+                notifications.show({ title: t('rides.errors.invalidStartTitle'), message: t('rides.errors.invalidStart'), color: 'red' });
                 return;
             }
             if (!isEndSelected || (!endPlaceId && !endCoords)) {
-                notifications.show({ title: 'Invalid Destination', message: 'Please select a valid destination from the dropdown menu.', color: 'red' });
+                notifications.show({ title: t('rides.errors.invalidEndTitle'), message: t('rides.errors.invalidEnd'), color: 'red' });
                 return;
             }
             if (!startTime) {
-                notifications.show({ title: 'Date Required', message: 'Please select a departure time.', color: 'red' });
+                notifications.show({ title: t('rides.errors.dateRequiredTitle'), message: t('rides.errors.dateRequired'), color: 'red' });
                 return;
             }
             if (startTime < new Date()) {
-                notifications.show({ title: 'Invalid Date', message: 'Departure time cannot be in the past.', color: 'red' });
+                notifications.show({ title: t('rides.errors.pastDateTitle'), message: t('rides.errors.pastDate'), color: 'red' });
                 return;
             }
         }
@@ -680,11 +657,11 @@ export function TripInputBar() {
         // Step 2 Validation (Details)
         if (active === 1) {
             if (price === '' || price < 0) {
-                notifications.show({ title: 'Price Required', message: 'Please enter a valid price.', color: 'red' });
+                notifications.show({ title: t('rides.errors.priceRequiredTitle'), message: t('rides.errors.priceRequired'), color: 'red' });
                 return;
             }
             if (seats === '' || seats < 1) {
-                notifications.show({ title: 'Seats Required', message: 'Please enter at least 1 seat.', color: 'red' });
+                notifications.show({ title: t('rides.errors.seatsRequiredTitle'), message: t('rides.errors.seatsRequired'), color: 'red' });
                 return;
             }
         }
@@ -704,7 +681,7 @@ export function TripInputBar() {
 
                 if (isAnyFieldFilled) {
                     if (carSeats === '' || carSeats < 1) {
-                        notifications.show({ title: 'Car Seats Required', message: 'If you are adding a vehicle, please specify the number of seats.', color: 'red' });
+                        notifications.show({ title: t('rides.errors.carSeatsRequiredTitle'), message: t('rides.errors.carSeatsRequired'), color: 'red' });
                         return;
                     }
                     carCapacity = Number(carSeats);
@@ -720,8 +697,8 @@ export function TripInputBar() {
             // Validate Seats vs Car Capacity
             if (carCapacity > 0 && Number(seats) > carCapacity) {
                 notifications.show({
-                    title: 'Capacity Exceeded',
-                    message: `Vehicle's capacity (${carCapacity}) cannot be less than the trip's seats (${seats}).`,
+                    title: t('rides.errors.capacityExceededTitle'),
+                    message: t('rides.errors.capacityExceeded', { capacity: carCapacity, seats }),
                     color: 'red'
                 });
                 return;
@@ -732,7 +709,7 @@ export function TripInputBar() {
         if (active === 3) {
             // Payment Methods are now OPTIONAL
             /* if (paymentMethods.length === 0) {
-                notifications.show({ title: 'Payment Method Required', message: 'Please select at least one method.', color: 'red' });
+                notifications.show({ title: t('rides.errors.paymentMethodRequiredTitle'), message: t('rides.errors.paymentMethodRequired'), color: 'red' });
                 return;
             } */
             // Payment Handle is now OPTIONAL
@@ -755,16 +732,16 @@ export function TripInputBar() {
 
                 if (carBigCap !== null && Number(bigLuggage || 0) > carBigCap) {
                     notifications.show({
-                        title: 'Luggage Check Reminder',
-                        message: `Big luggage limit (${bigLuggage || 0}) exceeds car capacity (${carBigCap}). Go back to adjust luggage limits to prevent overloading the car.`,
+                        title: t('rides.errors.luggageCheck'),
+                        message: t('rides.errors.bigLuggageExceeded', { limit: bigLuggage || 0, capacity: carBigCap }),
                         color: 'red',
                         autoClose: false
                     });
                 }
                 if (carSmallCap !== null && Number(smallLuggage || 0) > carSmallCap) {
                     notifications.show({
-                        title: 'Luggage Check Reminder',
-                        message: `Small luggage limit (${smallLuggage || 0}) exceeds car capacity (${carSmallCap}). Go back to adjust luggage limits to prevent overloading the car.`,
+                        title: t('rides.errors.luggageCheck'),
+                        message: t('rides.errors.smallLuggageExceeded', { limit: smallLuggage || 0, capacity: carSmallCap }),
                         color: 'red',
                         autoClose: false
                     });
@@ -773,11 +750,11 @@ export function TripInputBar() {
 
             // Required Field Validation
             if (bigLuggage === '') {
-                notifications.show({ title: 'Big Luggage Limit Required', message: 'Please specify big luggage capacity (or 0).', color: 'red' });
+                notifications.show({ title: t('rides.errors.bigLuggageRequiredTitle'), message: t('rides.errors.bigLuggageRequired'), color: 'red' });
                 return;
             }
             if (smallLuggage === '') {
-                notifications.show({ title: 'Small Luggage Limit Required', message: 'Please specify small luggage capacity (or 0).', color: 'red' });
+                notifications.show({ title: t('rides.errors.smallLuggageRequiredTitle'), message: t('rides.errors.smallLuggageRequired'), color: 'red' });
                 return;
             }
         }
@@ -790,33 +767,33 @@ export function TripInputBar() {
     const handleFinalSubmit = async () => {
         // Validation: Template Name if Saving (Rule or Trip)
         if (saveTemplate && !ruleTemplateName.trim()) {
-            notifications.show({ title: 'Template Name Required', message: 'Please provide a name for your Rule Template.', color: 'red' });
+            notifications.show({ title: t('rides.errors.templateNameRequiredTitle'), message: t('rides.errors.ruleTemplateNameRequired'), color: 'red' });
             return;
         }
         if (saveTripTemplate && !tripTemplateName.trim()) {
-            notifications.show({ title: 'Template Name Required', message: 'Please provide a name for your Trip Template.', color: 'red' });
+            notifications.show({ title: t('rides.errors.templateNameRequiredTitle'), message: t('rides.errors.templateNameRequired'), color: 'red' });
             return;
         }
 
         // Validation for Advanced Settings (Step 5)
         if (flexibility === '') {
-            notifications.show({ title: 'Flexibility Required', message: 'Please specify departure flexibility.', color: 'red' });
+            notifications.show({ title: t('rides.errors.flexibilityRequiredTitle'), message: t('rides.errors.flexibilityRequired'), color: 'red' });
             return;
         }
-        if (pickupRadius === '') {
-            notifications.show({ title: 'Pickup Radius Required', message: 'Please specify pickup radius.', color: 'red' });
+        if (pickupRadius === '' || pickupRadius < 500) {
+            notifications.show({ title: t('rides.errors.pickupRadiusRequiredTitle'), message: t('rides.errors.pickupRadiusRequired'), color: 'red' });
             return;
         }
-        if (dropoffRadius === '') {
-            notifications.show({ title: 'Drop-off Radius Required', message: 'Please specify drop-off radius.', color: 'red' });
+        if (dropoffRadius === '' || dropoffRadius < 500) {
+            notifications.show({ title: t('rides.errors.dropoffRadiusRequiredTitle'), message: t('rides.errors.dropoffRadiusRequired'), color: 'red' });
             return;
         }
-        if (payWindow === '') {
-            notifications.show({ title: 'Pay Window Required', message: 'Please specify the pay window duration.', color: 'red' });
+        if (payWindow === '' || payWindow < 1) {
+            notifications.show({ title: t('rides.errors.payWindowRequiredTitle'), message: t('rides.errors.payWindowRequired'), color: 'red' });
             return;
         }
-        if (cutoffEnabled && (cutoffHours === '' || cutoffHours === null || cutoffHours <= 0)) {
-            notifications.show({ title: 'Invalid Cutoff Time', message: 'Please enter a valid number of hours for booking cutoff.', color: 'red' });
+        if (cutoffEnabled && (cutoffHours === '' || cutoffHours === null || cutoffHours < 0)) {
+            notifications.show({ title: t('rides.errors.invalidCutoffTimeTitle'), message: t('rides.errors.invalidCutoffTime'), color: 'red' });
             return;
         }
 
@@ -894,8 +871,8 @@ export function TripInputBar() {
 
         const id = notifications.show({
             loading: true,
-            title: 'Posting Trip',
-            message: 'Please wait...',
+            title: t('rides.errors.postingTripTitle'),
+            message: t('rides.errors.postingTrip'),
             autoClose: false,
             withCloseButton: false,
         });
@@ -926,9 +903,9 @@ export function TripInputBar() {
             notifications.update({
                 id,
                 color: 'green',
-                title: 'Success!',
-                message: 'Your trip has been posted.',
-                icon: <IconMapPin size={18} />,
+                title: t('rides.errors.successTitle'),
+                message: t('rides.errors.success'),
+                icon: <IconCheck size={16} />,
                 loading: false,
                 autoClose: 2000,
             });
@@ -944,7 +921,7 @@ export function TripInputBar() {
             notifications.update({
                 id,
                 color: 'red',
-                title: 'Error',
+                title: t('rides.errors.errorTitle'),
                 message: error.message,
                 loading: false,
                 autoClose: 3000,
@@ -961,12 +938,12 @@ export function TripInputBar() {
             >
 
                 {/* STEP 1: Route & Date */}
-                <Stepper.Step label="Route" description="Where & When">
+                <Stepper.Step label={t('rides.create.steps.route')} description={t('rides.create.steps.routeDesc')}>
                     <Stack gap="md" mt="lg">
                         {tripTemplates.length > 0 && (
                             <Select
-                                label="Load from Template"
-                                placeholder="Select a saved trip..."
+                                label={t('rides.create.labels.loadTemplate')}
+                                placeholder={t('rides.create.placeholders.selectTemplate')}
                                 data={tripTemplates.map(t => ({ value: t.id, label: t.name || 'Untitled Trip' }))}
                                 value={selectedTripTemplate}
                                 onChange={(val) => {
@@ -1044,10 +1021,10 @@ export function TripInputBar() {
                             />
                         )}
 
-                        <Title order={4}>Trip Route</Title>
+                        <Title order={4}>{t('rides.create.labels.tripRoute')}</Title>
                         <Autocomplete
-                            label={<Group gap="xs">From {renderSourceBadge('startLocation')}</Group>}
-                            placeholder="Starting Location"
+                            label={<Group gap="xs">{t('rides.create.labels.from')} {renderSourceBadge('startLocation')}</Group>}
+                            placeholder={t('rides.create.labels.startingLoc')}
                             leftSection={<IconMapPin size={16} />}
                             data={startSuggestions}
                             value={startLocation}
@@ -1067,8 +1044,8 @@ export function TripInputBar() {
                         />
 
                         <Autocomplete
-                            label={<Group gap="xs">To {renderSourceBadge('endLocation')}</Group>}
-                            placeholder="Destination"
+                            label={<Group gap="xs">{t('rides.create.labels.to')} {renderSourceBadge('endLocation')}</Group>}
+                            placeholder={t('rides.create.labels.dest')}
                             leftSection={<IconMapPin size={16} />}
                             data={endSuggestions}
                             value={endLocation}
@@ -1088,8 +1065,8 @@ export function TripInputBar() {
                         />
 
                         <DateTimePicker
-                            label="Departure"
-                            placeholder="Pick date & time"
+                            label={t('rides.create.labels.departure')}
+                            placeholder={t('rides.create.labels.pickDateTime')}
                             leftSection={<IconCalendar size={16} />}
                             value={startTime}
                             required
@@ -1101,18 +1078,17 @@ export function TripInputBar() {
                         />
 
                         <Group justify="flex-end" mt="md">
-                            <Button onClick={nextStep}>Next: Trip Details</Button>
+                            <Button onClick={nextStep}>{t('rides.create.labels.nextDetails')}</Button>
                         </Group>
                     </Stack>
                 </Stepper.Step>
 
                 {/* STEP 2: Core Details */}
-                <Stepper.Step label="Details" description="Price & Capacity">
+                <Stepper.Step label={t('rides.create.steps.details')} description={t('rides.create.steps.detailsDesc')}>
                     <Stack gap="md" mt="lg">
-                        <Title order={4}>Trip Details</Title>
+                        <Title order={4}>{t('rides.create.labels.tripDetails')}</Title>
                         <NumberInput
-                            label={<Group gap="xs">Price per Person ($) {renderSourceBadge('price')}</Group>}
-                            placeholder="25.00"
+                            label={<Group gap="xs">{t('rides.create.labels.pricePerPerson')} {renderSourceBadge('price')}</Group>}
                             prefix="$ "
                             decimalScale={2}
                             fixedDecimalScale
@@ -1125,8 +1101,8 @@ export function TripInputBar() {
                             required
                         />
                         <NumberInput
-                            label={<Group gap="xs">Total Seats Available {renderSourceBadge('seats')}</Group>}
-                            description="How many passengers can you take?"
+                            label={<Group gap="xs">{t('rides.create.labels.totalSeats')} {renderSourceBadge('seats')}</Group>}
+                            description={t('rides.create.labels.capacityDesc')}
                             value={seats}
                             onChange={(val) => {
                                 setSeats(val === '' ? '' : Number(val));
@@ -1137,16 +1113,16 @@ export function TripInputBar() {
                             required
                         />
                         <Group justify="space-between" mt="md">
-                            <Button variant="default" onClick={prevStep}>Back</Button>
-                            <Button onClick={nextStep}>Next: Vehicle</Button>
+                            <Button variant="default" onClick={prevStep}>{t('rides.create.labels.back')}</Button>
+                            <Button onClick={nextStep}>{t('rides.create.labels.nextVehicle')}</Button>
                         </Group>
                     </Stack>
                 </Stepper.Step>
 
                 {/* STEP 3: Vehicle Info (Dynamic Selection) */}
-                <Stepper.Step label="Vehicle" description="Your Car">
+                <Stepper.Step label={t('rides.create.steps.vehicle')} description={t('rides.create.steps.vehicleDesc')}>
                     <Stack gap="md" mt="lg">
-                        <Title order={4}>Vehicle Details</Title>
+                        <Title order={4}>{t('rides.create.labels.vehicleDetails')}</Title>
 
                         {/* Saved Cars Selection */}
                         {loadingCars ? <MantineLoader size="sm" /> : (
@@ -1156,14 +1132,14 @@ export function TripInputBar() {
                                     setSelectedCarId(val);
                                     setFieldSourceManual(['selectedCarId']);
                                 }}
-                                label={<Group gap="xs">Select a Saved Vehicle {renderSourceBadge('selectedCarId')}</Group>}
-                                description="Or choose to add a new one"
+                                label={<Group gap="xs">{t('rides.create.labels.selectSavedVehicle')} {renderSourceBadge('selectedCarId')}</Group>}
+                                description={t('rides.create.labels.addVehicleDesc')}
                             >
                                 <Stack mt="xs">
                                     <Paper withBorder p="sm" radius="md">
                                         <Radio
                                             value="none"
-                                            label={<Text fw={500}>No Vehicle / Walking</Text>}
+                                            label={<Text fw={500}>{t('rides.create.labels.noVehicle')}</Text>}
                                         />
                                     </Paper>
 
@@ -1184,7 +1160,7 @@ export function TripInputBar() {
                                     <Paper withBorder p="sm" radius="md">
                                         <Radio
                                             value="new"
-                                            label={<Text fw={500}>Add a New Vehicle</Text>}
+                                            label={<Text fw={500}>{t('rides.create.labels.addNewVehicle')}</Text>}
                                         />
                                     </Paper>
                                 </Stack>
@@ -1194,64 +1170,64 @@ export function TripInputBar() {
                         {/* New Car Inputs (Only if "new" selected) */}
                         {selectedCarId === 'new' && (
                             <Box mt="md">
-                                <Title order={6} mb="sm">Vehicle Info (Optional)</Title>
+                                <Title order={6} mb="sm">{t('rides.create.labels.vehicleInfoOptional')}</Title>
                                 <Stack gap="sm">
                                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                                         <TextInput
-                                            label="Make"
-                                            placeholder="Optional (e.g. Toyota)"
+                                            label={t('rides.create.labels.make')}
+                                            placeholder={t('rides.create.placeholders.make')}
                                             value={carMake}
                                             onChange={(e) => setCarMake(e.currentTarget.value)}
                                         />
                                         <TextInput
-                                            label="Model"
-                                            placeholder="Optional (e.g. Camry)"
+                                            label={t('rides.create.labels.model')}
+                                            placeholder={t('rides.create.placeholders.model')}
                                             value={carModel}
                                             onChange={(e) => setCarModel(e.currentTarget.value)}
                                         />
                                     </SimpleGrid>
                                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                                         <TextInput
-                                            label="Color"
-                                            placeholder="Optional (e.g. White)"
+                                            label={t('rides.create.labels.color')}
+                                            placeholder={t('rides.create.placeholders.color')}
                                             value={carColor}
                                             onChange={(e) => setCarColor(e.currentTarget.value)}
                                         />
                                         <TextInput
-                                            label="Year"
-                                            placeholder="Optional (e.g. 2022)"
+                                            label={t('rides.create.labels.year')}
+                                            placeholder={t('rides.create.placeholders.year')}
                                             value={carYear}
                                             onChange={(e) => setCarYear(e.currentTarget.value)}
                                         />
                                     </SimpleGrid>
                                     <TextInput
-                                        label="License Plate"
-                                        placeholder="Optional"
+                                        label={t('rides.create.labels.plate')}
+                                        placeholder={t('rides.create.placeholders.optional')}
                                         value={carPlate}
                                         onChange={(e) => setCarPlate(e.currentTarget.value)}
                                     />
 
 
 
-                                    <Divider label="Templates" labelPosition="center" />
+                                    <Divider label={t('rides.create.labels.templates')} labelPosition="center" />
                                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                                         <NumberInput
-                                            label="Total Big Luggage Cap."
+                                            label={t('rides.create.labels.totalBigLuggage')}
                                             value={carBigLuggage}
                                             onChange={(val) => setCarBigLuggage(val === '' ? '' : Number(val))}
                                             min={0}
                                         />
                                         <NumberInput
-                                            label="Total Small Luggage Cap."
+                                            label={t('rides.create.labels.totalSmallLuggage')}
                                             value={carSmallLuggage}
                                             onChange={(val) => setCarSmallLuggage(val === '' ? '' : Number(val))}
                                             min={0}
                                         />
                                     </SimpleGrid>
                                     <NumberInput
-                                        label="Number of Seats (Car Capacity)"
-                                        description="Total seats in the car (inc. driver)"
-                                        placeholder="Required (e.g. 5)"
+                                        label={t('rides.create.labels.carCapacity')}
+                                        description={t('rides.create.labels.carCapacityDesc')}
+                                        placeholder={t('rides.create.placeholders.seats')}
                                         value={carSeats}
                                         onChange={(val) => setCarSeats(val === '' ? '' : Number(val))}
                                         min={1}
@@ -1262,22 +1238,22 @@ export function TripInputBar() {
                         )}
 
                         <Group justify="space-between" mt="md">
-                            <Button variant="default" onClick={prevStep}>Back</Button>
-                            <Button onClick={nextStep}>Next: Logistics</Button>
+                            <Button variant="default" onClick={prevStep}>{t('rides.create.labels.back')}</Button>
+                            <Button onClick={nextStep}>{t('rides.create.labels.nextLogistics')}</Button>
                         </Group>
                     </Stack>
                 </Stepper.Step>
 
                 {/* STEP 4: Logistics */}
-                <Stepper.Step label="Logistics" description="Payment & Luggage">
+                <Stepper.Step label={t('rides.create.steps.logistics')} description={t('rides.create.steps.logisticsDesc')}>
                     <Stack gap="md" mt="lg">
-                        <Title order={4}>Logistics</Title>
+                        <Title order={4}>{t('rides.create.labels.logistics')}</Title>
 
                         {/* Load Template Section */}
                         {templates.length > 0 && (
                             <Paper withBorder p="sm" bg="gray.0">
                                 <Select
-                                    label="Load Saved Template"
+                                    label={t('rides.create.labels.loadSavedTemplate')}
                                     placeholder="Select a rule template to prefill"
                                     data={templates.map(t => ({ value: t.id, label: t.name || 'Unnamed Template' }))}
                                     value={selectedTemplate}
@@ -1335,7 +1311,7 @@ export function TripInputBar() {
                                                     'bigLuggage', 'smallLuggage', 'pickupRadius', 'dropoffRadius', 'flexibility', 'cutoffHours', 'payWindow', 'startCheckInHrs'
                                                 ], 'Rule', t.name || 'Rule Template');
 
-                                                notifications.show({ title: 'Template Loaded', message: 'Rules have been populated from template.', color: 'green' });
+                                                notifications.show({ title: t('rides.errors.templateLoadedTitle'), message: t('rides.errors.templateLoaded'), color: 'green' });
                                             }
                                         }
                                     }}
@@ -1345,8 +1321,8 @@ export function TripInputBar() {
                         )}
 
                         <TagsInput
-                            label={<Group gap="xs">Payment Methods {renderSourceBadge('paymentMethods')}</Group>}
-                            placeholder="Select or type accepted methods. Leaving empty = None accepted."
+                            label={<Group gap="xs">{t('rides.create.labels.paymentMethods')} {renderSourceBadge('paymentMethods')}</Group>}
+                            placeholder={t('rides.create.labels.paymentMethodsPlaceholder')}
                             data={['Cash', 'Venmo', 'Zelle', 'WeChat', 'CashApp']}
                             value={paymentMethods}
                             onChange={(val) => {
@@ -1356,8 +1332,8 @@ export function TripInputBar() {
                             clearable
                         />
                         <TextInput
-                            label={<Group gap="xs">Payment Handle / ID {renderSourceBadge('paymentHandle')}</Group>}
-                            description="Who should riders pay? (e.g. @username)"
+                            label={<Group gap="xs">{t('rides.create.labels.paymentHandle')} {renderSourceBadge('paymentHandle')}</Group>}
+                            description={t('rides.create.labels.paymentHandleDesc')}
                             placeholder="Venmo: @user, WeChat: user123"
                             value={paymentHandle}
                             onChange={(e) => {
@@ -1366,8 +1342,8 @@ export function TripInputBar() {
                             }}
                         />
                         <Textarea
-                            label={<Group gap="xs">Pickup Rules {renderSourceBadge('pickupRules')}</Group>}
-                            placeholder="e.g. Wait at the bus stop, look for a red car"
+                            label={<Group gap="xs">{t('rides.create.labels.pickupRules')} {renderSourceBadge('pickupRules')}</Group>}
+                            placeholder={t('rides.create.labels.pickupRulesPlaceholder')}
                             value={pickupRules}
                             onChange={(e) => {
                                 setPickupRules(e.currentTarget.value);
@@ -1376,8 +1352,8 @@ export function TripInputBar() {
                             minRows={2}
                         />
                         <Textarea
-                            label={<Group gap="xs">Cancellation Policy {renderSourceBadge('cancellationPolicy')}</Group>}
-                            placeholder="e.g. Free cancellation up to 24h before departure"
+                            label={<Group gap="xs">{t('rides.create.labels.cancelPolicy')} {renderSourceBadge('cancellationPolicy')}</Group>}
+                            placeholder={t('rides.create.labels.cancelPolicyPlaceholder')}
                             value={cancellationPolicy}
                             onChange={(e) => {
                                 setCancellationPolicy(e.currentTarget.value);
@@ -1389,8 +1365,8 @@ export function TripInputBar() {
 
                         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                             <NumberInput
-                                label={<Group gap="xs">Big Luggage Cap. Per Person {renderSourceBadge('bigLuggage')}</Group>}
-                                description="Large suitcases"
+                                label={<Group gap="xs">{t('rides.create.labels.bigLuggageCap')} {renderSourceBadge('bigLuggage')}</Group>}
+                                description={t('rides.create.labels.largeSuitcases')}
                                 value={bigLuggage}
                                 required
                                 onChange={(val) => {
@@ -1400,8 +1376,8 @@ export function TripInputBar() {
                                 min={0}
                             />
                             <NumberInput
-                                label={<Group gap="xs">Small Luggage Cap. Per Person {renderSourceBadge('smallLuggage')}</Group>}
-                                description="Carry-ons"
+                                label={<Group gap="xs">{t('rides.create.labels.smallLuggageCap')} {renderSourceBadge('smallLuggage')}</Group>}
+                                description={t('rides.create.labels.carryOns')}
                                 value={smallLuggage}
                                 required
                                 onChange={(val) => {
@@ -1412,19 +1388,20 @@ export function TripInputBar() {
                             />
                         </SimpleGrid>
                         <Group justify="space-between" mt="md">
-                            <Button variant="default" onClick={prevStep}>Back</Button>
-                            <Button onClick={nextStep}>Next: Settings</Button>
+                            <Button variant="default" onClick={prevStep}>{t('rides.create.labels.back')}</Button>
+                            <Button onClick={nextStep}>{t('rides.create.labels.nextSettings')}</Button>
                         </Group>
                     </Stack>
                 </Stepper.Step>
 
                 {/* STEP 5: Settings */}
-                <Stepper.Step label="Settings" description="Advanced Rules">
+                <Stepper.Step label={t('rides.create.steps.settings')} description={t('rides.create.steps.settingsDesc')}>
                     <Stack gap="md" mt="lg">
-                        <Title order={4}>Advanced Settings</Title>
+                        <Title order={4}>{t('rides.create.labels.settings')}</Title>
+                        <Title order={5}>{t('rides.create.labels.advancedSettings')}</Title>
                         <NumberInput
-                            label={<Group gap="xs">Departure Flexibility (Hours) {renderSourceBadge('flexibility')}</Group>}
-                            description="How long might you leave early or late? Riders will search and book within this time range."
+                            label={<Group gap="xs">{t('rides.create.labels.flexibility')} {renderSourceBadge('flexibility')}</Group>}
+                            description={t('rides.create.labels.flexibilityDesc')}
                             required
                             value={flexibility}
                             onChange={(val) => {
@@ -1436,38 +1413,38 @@ export function TripInputBar() {
                         />
                         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                             <NumberInput
-                                label={<Group gap="xs">Pickup Radius (m) {renderSourceBadge('pickupRadius')}</Group>}
+                                label={<Group gap="xs">{t('rides.create.labels.pickupRadius')} {renderSourceBadge('pickupRadius')}</Group>}
                                 value={pickupRadius}
                                 onChange={(val) => {
                                     setPickupRadius(val === '' ? '' : Number(val));
                                     setFieldSourceManual(['pickupRadius']);
                                 }}
                                 min={0}
-                                description="The area around your departure location where you are willing to pick up passengers"
+                                description={t('rides.create.labels.pickupRadiusDesc')}
                                 required
                                 step={100}
                             />
                             <NumberInput
-                                label={<Group gap="xs">Dropoff Radius (m) {renderSourceBadge('dropoffRadius')}</Group>}
+                                label={<Group gap="xs">{t('rides.create.labels.dropoffRadius')} {renderSourceBadge('dropoffRadius')}</Group>}
                                 value={dropoffRadius}
                                 onChange={(val) => {
                                     setDropoffRadius(val === '' ? '' : Number(val));
                                     setFieldSourceManual(['dropoffRadius']);
                                 }}
                                 min={0}
-                                description="The area around your arrival location where you are willing to drop off passengers"
+                                description={t('rides.create.labels.dropoffRadiusDesc')}
                                 required
                                 step={100}
                             />
                         </SimpleGrid>
                         <Accordion variant="separated">
                             <Accordion.Item value="settings">
-                                <Accordion.Control>Advanced Rules</Accordion.Control>
+                                <Accordion.Control>{t('rides.create.labels.advancedRules')}</Accordion.Control>
                                 <Accordion.Panel>
                                     <Stack gap="md">
                                         <Switch
-                                            label={<Group gap="xs">Auto Accept Bookings {renderSourceBadge('autoAccept')}</Group>}
-                                            description="Automatically approve requests that meet your criteria"
+                                            label={<Group gap="xs">{t('rides.create.labels.autoAccept')} {renderSourceBadge('autoAccept')}</Group>}
+                                            description={t('rides.create.labels.autoAcceptDesc')}
                                             checked={autoAccept}
                                             onChange={(e) => {
                                                 setAutoAccept(e.currentTarget.checked);
@@ -1475,8 +1452,8 @@ export function TripInputBar() {
                                             }}
                                         />
                                         <Switch
-                                            label={<Group gap="xs">Auto Start Check-in {renderSourceBadge('startCheckInHrs')}</Group>}
-                                            description="Automatically ask passengers to check-in before the trip starts. Upon departure, check-in will begin automatically."
+                                            label={<Group gap="xs">{t('rides.create.labels.autoStartCheckIn')} {renderSourceBadge('startCheckInHrs')}</Group>}
+                                            description={t('rides.create.labels.autoStartCheckInDesc')}
                                             checked={startCheckInEnabled}
                                             onChange={(e) => {
                                                 setStartCheckInEnabled(e.currentTarget.checked);
@@ -1486,7 +1463,7 @@ export function TripInputBar() {
                                         />
                                         {startCheckInEnabled && (
                                             <NumberInput
-                                                label="Start Check-in (Hours before departure)"
+                                                label={t('rides.create.labels.autoCheckIn')}
                                                 value={startCheckInHrs}
                                                 placeholder='3'
                                                 onChange={(val) => {
@@ -1498,8 +1475,8 @@ export function TripInputBar() {
                                         )}
 
                                         <Switch
-                                            label="Enable Booking Cutoff"
-                                            description="Stop accepting bookings X hours before departure"
+                                            label={t('rides.create.labels.enableCutoff')}
+                                            description={t('rides.create.labels.enableCutoffDesc')}
                                             checked={cutoffEnabled}
                                             onChange={(e) => {
                                                 setCutoffEnabled(e.currentTarget.checked);
@@ -1508,8 +1485,8 @@ export function TripInputBar() {
                                         />
                                         {cutoffEnabled && (
                                             <NumberInput
-                                                label={<Group gap="xs">Hours before departure {renderSourceBadge('cutoffHours')}</Group>}
-                                                description="e.g. 1.5 for 1 hour 30 mins"
+                                                label={<Group gap="xs">{t('rides.create.labels.hoursBefore')} {renderSourceBadge('cutoffHours')}</Group>}
+                                                description={t('rides.create.labels.hoursBeforeDesc')}
                                                 placeholder="3"
                                                 value={cutoffHours === null ? '' : cutoffHours}
                                                 onChange={(val) => {
@@ -1524,8 +1501,8 @@ export function TripInputBar() {
                                         <Divider />
 
                                         <NumberInput
-                                            label={<Group gap="xs">Pay Window (Minutes) {renderSourceBadge('payWindow')}</Group>}
-                                            description="Time allowed for rider to pay after approval"
+                                            label={<Group gap="xs">{t('rides.create.labels.payWindow')} {renderSourceBadge('payWindow')}</Group>}
+                                            description={t('rides.create.labels.payWindowDesc')}
                                             value={payWindow}
                                             onChange={(val) => {
                                                 setPayWindow(val === '' ? '' : Number(val));
@@ -1540,8 +1517,8 @@ export function TripInputBar() {
                             </Accordion.Item>
                         </Accordion>
                         <Textarea
-                            label={<Group gap="xs">Trip Notes {renderSourceBadge('notes')}</Group>}
-                            placeholder="Any specific instructions? e.g. 'Meeting at the main entrance', 'No pets', etc."
+                            label={<Group gap="xs">{t('rides.create.labels.tripNotes')} {renderSourceBadge('notes')}</Group>}
+                            placeholder={t('rides.create.labels.tripNotesPlaceholder')}
                             minRows={3}
                             value={notes}
                             onChange={(e) => {
@@ -1553,20 +1530,20 @@ export function TripInputBar() {
                         <Divider />
 
                         <Checkbox
-                            label="Save logistics and rules (Rule Template)"
+                            label={t('rides.create.labels.saveLogisticsTemplate')}
                             checked={saveTemplate}
                             onChange={(e) => setSaveTemplate(e.currentTarget.checked)}
                         />
                         <Checkbox
-                            label="Save entire trip details (Trip Template)"
+                            label={t('rides.create.labels.saveTripTemplate')}
                             checked={saveTripTemplate}
                             onChange={(e) => setSaveTripTemplate(e.currentTarget.checked)}
                         />
 
                         {(saveTemplate && saveTripTemplate) && (
                             <Checkbox
-                                label="Link Rule Template to Trip Template"
-                                description="Associate this rule set with the trip template for automatic loading."
+                                label={t('rides.create.labels.linkTemplate')}
+                                description={t('rides.create.labels.linkTemplateDesc')}
                                 checked={linkTemplates}
                                 onChange={(e) => setLinkTemplates(e.currentTarget.checked)}
                                 ml="xl"
@@ -1575,7 +1552,7 @@ export function TripInputBar() {
 
                         {saveTemplate && (
                             <TextInput
-                                label="Rule Template Name"
+                                label={t('rides.create.labels.ruleTemplateName')}
                                 placeholder="e.g. Standard Rules"
                                 value={ruleTemplateName}
                                 onChange={(e) => setRuleTemplateName(e.currentTarget.value)}
@@ -1585,7 +1562,7 @@ export function TripInputBar() {
 
                         {saveTripTemplate && (
                             <TextInput
-                                label="Trip Template Name"
+                                label={t('rides.create.labels.tripTemplateName')}
                                 placeholder="e.g. Daily Commute"
                                 value={tripTemplateName}
                                 onChange={(e) => setTripTemplateName(e.currentTarget.value)}
@@ -1594,8 +1571,8 @@ export function TripInputBar() {
                         )}
 
                         <Group justify="space-between" mt="md">
-                            <Button variant="default" onClick={prevStep}>Back</Button>
-                            <Button color="blue" onClick={handleFinalSubmit}>Post Trip</Button>
+                            <Button variant="default" onClick={prevStep}>{t('rides.create.labels.back')}</Button>
+                            <Button color="blue" onClick={handleFinalSubmit}>{t('rides.create.labels.postTrip')}</Button>
                         </Group>
                     </Stack>
                 </Stepper.Step>

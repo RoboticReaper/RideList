@@ -6,6 +6,7 @@ import { Container, Title, Paper, Text, Stack, Button, Group, LoadingOverlay, Se
 import { notifications } from '@mantine/notifications';
 import { IconCheck, IconX } from '@tabler/icons-react';
 import { LocalizedLink } from '@/components/LocalizedLink';
+import { useTranslation, Trans } from 'react-i18next';
 
 const LANGUAGE_OPTIONS = [
     { value: 'en', label: 'English' },
@@ -13,6 +14,7 @@ const LANGUAGE_OPTIONS = [
 ];
 
 export default function SettingsPage() {
+    const { t } = useTranslation('common');
     const { user } = useAuth();
     const [language, setLanguage] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -38,8 +40,8 @@ export default function SettingsPage() {
                 } else {
                     console.error("Failed to fetch settings");
                     notifications.show({
-                        title: 'Error',
-                        message: 'Failed to fetch settings',
+                        title: t('rides.errors.errorTitle'),
+                        message: t('settings.notifications.fetchError'),
                         color: 'red',
                         icon: <IconX size={16} />
                     });
@@ -47,8 +49,8 @@ export default function SettingsPage() {
             } catch (err) {
                 console.error("Failed to fetch settings", err);
                 notifications.show({
-                    title: 'Error',
-                    message: 'An error occurred while fetching settings',
+                    title: t('rides.errors.errorTitle'),
+                    message: t('settings.notifications.fetchError'),
                     color: 'red',
                     icon: <IconX size={16} />
                 });
@@ -58,7 +60,7 @@ export default function SettingsPage() {
         };
 
         fetchSettings();
-    }, [user]);
+    }, [user, t]);
 
     const handleSave = async () => {
         if (!user) return;
@@ -78,15 +80,15 @@ export default function SettingsPage() {
 
             if (res.ok) {
                 notifications.show({
-                    title: 'Success',
-                    message: 'Settings saved successfully',
+                    title: t('rides.errors.successTitle'),
+                    message: t('settings.notifications.saveSuccess'),
                     color: 'green',
                     icon: <IconCheck size={16} />
                 });
             } else {
                 notifications.show({
-                    title: 'Error',
-                    message: 'Failed to save settings',
+                    title: t('rides.errors.errorTitle'),
+                    message: t('settings.notifications.saveError'),
                     color: 'red',
                     icon: <IconX size={16} />
                 });
@@ -94,8 +96,8 @@ export default function SettingsPage() {
         } catch (err) {
             console.error(err);
             notifications.show({
-                title: 'Error',
-                message: 'An error occurred while saving',
+                title: t('rides.errors.errorTitle'),
+                message: t('settings.notifications.saveError'),
                 color: 'red',
                 icon: <IconX size={16} />
             });
@@ -107,25 +109,25 @@ export default function SettingsPage() {
     return (
         <Container size="sm" py="xl">
             <Stack gap="lg">
-                <Title order={2}>Account Settings</Title>
+                <Title order={2}>{t('settings.title')}</Title>
 
                 <Text size="sm" c="dimmed">
-                    Want to configure role-specific settings? <Anchor component={LocalizedLink} href="/roleSettings">Go to Role Settings</Anchor>
+                    {t('settings.roleLinkPre')} <Anchor component={LocalizedLink} href="/roleSettings">{t('settings.roleLink')}</Anchor>
                 </Text>
 
                 <Paper withBorder p="md" radius="md" pos="relative">
                     <LoadingOverlay visible={loading} overlayProps={{ radius: "sm", blur: 2 }} />
                     <Stack gap="md">
                         <div>
-                            <Title order={4}>General Preferences</Title>
+                            <Title order={4}>{t('settings.general')}</Title>
                             <Text c="dimmed" size="sm">
-                                Manage your account-level preferences.
+                                {t('settings.generalDesc')}
                             </Text>
                         </div>
 
                         <Select
-                            label="Language"
-                            placeholder="Select language"
+                            label={t('settings.language')}
+                            placeholder={t('settings.languagePlaceholder')}
                             data={LANGUAGE_OPTIONS}
                             value={language}
                             onChange={setLanguage}
@@ -138,7 +140,7 @@ export default function SettingsPage() {
                         onClick={handleSave}
                         loading={saving}
                     >
-                        Save Settings
+                        {t('settings.save')}
                     </Button>
                 </Group>
             </Stack>

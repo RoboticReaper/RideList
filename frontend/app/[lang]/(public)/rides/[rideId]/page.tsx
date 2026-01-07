@@ -16,6 +16,7 @@ import { LocalizedLink } from '@/components/LocalizedLink';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { getBookingStatusConfig, getTripStatusConfig } from '@/utils/statusUtils';
+import { useTranslation } from 'react-i18next';
 
 dayjs.extend(relativeTime);
 
@@ -86,6 +87,7 @@ export default function RidePage() {
     const router = useRouter();
     const rideId = params.rideId as string;
     const { user, handleProtectedAction } = useAuth();
+    const { t } = useTranslation('common');
     const [ride, setRide] = useState<RideDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -206,8 +208,8 @@ export default function RidePage() {
         }
         if (isDriver) {
             notifications.show({
-                title: 'Error',
-                message: 'You cannot book your own trip.',
+                title: t('rides.detail.notifications.ownTripError.title'),
+                message: t('rides.detail.notifications.ownTripError.message'),
                 color: 'red'
             });
             return;
@@ -242,8 +244,8 @@ export default function RidePage() {
                 // Handle Profile Required Error
                 if (res.status === 403 && data.code === 'PROFILE_REQUIRED') {
                     notifications.show({
-                        title: 'Profile Required',
-                        message: 'You need to complete your profile before booking.',
+                        title: t('rides.detail.notifications.profileRequired.title'),
+                        message: t('rides.detail.notifications.profileRequired.message'),
                         color: 'blue'
                     });
                     const returnUrl = encodeURIComponent(`/rides/${rideId}`);
@@ -253,7 +255,7 @@ export default function RidePage() {
                     return;
                 }
 
-                throw new Error(data.error || 'Failed to book');
+                throw new Error(data.error || t('rides.detail.notifications.error.defaultMessage'));
             }
 
             // If status is 'joined_with_pay_window', we might want to show a modal or redirect.
@@ -265,15 +267,15 @@ export default function RidePage() {
             // I'll show a persistent notification or alert for pay window if that status comes back.
             if (data.status === 'joined_with_pay_window') {
                 notifications.show({
-                    title: 'Booking Accepted',
-                    message: 'Please arrange payment with the driver.',
+                    title: t('rides.detail.notifications.bookingAccepted.title'),
+                    message: t('rides.detail.notifications.bookingAccepted.message'),
                     color: 'blue',
                     autoClose: false
                 });
             } else {
                 notifications.show({
-                    title: 'Success',
-                    message: data.status === 'ordered_with_pay_window' ? 'Booking initiated! Proceeding to payment...' : 'Booking request sent! Waiting for approval.', // prompt said 'joined with pay window', handling generalized success msg
+                    title: t('rides.detail.notifications.success.title'),
+                    message: data.status === 'ordered_with_pay_window' ? t('rides.detail.notifications.success.messagePayment') : t('rides.detail.notifications.success.messageWaiting'),
                     color: 'green'
                 });
             }
@@ -303,7 +305,7 @@ export default function RidePage() {
 
         } catch (err: any) {
             notifications.show({
-                title: 'Error',
+                title: t('rides.detail.notifications.error.title'),
                 message: err.message,
                 color: 'red'
             });
@@ -313,8 +315,8 @@ export default function RidePage() {
     };
 
     if (loading) return <LoadingOverlay visible />;
-    if (error) return <Container py="xl"><Alert color="red" title="Error" icon={<IconInfoCircle />}>{error}</Alert></Container>;
-    if (!ride) return <Container py="xl"><Alert color="yellow" title="Not Found" icon={<IconInfoCircle />}>Ride not found</Alert></Container>;
+    if (error) return <Container py="xl"><Alert color="red" title={t('rides.detail.alerts.errorTitle')} icon={<IconInfoCircle />}>{error}</Alert></Container>;
+    if (!ride) return <Container py="xl"><Alert color="yellow" title={t('rides.detail.alerts.notFoundTitle')} icon={<IconInfoCircle />}>{t('rides.detail.alerts.notFound')}</Alert></Container>;
 
     return (
         <Container size="md" py="xl" w="100%">
@@ -324,14 +326,14 @@ export default function RidePage() {
                 <div>
                     <Group justify="space-between" align="start" mb="xs">
                         {ride.status === 'locked' ? (
-                            <Badge size="lg" color="red">BOOKING CLOSED</Badge>
+                            <Badge size="lg" color="red">{t('rides.detail.header.bookingClosed')}</Badge>
                         ) : (
                             <Badge size="lg" color={getTripStatusConfig(ride.status).color}>
-                                {getTripStatusConfig(ride.status).label.toUpperCase()}
+                                {t(getTripStatusConfig(ride.status).labelKey).toUpperCase()}
                             </Badge>
                         )}
                         <Group gap="xs">
-                            <Text size="xs" c="dimmed">Posted {dayjs(ride.created_at).fromNow()}</Text>
+                            <Text size="xs" c="dimmed">{t('rides.detail.header.posted', { time: dayjs(ride.created_at).fromNow() })}</Text>
                             <ActionIcon variant="transparent" color="gray" size="sm" onClick={fetchRide} loading={loading}>
                                 <IconRefresh size={18} />
                             </ActionIcon>
@@ -403,10 +405,10 @@ export default function RidePage() {
                                 <Group align="center" justify="space-between" mb="lg">
                                     <div>
                                         <Text size="3rem" fw={800} lh={1} c="blue">${ride.price}</Text>
-                                        <Text size="sm" c="dimmed">per seat</Text>
+                                        <Text size="sm" c="dimmed">{t('rides.detail.summary.perSeat')}</Text>
                                         {ride.user_booking_status && (
                                             <Text size="sm" fw={700} c="blue" mt={4}>
-                                                Status: {getBookingStatusConfig(ride.user_booking_status).label.toUpperCase()}
+                                                {t('rides.detail.summary.status')}: {t(getBookingStatusConfig(ride.user_booking_status).labelKey).toUpperCase()}
                                             </Text>
                                         )}
                                         <Button
@@ -444,17 +446,17 @@ export default function RidePage() {
                                             }}
                                         >
                                             {user ? (
-                                                isDriver ? 'Manage Trip' :
-                                                    (ride.user_booking_status === 'cancelled') ? 'Booking Cancelled' :
-                                                        (ride.status === 'locked' && !ride.user_booking_status) ? 'Booking Closed' :
-                                                            ((ride.user_booking_status && !['removed', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) ? 'Manage in Dashboard' : 'Book Now')
-                                            ) : ride.status === 'bookable' ? 'Login to Book' : 'Trip cannot be booked'}
+                                                isDriver ? t('rides.detail.buttons.manageTrip') :
+                                                    (ride.user_booking_status === 'cancelled') ? t('rides.detail.buttons.bookingCancelled') :
+                                                        (ride.status === 'locked' && !ride.user_booking_status) ? t('rides.detail.buttons.bookingClosed') :
+                                                            ((ride.user_booking_status && !['removed', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) ? t('rides.detail.buttons.manageDashboard') : t('rides.detail.buttons.bookNow'))
+                                            ) : ride.status === 'bookable' ? t('rides.detail.buttons.loginToBook') : t('rides.detail.buttons.cannotBook')}
 
                                         </Button>
                                     </div>
                                     <div style={{ width: isSmallScreen ? '100%' : 140, marginTop: isSmallScreen ? 'var(--mantine-spacing-md)' : 0 }}>
                                         <Text size="sm" fw={500} mb={4} ta={isSmallScreen ? "left" : "right"}>
-                                            {ride.seats.total - ride.seats.taken} seats available
+                                            {t('rides.detail.summary.seatsAvailable', { count: ride.seats.total - ride.seats.taken })}
                                         </Text>
                                         <Progress
                                             value={((ride.seats.total - ride.seats.taken) / ride.seats.total) * 100}
@@ -466,16 +468,16 @@ export default function RidePage() {
                                             radius="xl"
                                         />
                                         <Text size="xs" c="dimmed" ta={isSmallScreen ? "left" : "right"} mt={2}>
-                                            Total seats: {ride.seats.total}
+                                            {t('rides.detail.summary.totalSeats', { count: ride.seats.total })}
                                         </Text>
                                     </div>
                                 </Group>
 
-                                <Text size="sm" c="dimmed" ta="center">Payment handled directly with driver</Text>
+                                <Text size="sm" c="dimmed" ta="center">{t('rides.detail.summary.paymentNote')}</Text>
 
                                 {ride.notes && (
                                     <>
-                                        <Divider my="md" label="Driver's Note" labelPosition="left" />
+                                        <Divider my="md" label={t('rides.detail.summary.driversNote')} labelPosition="left" />
                                         <Text color="dimmed" style={{ whiteSpace: 'pre-wrap' }}>{ride.notes}</Text>
                                     </>
                                 )}
@@ -483,7 +485,7 @@ export default function RidePage() {
 
                             {/* Driver Card */}
                             <Paper shadow="sm" radius="md" p="lg" withBorder>
-                                <Title order={4} mb="md">Your Driver</Title>
+                                <Title order={4} mb="md">{t('rides.detail.driver.title')}</Title>
                                 <Group align="start">
                                     <Avatar src={ride.driver.photo_url} size="xl" radius="xl" color="initials">
                                         {ride.driver.name.substring(0, 2).toUpperCase()}
@@ -492,10 +494,10 @@ export default function RidePage() {
                                         <Group gap="xs" align="center">
                                             <Text fw={700} size="lg">{ride.driver.name}</Text>
                                             {ride.driver.verified && (
-                                                <Badge color="green" leftSection={<IconCheck size={12} />}>Verified Student</Badge>
+                                                <Badge color="green" leftSection={<IconCheck size={12} />}>{t('rides.detail.driver.verifiedStudent')}</Badge>
                                             )}
                                         </Group>
-                                        <Text size="sm" c="dimmed">Member since {memberSinceYear}</Text>
+                                        <Text size="sm" c="dimmed">{t('rides.detail.driver.memberSince', { year: memberSinceYear })}</Text>
 
                                         {ride.access.contact ? (
                                             ride.driver.phone ? (
@@ -504,16 +506,16 @@ export default function RidePage() {
                                                     <Text size="sm">{ride.driver.phone}</Text>
                                                 </Group>
                                             ) : (
-                                                <Text size="sm" c="dimmed" fs="italic" mt={4}>Not provided by driver</Text>
+                                                <Text size="sm" c="dimmed" fs="italic" mt={4}>{t('rides.detail.driver.phoneNotProvided')}</Text>
                                             )
                                         ) : (
                                             <Text size="sm" c="dimmed" fs="italic" mt={4}>
                                                 {(() => {
-                                                    if (!ride.user_booking_status) return 'Book ride to view';
-                                                    if (ride.user_booking_status === 'waiting_approval') return 'Contact hidden until approved';
-                                                    if (['removed', 'rejected', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) return 'Booking no longer active';
-                                                    if (['done', 'cancelled', 'aborted'].includes(ride.status)) return 'Contact info expired';
-                                                    return 'Booking not active';
+                                                    if (!ride.user_booking_status) return t('rides.detail.driver.bookToView');
+                                                    if (ride.user_booking_status === 'waiting_approval') return t('rides.detail.driver.hiddenUntilApproved');
+                                                    if (['removed', 'rejected', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) return t('rides.detail.driver.bookingInactive');
+                                                    if (['done', 'cancelled', 'aborted'].includes(ride.status)) return t('rides.detail.driver.contactExpired');
+                                                    return t('rides.detail.driver.bookingNotActive');
                                                 })()}
                                             </Text>
                                         )}
@@ -524,11 +526,11 @@ export default function RidePage() {
                                                     <IconStar size={16} fill="orange" color="orange" />
                                                     <Text fw={600}>{ride.driver.rating?.toFixed(1) || 'New'}</Text>
                                                 </Group>
-                                                <Text size="xs" c="dimmed">Rating</Text>
+                                                <Text size="xs" c="dimmed">{t('rides.detail.driver.rating')}</Text>
                                             </div>
                                             <div>
                                                 <Text fw={600}>{ride.driver.completed_trips}</Text>
-                                                <Text size="xs" c="dimmed">Trips Completed</Text>
+                                                <Text size="xs" c="dimmed">{t('rides.detail.driver.tripsCompleted')}</Text>
                                             </div>
                                         </Group>
                                     </div>
@@ -538,7 +540,7 @@ export default function RidePage() {
                             {/* Car Card */}
                             {ride.car && (
                                 <Paper shadow="sm" radius="md" p="lg" withBorder>
-                                    <Title order={4} mb="md">Vehicle</Title>
+                                    <Title order={4} mb="md">{t('rides.detail.vehicle.title')}</Title>
                                     <Group>
                                         <ThemeIcon variant="light" size={48} radius="md" color="gray">
                                             <IconCar size={28} />
@@ -553,15 +555,15 @@ export default function RidePage() {
                                                 ) : (
                                                     <Badge color="gray" variant="light" ml="xs">
                                                         {['done', 'cancelled', 'aborted'].includes(ride.status)
-                                                            ? 'Trip Ended'
-                                                            : (ride.status === 'departed' ? 'Not provided' : 'Visible when departed')}
+                                                            ? t('rides.detail.vehicle.tripEnded')
+                                                            : (ride.status === 'departed' ? t('rides.detail.vehicle.notProvided') : t('rides.detail.vehicle.visibleWhenDeparted'))}
                                                     </Badge>
                                                 )
                                             ) : (
                                                 <Badge color="gray" variant="light" ml="xs">
                                                     {['departed', 'done', 'cancelled', 'aborted'].includes(ride.status)
-                                                        ? 'Hidden'
-                                                        : 'Book to view'}
+                                                        ? t('rides.detail.vehicle.hidden')
+                                                        : t('rides.detail.vehicle.bookToView')}
                                                 </Badge>
                                             )}
                                         </div>
@@ -569,7 +571,7 @@ export default function RidePage() {
                                     <Paper withBorder p="xs" radius="md" bg="gray.0" mt="md">
                                         <Group justify="center" gap="xs">
                                             <IconInfoCircle size={16} color="gray" />
-                                            <Text size="xs" c="dimmed" ta="center">Vehicle details confirmed by driver before departure.</Text>
+                                            <Text size="xs" c="dimmed" ta="center">{t('rides.detail.vehicle.confirmedNote')}</Text>
                                         </Group>
                                     </Paper>
                                 </Paper>
@@ -582,16 +584,16 @@ export default function RidePage() {
                     <Grid.Col span={{ base: 12, md: 4 }}>
                         <Stack gap="md">
                             <Paper shadow="sm" radius="md" p="md" withBorder>
-                                <Title order={5} mb="md">Trip Rules</Title>
+                                <Title order={5} mb="md">{t('rides.detail.rules.title')}</Title>
                                 <Stack gap="sm">
                                     <Group justify="space-between">
                                         <Group gap="xs">
                                             <IconLuggage size={18} color="gray" />
-                                            <Text size="sm">Luggage</Text>
+                                            <Text size="sm">{t('rides.detail.rules.luggage')}</Text>
                                         </Group>
                                         <div style={{ textAlign: 'right' }}>
-                                            <Text size="sm" fw={500}>{ride.rules.luggage.big} Big</Text>
-                                            <Text size="sm" fw={500}>{ride.rules.luggage.small} Small</Text>
+                                            <Text size="sm" fw={500}>{ride.rules.luggage.big} {t('rides.detail.rules.big')}</Text>
+                                            <Text size="sm" fw={500}>{ride.rules.luggage.small} {t('rides.detail.rules.small')}</Text>
                                         </div>
                                     </Group>
 
@@ -599,7 +601,7 @@ export default function RidePage() {
 
                                     <div>
                                         <Group gap={4} mb={4}>
-                                            <Text size="xs" c="dimmed">Auto-Accept</Text>
+                                            <Text size="xs" c="dimmed">{t('rides.detail.rules.autoAccept')}</Text>
                                             <Popover width={220} position="bottom" withArrow shadow="md">
                                                 <Popover.Target>
                                                     <ThemeIcon size="xs" variant="transparent" color="gray" style={{ cursor: 'pointer' }}>
@@ -607,17 +609,17 @@ export default function RidePage() {
                                                     </ThemeIcon>
                                                 </Popover.Target>
                                                 <Popover.Dropdown>
-                                                    <Text size="xs">If auto-accept is on, you will instantly move on to payment step upon booking. If it's off, you will need to wait for driver's manual approval to continue payment step.</Text>
+                                                    <Text size="xs">{t('rides.detail.rules.autoAcceptTooltip')}</Text>
                                                 </Popover.Dropdown>
                                             </Popover>
                                         </Group>
                                         {ride.rules.auto_accept ? (
                                             <Alert variant="light" color="green" py="xs" icon={<IconCheck size={16} />}>
-                                                <Text size="sm">Bookings are instantly accepted</Text>
+                                                <Text size="sm">{t('rides.detail.rules.instantlyAccepted')}</Text>
                                             </Alert>
                                         ) : (
                                             <Alert variant="light" color="yellow" py="xs" icon={<IconClock size={16} />}>
-                                                <Text size="sm">Driver approval required</Text>
+                                                <Text size="sm">{t('rides.detail.rules.approvalRequired')}</Text>
                                             </Alert>
                                         )}
                                     </div>
@@ -625,54 +627,54 @@ export default function RidePage() {
                                     <Divider />
 
                                     <div>
-                                        <Text size="xs" mb={4} >Cancellation Policy</Text>
-                                        <Text size="sm" c={ride.rules.cancellation_policy ? undefined : "dimmed"}>{ride.rules.cancellation_policy || 'Cancellation policy will be communicated by the driver before departure.'}</Text>
+                                        <Text size="xs" mb={4} >{t('rides.detail.rules.cancellationPolicy')}</Text>
+                                        <Text size="sm" c={ride.rules.cancellation_policy ? undefined : "dimmed"}>{ride.rules.cancellation_policy || t('rides.detail.rules.cancellationDefault')}</Text>
                                     </div>
 
                                     <div>
-                                        <Text size="xs" mb={4}>Pickup Instructions</Text>
+                                        <Text size="xs" mb={4}>{t('rides.detail.rules.pickupInstructions')}</Text>
                                         <Text size="sm" fs={ride.rules.pickup.rules ? 'italic' : 'normal'} c={ride.rules.pickup.rules ? undefined : "dimmed"}>
-                                            {ride.rules.pickup.rules ? `${ride.rules.pickup.rules}` : 'No special restrictions'}
+                                            {ride.rules.pickup.rules ? `${ride.rules.pickup.rules}` : t('rides.detail.rules.noRestrictions')}
                                         </Text>
                                     </div>
                                 </Stack>
                             </Paper>
 
                             <Paper shadow="sm" radius="md" p="md" withBorder>
-                                <Title order={5} mb="sm">Payment Methods</Title>
+                                <Title order={5} mb="sm">{t('rides.detail.payment.title')}</Title>
                                 <Group gap="xs" style={{ flexWrap: 'wrap' }} mb="md">
                                     {ride.rules.payment.methods && ride.rules.payment.methods.length > 0 ? (
                                         ride.rules.payment.methods.map(method => (
                                             <Badge key={method} variant="dot" size="lg">{method}</Badge>
                                         ))
                                     ) : (
-                                        <Text size="sm" c="dimmed">None</Text>
+                                        <Text size="sm" c="dimmed">{t('rides.detail.payment.none')}</Text>
                                     )}
                                 </Group>
 
                                 <Divider mb="sm" />
 
                                 <div>
-                                    <Text size="xs" c="dimmed" mb={4}>Payment handle / contact</Text>
+                                    <Text size="xs" c="dimmed" mb={4}>{t('rides.detail.payment.handleLabel')}</Text>
                                     {ride.access.contact ? (
                                         <Text size="sm" c={ride.rules.payment.handle ? undefined : "dimmed"}>
-                                            {ride.rules.payment.handle || 'Not provided by driver'}
+                                            {ride.rules.payment.handle || t('rides.detail.payment.notProvided')}
                                         </Text>
                                     ) : (
                                         <Text size="sm" c="dimmed" fs="italic">
                                             {(() => {
-                                                if (!ride.user_booking_status) return 'Book ride to view';
-                                                if (ride.user_booking_status === 'waiting_approval') return 'Contact hidden until approved';
-                                                if (['removed', 'rejected', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) return 'Booking no longer active';
-                                                if (['done', 'cancelled', 'aborted'].includes(ride.status)) return 'Contact info expired';
-                                                return 'Booking not active';
+                                                if (!ride.user_booking_status) return t('rides.detail.driver.bookToView');
+                                                if (ride.user_booking_status === 'waiting_approval') return t('rides.detail.driver.hiddenUntilApproved');
+                                                if (['removed', 'rejected', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) return t('rides.detail.driver.bookingInactive');
+                                                if (['done', 'cancelled', 'aborted'].includes(ride.status)) return t('rides.detail.driver.contactExpired');
+                                                return t('rides.detail.driver.bookingNotActive');
                                             })()}
                                         </Text>
                                     )}
                                 </div>
 
                                 <Text size="xs" c="dimmed" mt="md">
-                                    RideList does not process payments.
+                                    {t('rides.detail.payment.disclaimer')}
                                 </Text>
                             </Paper>
                         </Stack>
@@ -682,7 +684,7 @@ export default function RidePage() {
                 {/* Safety Footer - Moved to bottom */}
                 <Container size="sm" py="md">
                     <Stack gap={4} align="center">
-                        <Text size="xs" c="dimmed" ta="center">RideList does not employ drivers. Always meet in public places and confirm details with the driver.</Text>
+                        <Text size="xs" c="dimmed" ta="center">{t('rides.detail.safety.disclaimer')}</Text>
 
                     </Stack>
                 </Container>
@@ -699,10 +701,10 @@ export default function RidePage() {
                                 <Group justify="space-between">
                                     <div>
                                         <Text size="xl" fw={800} lh={1} c="blue">${ride.price}</Text>
-                                        <Text size="xs" c="dimmed">per seat</Text>
+                                        <Text size="xs" c="dimmed">{t('rides.detail.summary.perSeat')}</Text>
                                         {ride.user_booking_status && (
                                             <Text size="xs" fw={700} c="blue" mt={2}>
-                                                Status: {getBookingStatusConfig(ride.user_booking_status).label.toUpperCase()}
+                                                {t('rides.detail.summary.status')}: {t(getBookingStatusConfig(ride.user_booking_status).labelKey).toUpperCase()}
                                             </Text>
                                         )}
                                     </div>
@@ -739,12 +741,12 @@ export default function RidePage() {
                                         }}
                                     >
                                         {user ? (
-                                            isDriver ? 'Manage Trip' :
-                                                (ride.user_booking_status === 'cancelled') ? 'Booking Cancelled' :
-                                                    (ride.status === 'locked' && !ride.user_booking_status) ? 'Booking Closed' :
-                                                        ((ride.user_booking_status && !['removed', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) ? 'Manage in Dashboard' : 'Book Now')
+                                            isDriver ? t('rides.detail.buttons.manageTrip') :
+                                                (ride.user_booking_status === 'cancelled') ? t('rides.detail.buttons.bookingCancelled') :
+                                                    (ride.status === 'locked' && !ride.user_booking_status) ? t('rides.detail.buttons.bookingClosed') :
+                                                        ((ride.user_booking_status && !['removed', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) ? t('rides.detail.buttons.manageDashboard') : t('rides.detail.buttons.bookNow'))
                                         ) :
-                                            ride.status === 'bookable' ? 'Login to Book' : 'Trip cannot be booked'}
+                                            ride.status === 'bookable' ? t('rides.detail.buttons.loginToBook') : t('rides.detail.buttons.cannotBook')}
 
                                     </Button>
                                 </Group>
@@ -753,11 +755,11 @@ export default function RidePage() {
                     )}
                 </Transition>
 
-                <Modal opened={bookingOpen} onClose={() => setBookingOpen(false)} title="Booking Details" centered>
+                <Modal opened={bookingOpen} onClose={() => setBookingOpen(false)} title={t('rides.detail.booking.modalTitle')} centered>
                     <Stack gap="sm">
                         <NumberInput
-                            label="Seats"
-                            description={`Max ${ride.seats.total - ride.seats.taken}`}
+                            label={t('rides.detail.booking.seats')}
+                            description={t('rides.detail.booking.maxSeats', { count: ride.seats.total - ride.seats.taken })}
                             min={1}
                             max={ride.seats.total - ride.seats.taken}
                             value={bookingData.seats}
@@ -767,16 +769,16 @@ export default function RidePage() {
 
                         <Group grow>
                             <NumberInput
-                                label="Big Luggage"
-                                description={`Max ${ride.rules.luggage.big * bookingData.seats}`}
+                                label={t('rides.detail.booking.bigLuggage')}
+                                description={t('rides.detail.booking.maxLuggage', { count: ride.rules.luggage.big * bookingData.seats })}
                                 min={0}
                                 max={(ride.rules.luggage.big * bookingData.seats)}
                                 value={bookingData.bigLuggage}
                                 onChange={(v) => setBookingData({ ...bookingData, bigLuggage: Number(v) })}
                             />
                             <NumberInput
-                                label="Small Luggage"
-                                description={`Max ${ride.rules.luggage.small * bookingData.seats}`}
+                                label={t('rides.detail.booking.smallLuggage')}
+                                description={t('rides.detail.booking.maxLuggage', { count: ride.rules.luggage.small * bookingData.seats })}
                                 min={0}
                                 max={(ride.rules.luggage.small * bookingData.seats)}
                                 value={bookingData.smallLuggage}
@@ -787,8 +789,8 @@ export default function RidePage() {
                         {/* Payment Method Selection */}
                         {ride.rules.payment.methods && ride.rules.payment.methods.length > 0 ? (
                             <Select
-                                label="Intended Payment Method"
-                                placeholder="Select how you plan to pay"
+                                label={t('rides.detail.booking.intendedPayment')}
+                                placeholder={t('rides.detail.booking.selectPayment')}
                                 data={ride.rules.payment.methods}
                                 value={bookingData.intendedPaymentMethod}
                                 onChange={(value) => setBookingData({ ...bookingData, intendedPaymentMethod: value || '' })}
@@ -797,23 +799,23 @@ export default function RidePage() {
                             />
                         ) : (
                             <TextInput
-                                label="Intended Payment Method"
-                                value="None"
+                                label={t('rides.detail.booking.intendedPayment')}
+                                value={t('rides.detail.payment.none')}
                                 disabled
-                                description="No specific payment methods listed by driver"
+                                description={t('rides.detail.booking.noPaymentMethods')}
                             />
                         )}
 
 
                         <Group justify="space-between" mb={0} pb={0}>
-                            <Text size="sm" fw={500}>Preferred Pickup Time</Text>
+                            <Text size="sm" fw={500}>{t('rides.detail.booking.preferredPickup')}</Text>
                             <Button
                                 variant="transparent"
                                 size="compact-xs"
                                 style={{ fontSize: 11, height: 'auto' }}
                                 onClick={() => setBookingData(prev => ({ ...prev, pickupTime: new Date(ride.departure_time) }))}
                             >
-                                Reset to Departure
+                                {t('rides.detail.booking.resetToDeparture')}
                             </Button>
                         </Group>
                         <DateTimePicker
@@ -822,14 +824,14 @@ export default function RidePage() {
                                 if (typeof f === 'object' && f !== null) {
                                     const h = f.hours || 0;
                                     const m = f.minutes || 0;
-                                    if (h === 0 && m === 0) return 'Exact time only';
+                                    if (h === 0 && m === 0) return t('rides.detail.booking.exactTimeOnly');
 
                                     const parts = [];
                                     if (h > 0) parts.push(`${h} hr${h > 1 ? 's' : ''}`);
                                     if (m > 0) parts.push(`${m} min${m > 1 ? 's' : ''}`);
                                     return `Flexibility: +/- ${parts.join(' ')}`;
                                 }
-                                return 'Optional';
+                                return t('rides.detail.booking.optional');
                             })()}
                             leftSection={<IconClock size={16} />}
                             value={bookingData.pickupTime}
@@ -846,7 +848,7 @@ export default function RidePage() {
                             loading={bookingSubmitting}
                             disabled={ride.rules.payment.methods && ride.rules.payment.methods.length > 0 && !bookingData.intendedPaymentMethod}
                         >
-                            Confirm Booking
+                            {t('rides.detail.booking.confirmBooking')}
                         </Button>
                     </Stack>
                 </Modal>

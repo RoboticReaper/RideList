@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Paper,
     Button,
@@ -18,7 +19,9 @@ import {
     Stack,
     Divider,
     RangeSlider,
-    Input
+    Input,
+    SimpleGrid,
+    TagsInput
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import { IconMapPin, IconCalendar, IconX, IconSearch, IconAdjustments, IconCurrencyDollar, IconLuggage, IconCreditCard, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
@@ -39,8 +42,13 @@ interface PlacePrediction {
     };
 }
 
-export function RidesSearch() {
+interface RidesSearchProps {
+    onSearch?: () => void;
+}
+
+export function RidesSearch({ onSearch }: RidesSearchProps) {
     const router = useRouter();
+    const { t } = useTranslation('common');
 
     const searchParams = useSearchParams();
 
@@ -351,12 +359,12 @@ export function RidesSearch() {
 
         // Validation: If text exists but no coords (meaning user typed but didn't select valid option)
         if (startLocation && !startCoords) {
-            setStartError('Please select a valid location from the suggestions');
+            setStartError(t('rides.errors.invalidStart'));
             hasError = true;
         }
 
         if (endLocation && !endCoords) {
-            setEndError('Please select a valid location from the suggestions');
+            setEndError(t('rides.errors.invalidEnd'));
             hasError = true;
         }
 
@@ -403,6 +411,7 @@ export function RidesSearch() {
         }
 
         router.push(`/rides?${query.toString()}`);
+        onSearch?.(); // Call the onSearch prop if provided
     };
 
     return (
@@ -411,8 +420,8 @@ export function RidesSearch() {
                 <Grid align="flex-end" gutter="md" w="100%">
                     <Grid.Col span={{ base: 12, md: 3 }}>
                         <Autocomplete
-                            label="Start Location"
-                            placeholder="Where from?"
+                            label={t('rides.common.startLocation')}
+                            placeholder={t('rides.search.startPlaceholder')}
                             data={startSuggestions}
                             value={startLocation}
                             onChange={handleStartChange}
@@ -430,8 +439,8 @@ export function RidesSearch() {
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 3 }}>
                         <Autocomplete
-                            label="End Location"
-                            placeholder="Where to?"
+                            label={t('rides.common.endLocation')}
+                            placeholder={t('rides.search.endPlaceholder')}
                             data={endSuggestions}
                             value={endLocation}
                             onChange={handleEndChange}
@@ -449,8 +458,8 @@ export function RidesSearch() {
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 3 }}>
                         <DateTimePicker
-                            label="Date & Time"
-                            placeholder="Pick date"
+                            label={t('rides.common.date')}
+                            placeholder={t('rides.search.datePlaceholder')}
                             value={startTime}
                             onChange={(val) => {
                                 if (typeof val === 'string') {
@@ -469,76 +478,66 @@ export function RidesSearch() {
                                 leftSection={<IconSearch size={16} />}
                                 onClick={handleSearch}
                             >
-                                Search
+                                {t('rides.search.searchBtn')}
                             </Button>
                             <Button
                                 variant="light"
                                 onClick={() => setAdvancedOpen((o) => !o)}
                                 aria-label="More Filters"
                                 color={advancedOpen ? 'blue' : 'gray'}
-                                leftSection={<IconAdjustments size={20} />}
+                                leftSection={advancedOpen ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
                             >
-                                {advancedOpen ? 'Hide' : 'More'}
+                                {advancedOpen ? t('rides.search.hide') : t('rides.search.more')}
                             </Button>
                         </Group>
                     </Grid.Col>
                 </Grid>
 
                 <Collapse in={advancedOpen}>
-                    <Divider my="md" label="Advanced Filters" labelPosition="center" />
-                    <Grid gutter="xl">
-                        <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                            <NumberInput
-                                label="Big Luggage"
-                                placeholder="0"
-                                min={0}
-                                value={bigLuggage}
-                                onChange={(val) => setBigLuggage(val === '' ? '' : Number(val))}
-                                leftSection={<IconLuggage size={16} />}
-                            />
-                        </Grid.Col>
-                        <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                            <NumberInput
-                                label="Small Luggage"
-                                placeholder="0"
-                                min={0}
-                                value={smallLuggage}
-                                onChange={(val) => setSmallLuggage(val === '' ? '' : Number(val))}
-                                leftSection={<IconLuggage size={16} />}
-                            />
-                        </Grid.Col>
-                        <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                            <NumberInput
-                                label="Max Price"
-                                placeholder="Any"
-                                min={0}
-                                value={priceMax}
-                                onChange={(val) => setPriceMax(val === '' ? '' : Number(val))}
-                                leftSection={<IconCurrencyDollar size={16} />}
-                            />
-                        </Grid.Col>
-                        <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                            <Switch
-                                label="Auto Accept Only"
-                                checked={autoAccept}
-                                onChange={(event) => setAutoAccept(event.currentTarget.checked)}
-                                mt="xl"
-                            />
-                        </Grid.Col>
-                        <Grid.Col span={{ base: 12 }}>
-                            <MultiSelect
-                                label="Payment Methods"
-                                placeholder="Select relevant methods"
-                                data={['Cash', 'E-transfer', 'PayPal', 'Crypto']}
-                                value={paymentMethods}
-                                onChange={setPaymentMethods}
-                                leftSection={<IconCreditCard size={16} />}
-                                searchable
-                            />
-                        </Grid.Col>
-                    </Grid>
+                    <Divider my="md" label={t('rides.search.advancedFilters')} labelPosition="center" />
+                    <SimpleGrid cols={{ base: 1, sm: 2, md: 4, lg: 5 }} spacing="sm" verticalSpacing="sm">
+                        <NumberInput
+                            label={t('rides.common.bigLuggage')}
+                            placeholder="0"
+                            min={0}
+                            value={bigLuggage}
+                            onChange={(val) => setBigLuggage(val === '' ? '' : Number(val))}
+                            leftSection={<IconLuggage size={16} />}
+                        />
+                        <NumberInput
+                            label={t('rides.common.smallLuggage')}
+                            placeholder="0"
+                            min={0}
+                            value={smallLuggage}
+                            onChange={(val) => setSmallLuggage(val === '' ? '' : Number(val))}
+                            leftSection={<IconLuggage size={16} />}
+                        />
+                        <NumberInput
+                            label={t('rides.search.maxPrice')}
+                            placeholder={t('rides.search.maxPrice')}
+                            min={0}
+                            value={priceMax}
+                            onChange={(val) => setPriceMax(val === '' ? '' : Number(val))}
+                            leftSection={<IconCurrencyDollar size={16} />}
+                        />
+                        <TagsInput
+                            label={t('rides.common.paymentMethods')}
+                            placeholder={t('rides.search.paymentPlaceholder')}
+                            data={['Cash', 'Venmo', 'Zelle', 'WeChat', 'CashApp']}
+                            value={paymentMethods}
+                            onChange={setPaymentMethods}
+                            leftSection={<IconCreditCard size={16} />}
+                            clearable
+                        />
+                        <Switch
+                            label={t('rides.search.autoAcceptOnly')}
+                            checked={autoAccept}
+                            onChange={(event) => setAutoAccept(event.currentTarget.checked)}
+                            mt={24}
+                        />
+                    </SimpleGrid>
                 </Collapse>
-            </Paper>
-        </Stack>
+            </Paper >
+        </Stack >
     );
 }

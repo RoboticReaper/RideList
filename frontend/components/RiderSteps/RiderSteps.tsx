@@ -6,25 +6,25 @@ import classes from './RiderSteps.module.css';
 import { useTranslation } from 'react-i18next';
 
 export function RiderSteps() {
-  const {t} = useTranslation('common');
+	const { t } = useTranslation('common');
 
-  const data = [
-	{
-		title: t('riderSteps.search'),
-		description:t('riderSteps.searchDesc'),
-		icon: IconSearch,
-	},
-	{
-		title: t('riderSteps.compare'),
-		description: t('riderSteps.compareDesc'),
-    icon: IconArrowsSort,
-	},
-	{
-		title: t('riderSteps.book'),
-		description: t('riderSteps.bookDesc'),
-    icon: IconCalendarCheck,
-	},
-];
+	const data = [
+		{
+			title: t('riderSteps.search'),
+			description: t('riderSteps.searchDesc'),
+			icon: IconSearch,
+		},
+		{
+			title: t('riderSteps.compare'),
+			description: t('riderSteps.compareDesc'),
+			icon: IconArrowsSort,
+		},
+		{
+			title: t('riderSteps.book'),
+			description: t('riderSteps.bookDesc'),
+			icon: IconCalendarCheck,
+		},
+	];
 
 	return (
 		<Container className={classes.wrapper}>
@@ -56,7 +56,7 @@ export function RiderSteps() {
 						<Grid.Col span={{ base: 12, md: 6 }}>
 							<div className={classes.screenshotPlaceholder}>
 								<Text c="dimmed" size="sm">
-									Screenshot Placeholder
+									{t('riderSteps.screenshotPlaceholder')}
 								</Text>
 							</div>
 						</Grid.Col>

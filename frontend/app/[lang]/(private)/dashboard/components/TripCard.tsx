@@ -3,6 +3,7 @@ import { getTripStatusConfig } from '@/utils/statusUtils';
 import { IconMapPin, IconCalendar, IconUsers, IconSteeringWheel, IconAlertTriangle } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { LocalizedLink } from '@/components/LocalizedLink';
+import { useTranslation, Trans } from 'react-i18next';
 
 interface Trip {
     // ... existing interface
@@ -29,6 +30,7 @@ interface TripCardProps {
 }
 
 export function TripCard({ trip }: TripCardProps) {
+    const { t } = useTranslation('common');
 
 
     return (
@@ -55,11 +57,11 @@ export function TripCard({ trip }: TripCardProps) {
                     </Stack>
                     <Group gap="xs">
                         <Badge color={getTripStatusConfig(trip.status).color} variant="light">
-                            {getTripStatusConfig(trip.status).label.toUpperCase()}
+                            {t(getTripStatusConfig(trip.status).labelKey).toUpperCase()}
                         </Badge>
                         {trip.status !== "done" && trip.status !== "cancelled" && trip.start_check_in && (
                             <Badge color="cyan" variant="light">
-                                Check-in Started
+                                {t('dashboard.tripCard.checkInStarted')}
                             </Badge>
                         )}
                     </Group>
@@ -79,7 +81,7 @@ export function TripCard({ trip }: TripCardProps) {
                         <Group gap="xs">
                             <IconUsers size={16} />
                             <Text size="sm">
-                                {trip.total_seats - trip.seats_taken} / {trip.total_seats} seats left
+                                {trip.total_seats - trip.seats_taken} / {trip.total_seats} {t('dashboard.tripCard.seatsLeft')}
                             </Text>
                         </Group>
                     </Group>
@@ -99,20 +101,20 @@ export function TripCard({ trip }: TripCardProps) {
                 {(!trip.driver_phone || !trip.make) && trip.status !== 'cancelled' && (
                     <Stack gap="xs">
                         {!trip.driver_phone && (
-                            <Alert color="red" variant="light" title="Action Required" icon={<IconAlertTriangle size={16} />}>
-                                Please add a phone number to <Anchor component={LocalizedLink} href={`/profile/${trip.driver_id}`} style={{ textDecoration: 'underline' }}>your profile</Anchor> to start this trip.
+                            <Alert color="red" variant="light" title={t('dashboard.tripCard.actionRequired')} icon={<IconAlertTriangle size={16} />}>
+                                <Trans i18nKey="dashboard.tripCard.driverPhoneRequired" components={{ 1: <Anchor component={LocalizedLink} href={`/profile/${trip.driver_id}`} style={{ textDecoration: 'underline' }} /> }} />
                             </Alert>
                         )}
                         {!trip.id && (
-                            <Alert color="red" variant="light" title="Action Required" icon={<IconAlertTriangle size={16} />}>
-                                Please <Anchor component={LocalizedLink} href={`/dashboard/${trip.id}?tab=edit`} style={{ textDecoration: 'underline' }}>assign a car</Anchor> to this trip.
+                            <Alert color="red" variant="light" title={t('dashboard.tripCard.actionRequired')} icon={<IconAlertTriangle size={16} />}>
+                                <Trans i18nKey="dashboard.tripCard.carRequired" components={{ 1: <Anchor component={LocalizedLink} href={`/dashboard/${trip.id}?tab=edit`} style={{ textDecoration: 'underline' }} /> }} />
                             </Alert>
                         )}
                     </Stack>
                 )}
 
                 <Button component={LocalizedLink} href={`/dashboard/${trip.id}`} variant="light" fullWidth mt="xs">
-                    Manage Trip
+                    {t('dashboard.tripCard.manageTrip')}
                 </Button>
             </Stack>
         </Card>

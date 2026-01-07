@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Container, Title, Button, Stack, Text, Loader, Center, Group } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { TripCard } from './TripCard';
 import { IconRefresh, IconPlus } from '@tabler/icons-react';
 import { LocalizedLink } from '@/components/LocalizedLink';
@@ -23,6 +24,7 @@ interface Trip {
 }
 
 export function DriverDashboard() {
+    const { t } = useTranslation('common');
     const { user } = useAuth();
     const [trips, setTrips] = useState<Trip[]>([]);
     const [loading, setLoading] = useState(true);
@@ -97,7 +99,7 @@ export function DriverDashboard() {
     return (
         <Stack gap="lg">
             <Group>
-                <Text size="xl" fw={600}>Upcoming Drives</Text>
+                <Text size="xl" fw={600}>{t('dashboard.driver.title')}</Text>
                 <Group gap={0}>
                     <Button
                         variant="subtle"
@@ -105,7 +107,7 @@ export function DriverDashboard() {
                         onClick={handleRefresh}
                         size="xs"
                     >
-                        Refresh
+                        {t('dashboard.common.refresh')}
                     </Button>
                     <Button
                         component={LocalizedLink}
@@ -114,13 +116,13 @@ export function DriverDashboard() {
                         size="xs"
                         variant="subtle"
                     >
-                        Post Ride
+                        {t('dashboard.driver.postRide')}
                     </Button>
                 </Group>
             </Group>
 
             {trips.length === 0 ? (
-                <Text c="dimmed" ta="center">You have no upcoming trips scheduled.</Text>
+                <Text c="dimmed" ta="center">{t('dashboard.driver.noTrips')}</Text>
             ) : (
                 <Stack gap="md">
                     {trips.map(trip => (
@@ -130,7 +132,7 @@ export function DriverDashboard() {
                     {nextCursor && (
                         <Center mt="md">
                             <Button variant="light" onClick={handleLoadMore} loading={loadingMore}>
-                                Load More
+                                {t('dashboard.common.loadMore')}
                             </Button>
                         </Center>
                     )}

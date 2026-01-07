@@ -21,18 +21,21 @@ import { useDashboard } from '@/app/[lang]/(private)/DashboardContext';
 import { LocalizedLink } from '../LocalizedLink';
 import { usePathname } from 'next/navigation';
 
+import { useTranslation } from 'react-i18next';
+
 export function DashboardNavbar({ drawerOpened, toggleDrawer, closeDrawer }: { drawerOpened: boolean, toggleDrawer: () => void, closeDrawer: () => void }) {
     const { role, activeLink, setActiveLink } = useDashboard();
     const pathname = usePathname();
+    const { t } = useTranslation('common');
 
     const data = [
-        { link: '/dashboard', label: 'Dashboard', icon: IconLayoutDashboard },
-        { link: '/history', label: 'History', icon: IconHistory },
-        { link: '/roleSettings', label: 'Role-based Settings', icon: IconSettings },
+        { link: '/dashboard', label: t('dashboard.navbar.dashboard'), icon: IconLayoutDashboard },
+        { link: '/history', label: t('dashboard.navbar.history'), icon: IconHistory },
+        { link: '/roleSettings', label: t('dashboard.navbar.roleSettings'), icon: IconSettings },
         ...(role === 'driver' ? [
-            { link: '/trip-templates', label: 'Trip Templates', icon: IconMapPin },
-            { link: '/rule-templates', label: 'Rule Templates', icon: IconReceipt2 },
-            { link: '/cars', label: 'My Vehicles', icon: IconCar },
+            { link: '/trip-templates', label: t('dashboard.navbar.tripTemplates'), icon: IconMapPin },
+            { link: '/rule-templates', label: t('dashboard.navbar.ruleTemplates'), icon: IconReceipt2 },
+            { link: '/cars', label: t('dashboard.navbar.myVehicles'), icon: IconCar },
         ] : []),
     ];
 

@@ -7,10 +7,12 @@ import { useNotifications, NotificationItem } from './NotificationContext';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { LocalizedLink } from '../LocalizedLink';
+import { useTranslation } from 'react-i18next';
 
 dayjs.extend(relativeTime);
 
 export default function Notifications() {
+    const { t } = useTranslation('common');
     const { user } = useAuth();
     const [opened, setOpened] = useState(false);
     const { notifications, unreadCount, isLoading, hasMore, fetchMore, markAsRead } = useNotifications();
@@ -44,14 +46,14 @@ export default function Notifications() {
             <Menu.Dropdown>
                 <Group justify="space-between" px="sm" py="xs" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
                     <Group gap={5}>
-                        <Text fw={600} size="sm">Notifications</Text>
+                        <Text fw={600} size="sm">{t('headerMenu.notifications.ui.title')}</Text>
                         <ActionIcon component={LocalizedLink} href="/roleSettings" variant="subtle" color="gray" size="sm" onClick={() => setOpened(false)}>
                             <IconSettings size={16} />
                         </ActionIcon>
                     </Group>
                     {unreadCount > 0 && (
                         <Button variant="subtle" size="xs" onClick={handleMarkAllRead}>
-                            Mark all read
+                            {t('headerMenu.notifications.ui.markAllRead')}
                         </Button>
                     )}
                 </Group>
@@ -59,7 +61,7 @@ export default function Notifications() {
                 <ScrollArea.Autosize mah={400} type="always">
                     {notifications.length === 0 && !isLoading ? (
                         <Box py="xl" ta="center">
-                            <Text c="dimmed" size="sm">No notifications</Text>
+                            <Text c="dimmed" size="sm">{t('headerMenu.notifications.ui.empty')}</Text>
                         </Box>
                     ) : (
                         <Stack gap={0}>
@@ -84,7 +86,7 @@ export default function Notifications() {
                                                             markAsRead([n.id]);
                                                         }}
                                                     >
-                                                        Mark Read
+                                                        {t('headerMenu.notifications.ui.markRead')}
                                                     </Button>
                                                 )}
                                             </Group>
@@ -144,7 +146,7 @@ export default function Notifications() {
                                 e.stopPropagation();
                                 fetchMore();
                             }}>
-                                Load More
+                                {t('headerMenu.notifications.ui.loadMore')}
                             </Button>
                         </Box>
                     )}

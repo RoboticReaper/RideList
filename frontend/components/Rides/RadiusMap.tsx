@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader as MantineLoader, Box, Text } from '@mantine/core';
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 
@@ -10,6 +11,7 @@ interface RadiusMapProps {
 }
 
 export function RadiusMap({ lat, lng, radiusMeters, type = 'pickup' }: RadiusMapProps) {
+    const { t } = useTranslation('common');
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<google.maps.Map | null>(null);
     const circleInstanceRef = useRef<google.maps.Circle | null>(null);
@@ -67,7 +69,7 @@ export function RadiusMap({ lat, lng, radiusMeters, type = 'pickup' }: RadiusMap
                     markerInstanceRef.current = new AdvancedMarkerElement({
                         map: mapInstanceRef.current,
                         position: { lat, lng },
-                        title: type === 'pickup' ? "Pickup Location" : "Dropoff Location",
+                        title: type === 'pickup' ? t('map.pickup') : t('map.dropoff'),
                     });
                 } else {
                     // AdvancedMarkerElement properties might differ slightly in update logic
@@ -97,7 +99,7 @@ export function RadiusMap({ lat, lng, radiusMeters, type = 'pickup' }: RadiusMap
     if (!lat || !lng) {
         return (
             <Box h={200} bg="gray.1" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8 }}>
-                <Text c="dimmed" size="sm">Map not available for this location</Text>
+                <Text c="dimmed" size="sm">{t('map.unavailable')}</Text>
             </Box>
         );
     }

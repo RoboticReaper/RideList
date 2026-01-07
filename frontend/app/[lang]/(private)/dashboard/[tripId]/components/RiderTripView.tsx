@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Paper, Title, Text, Group, Stack, Alert, Box, SimpleGrid, Button, Flex, Badge, Modal, Switch } from '@mantine/core';
 import { IconAlertTriangle, IconInfoCircle, IconCash, IconUserCheck, IconCalendar, IconLuggage, IconArmchair, IconClock, IconCreditCard, IconSteeringWheel, IconPhone, IconNote, IconMapPin } from '@tabler/icons-react';
 import dayjs from 'dayjs';
+import { useTranslation, Trans } from 'react-i18next';
 import { LocalizedLink } from '@/components/LocalizedLink';
 import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/components/firebase/AuthContext';
@@ -35,6 +36,7 @@ const InfoItem = ({ label, value }: { label: string, value: React.ReactNode }) =
 );
 
 export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
+    const { t } = useTranslation('common');
     const { user } = useAuth();
     const [markingPaid, setMarkingPaid] = useState(false);
     const [markingReady, setMarkingReady] = useState(false);
@@ -55,19 +57,19 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
 
             if (!res.ok) {
                 const err = await res.json();
-                throw new Error(err.error || 'Failed to update status');
+                throw new Error(err.error || t('tripDetails.rider.notifications.updateStatusFailed'));
             }
 
             notifications.show({
-                title: 'Success',
-                message: 'Marked as paid. Waiting for driver confirmation.',
+                title: t('tripDetails.rider.notifications.success.title'),
+                message: t('tripDetails.rider.notifications.markedPaid.message'),
                 color: 'green'
             });
             onRefresh();
 
         } catch (error: any) {
             notifications.show({
-                title: 'Error',
+                title: t('tripDetails.rider.notifications.error.title'),
                 message: error.message,
                 color: 'red'
             });
@@ -90,14 +92,14 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
 
             if (!res.ok) {
                 const err = await res.json();
-                throw new Error(err.error || 'Failed to cancel booking');
+                throw new Error(err.error || t('tripDetails.rider.notifications.cancelBookingFailed'));
             }
 
             const { paid } = await res.json();
 
             notifications.show({
-                title: 'Success',
-                message: 'Booking cancelled (left ' + (paid ? 'paid' : 'unpaid') + ')',
+                title: t('tripDetails.rider.notifications.success.title'),
+                message: t('tripDetails.rider.notifications.bookingCancelled.message', { status: paid ? t('tripDetails.status.paid') : t('tripDetails.status.unpaid') }),
                 color: 'green'
             });
             onRefresh();
@@ -105,7 +107,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
 
         } catch (error: any) {
             notifications.show({
-                title: 'Error',
+                title: t('tripDetails.rider.notifications.error.title'),
                 message: error.message,
                 color: 'red'
             });
@@ -127,19 +129,19 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
 
             if (!res.ok) {
                 const err = await res.json();
-                throw new Error(err.error || 'Failed to update status');
+                throw new Error(err.error || t('tripDetails.rider.notifications.updateStatusFailed'));
             }
 
             notifications.show({
-                title: 'Success',
-                message: 'You are now marked as ready!',
+                title: t('tripDetails.rider.notifications.success.title'),
+                message: t('tripDetails.rider.notifications.markedReady.message'),
                 color: 'green'
             });
             onRefresh();
 
         } catch (error: any) {
             notifications.show({
-                title: 'Error',
+                title: t('tripDetails.rider.notifications.error.title'),
                 message: error.message,
                 color: 'red'
             });
@@ -169,16 +171,16 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
 
     return (
         <>
-            <Modal opened={cancelModalOpen} onClose={() => setCancelModalOpen(false)} title="Leave Trip" centered>
+            <Modal opened={cancelModalOpen} onClose={() => setCancelModalOpen(false)} title={t('tripDetails.rider.modals.leaveTrip.title')} centered>
                 <Text size="sm" mb="lg">
-                    Are you sure you want to cancel this booking? This action cannot be undone.
+                    {t('tripDetails.rider.modals.leaveTrip.description')}
                 </Text>
                 <Group justify="flex-end">
                     <Button variant="default" onClick={() => setCancelModalOpen(false)} disabled={cancelling}>
-                        Cancel
+                        {t('tripDetails.manage.actions.cancel')}
                     </Button>
                     <Button color="red" onClick={confirmCancelBooking} loading={cancelling}>
-                        Confirm
+                        {t('tripDetails.rider.modals.leaveTrip.confirm')}
                     </Button>
                 </Group>
             </Modal>
@@ -199,44 +201,51 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                             size="md"
                             color={getTripStatusConfig(trip.status).color}
                         >
-                            {getTripStatusConfig(trip.status).label.toUpperCase()}
+                            {t(getTripStatusConfig(trip.status).labelKey).toUpperCase()}
                         </Badge>
                         {trip.status !== "done" && trip.status !== "cancelled" && trip.start_check_in && (
                             <Badge
                                 size="md"
                                 color="cyan"
                             >
-                                Check-in Started
+                                {t('dashboard.tripCard.checkInStarted')}
                             </Badge>
                         )}
                     </Group>
                 </Stack>
                 {isRemoved && (
-                    <Alert color="blue" icon={<IconInfoCircle />} title="Booking removed">
-                        The driver is unable to accomodate you. {trip.driver?.phone ? `Please contact the driver at ${trip.driver.phone} for refund. ` : ''} You can re-book this trip but it will require driver manual approval.
+                    <Alert color="blue" icon={<IconInfoCircle />} title={t('tripDetails.rider.alerts.bookingRemoved.title')}>
+                        <Trans
+                            i18nKey="tripDetails.rider.alerts.bookingRemoved.description"
+                            values={{ phone: trip.driver?.phone }}
+                        />
                     </Alert>
                 )}
 
                 {!isRemoved && (
                     <Alert color="blue" icon={<IconInfoCircle />}>
-                        Manage your booking state here or view public posting for more details. Contact the driver for any questions.
+                        {t('tripDetails.rider.alerts.manageState')}
                     </Alert>
                 )}
 
                 {trip.cancelled_paid_booking_within_sensitive_info_grace_period && (
-                    <Alert color="red" icon={<IconAlertTriangle />} title="Trip Cancelled/Aborted">
-                        This trip was cancelled or aborted. Since you have already paid, please contact the driver at <Text span fw={700}>{trip.driver?.phone || 'Unknown'}</Text> for a refund.
+                    <Alert color="red" icon={<IconAlertTriangle />} title={t('tripDetails.rider.alerts.cancelledTrip.title')}>
+                        <Trans
+                            i18nKey="tripDetails.rider.alerts.cancelledTrip.description"
+                            values={{ phone: trip.driver?.phone || 'Unknown' }}
+                            components={{ 1: <Text span fw={700} /> }}
+                        />
                     </Alert>
                 )}
 
                 <Paper withBorder p="md" radius="md">
                     <Group justify="space-between" mb="md">
-                        <Title order={4}>Booking Details</Title>
+                        <Title order={4}>{t('tripDetails.rider.sections.bookingDetails')}</Title>
                         {trip.user_booking?.status && (
                             <Badge
                                 color={getBookingStatusConfig(trip.user_booking.status).color}
                             >
-                                {getBookingStatusConfig(trip.user_booking.status).label}
+                                {t(getBookingStatusConfig(trip.user_booking.status).labelKey)}
                             </Badge>
                         )}
                     </Group>
@@ -244,11 +253,11 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                     <Stack gap="sm" mb="lg">
                         <SimpleGrid cols={{ base: 1, sm: 2 }}>
                             <InfoItem
-                                label="Booked At"
+                                label={t('tripDetails.rider.labels.bookedAt')}
                                 value={trip.user_booking?.created_at ? dayjs(trip.user_booking.created_at).format('MMM D, h:mm A') : '-'}
                             />
                             <InfoItem
-                                label="Seats Booked"
+                                label={t('tripDetails.rider.labels.seatsBooked')}
                                 value={
                                     <Group gap="xs">
                                         <IconArmchair size={16} style={{ opacity: 0.7 }} />
@@ -257,29 +266,29 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                 }
                             />
                             <InfoItem
-                                label="Luggage"
+                                label={t('tripDetails.rider.labels.luggage')}
                                 value={
                                     <Group gap="xs">
                                         <IconLuggage size={16} style={{ opacity: 0.7 }} />
-                                        <span>{trip.user_booking?.big_luggage || 0} Big, {trip.user_booking?.small_luggage || 0} Small</span>
+                                        <span>{trip.user_booking?.big_luggage || 0} {t('dashboard.common.big')}, {trip.user_booking?.small_luggage || 0} {t('dashboard.common.small')}</span>
                                     </Group>
                                 }
                             />
                             <InfoItem
-                                label="Intended Payment Method"
-                                value={trip.user_booking?.intended_payment_method || 'None'}
+                                label={t('tripDetails.rider.labels.intendedPayment')}
+                                value={trip.user_booking?.intended_payment_method || t('dashboard.common.none')}
                             />
                             <InfoItem
-                                label="Payment Status (Confirmed by Driver)"
+                                label={t('tripDetails.rider.labels.paymentStatus')}
                                 value={
                                     trip.user_booking?.paid ?
-                                        <Badge color="green" variant="light">Paid</Badge> :
-                                        <Badge color="yellow" variant="light">Unpaid</Badge>
+                                        <Badge color="green" variant="light">{t('tripDetails.status.paid')}</Badge> :
+                                        <Badge color="yellow" variant="light">{t('tripDetails.status.unpaid')}</Badge>
                                 }
                             />
                             {trip.user_booking?.picked_up_at && (
                                 <InfoItem
-                                    label="Picked Up At"
+                                    label={t('tripDetails.rider.labels.pickedUpAt')}
                                     value={
                                         <Group gap="xs">
                                             <IconUserCheck size={16} style={{ opacity: 0.7 }} color="green" />
@@ -300,7 +309,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                         <Stack gap={2}>
                                             <Group gap="xs">
                                                 {trip.user_booking?.ready ? <IconUserCheck size={16} color="green" /> : <IconClock size={16} color="gray" />}
-                                                <Text size="sm" fw={500}>{trip.user_booking?.ready ? 'Ready' : 'Not marked ready'}</Text>
+                                                <Text size="sm" fw={500}>{trip.user_booking?.ready ? t('tripDetails.rider.ready') : t('tripDetails.rider.notReady')}</Text>
                                             </Group>
                                             {trip.user_booking?.ready && trip.user_booking?.ready_at && (
                                                 <Text size="xs" c="dimmed">at {dayjs(trip.user_booking.ready_at).format('MMM D, h:mm A')}</Text>
@@ -318,14 +327,14 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                     );
                                 }
 
-                                return <InfoItem label="Ready For Pickup" value={content} />;
+                                return <InfoItem label={t('tripDetails.rider.labels.readyForPickup')} value={content} />;
                             })()}
                             <InfoItem
-                                label="Preferred Pickup"
+                                label={t('tripDetails.rider.labels.preferredPickup')}
                                 value={
                                     trip.user_booking?.preferred_pickup_time ?
                                         dayjs(trip.user_booking.created_at).format('MMM D, h:mm A') :
-                                        'Departure Time'
+                                        t('tripDetails.rider.departureTime')
                                 }
                             />
                         </SimpleGrid>
@@ -340,7 +349,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                 loading={cancelling}
                                 fullWidth
                             >
-                                Cancel Booking
+                                {t('tripDetails.manage.actions.cancelBooking')}
                             </Button>
                         )}
 
@@ -352,7 +361,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                 leftSection={<IconCash size={16} />}
                                 fullWidth
                             >
-                                Mark Payment Sent
+                                {t('tripDetails.manage.actions.markPaymentSent')}
                             </Button>
                         )}
 
@@ -364,7 +373,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                 leftSection={<IconUserCheck size={16} />}
                                 fullWidth
                             >
-                                Check-in Now
+                                {t('tripDetails.manage.actions.checkInNow')}
                             </Button>
                         )}
                     </Flex>
@@ -372,24 +381,24 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
 
                 <Paper withBorder p="md" radius="md">
                     <Group justify="space-between" mb="md">
-                        <Title order={4}>Trip Details</Title>
+                        <Title order={4}>{t('tripDetails.rider.sections.tripDetails')}</Title>
                         {trip.snapshot_rules && (
                             <Switch
-                                label="View Booking Snapshot"
+                                label={t('tripDetails.rider.snapshot.switchLabel')}
                                 checked={viewingSnapshot}
                                 onChange={(event) => setViewingSnapshot(event.currentTarget.checked)}
                             />
                         )}
                     </Group>
                     {viewingSnapshot && (
-                        <Alert color="orange" icon={<IconInfoCircle />} title="Viewing Booked Rules" mb="md">
-                            You are viewing the trip rules as they were when you booked.
+                        <Alert color="orange" icon={<IconInfoCircle />} title={t('tripDetails.rider.snapshot.alertTitle')} mb="md">
+                            {t('tripDetails.rider.snapshot.alertMessage')}
                         </Alert>
                     )}
                     <Stack gap="lg">
                         <SimpleGrid cols={{ base: 1, sm: 2 }}>
                             <InfoItem
-                                label="Departure"
+                                label={t('tripDetails.rider.labels.departure')}
                                 value={
                                     <Group gap="xs">
                                         <IconCalendar size={16} style={{ opacity: 0.7 }} />
@@ -398,23 +407,23 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                 }
                             />
                             <InfoItem
-                                label="Trip Status"
+                                label={t('tripDetails.rider.labels.tripStatus')}
                                 value={
                                     <Badge variant="light" color={getTripStatusConfig(trip.status).color}>
-                                        {getTripStatusConfig(trip.status).label.toUpperCase()}
+                                        {t(getTripStatusConfig(trip.status).labelKey).toUpperCase()}
                                     </Badge>
                                 }
                             />
                         </SimpleGrid>
 
                         <SimpleGrid cols={{ base: 1, sm: 2 }}>
-                            <InfoItem label="Cancellation Policy" value={rulesToDisplay?.cancellation_policy || 'Standard'} />
-                            <InfoItem label="Pickup Instructions" value={rulesToDisplay?.pickup?.rules || 'None provided'} />
+                            <InfoItem label={t('tripDetails.rider.labels.cancellationPolicy')} value={rulesToDisplay?.cancellation_policy || t('dashboard.common.standard')} />
+                            <InfoItem label={t('tripDetails.rider.labels.pickupInstructions')} value={rulesToDisplay?.pickup?.rules || t('dashboard.common.noneProvided')} />
                         </SimpleGrid>
 
                         <SimpleGrid cols={{ base: 1, sm: 2 }}>
                             <InfoItem
-                                label="Driver Contact"
+                                label={t('tripDetails.rider.labels.driverContact')}
                                 value={
                                     trip.access?.contact ? (
                                         trip.driver?.phone ? (
@@ -422,22 +431,22 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                                 <IconPhone size={16} style={{ opacity: 0.7 }} />
                                                 <span>{trip.driver.phone}</span>
                                             </Group>
-                                        ) : 'Not provided by driver'
+                                        ) : t('dashboard.common.notProvidedByDriver')
                                     ) : (
                                         <Text size="sm" c="dimmed" fs="italic">
                                             {(() => {
-                                                if (!trip.user_booking_status) return 'Book ride to view';
-                                                if (trip.user_booking_status === 'waiting_approval') return 'Contact hidden until approved';
-                                                if (['removed', 'rejected', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(trip.user_booking_status)) return 'Booking no longer active';
-                                                if (['done', 'cancelled', 'aborted'].includes(trip.status)) return 'Contact info expired';
-                                                return 'Booking not active';
+                                                if (!trip.user_booking_status) return t('tripDetails.rider.statusMessages.bookToView');
+                                                if (trip.user_booking_status === 'waiting_approval') return t('tripDetails.rider.statusMessages.contactHidden');
+                                                if (['removed', 'rejected', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(trip.user_booking_status)) return t('tripDetails.rider.statusMessages.bookingNotActive');
+                                                if (['done', 'cancelled', 'aborted'].includes(trip.status)) return t('tripDetails.rider.statusMessages.contactExpired');
+                                                return t('tripDetails.rider.statusMessages.bookingNotActive');
                                             })()}
                                         </Text>
                                     )
                                 }
                             />
                             <InfoItem
-                                label="Vehicle"
+                                label={t('tripDetails.rider.labels.vehicle')}
                                 value={
                                     trip.car ? (
                                         <Group gap="xs" align="start">
@@ -445,42 +454,42 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                             <Stack gap={0}>
                                                 <Text size="sm" fw={500}>{trip.car.color} {trip.car.year} {trip.car.make} {trip.car.model}</Text>
                                                 {trip.car.plate ? (
-                                                    <Text size="xs" c="dimmed">Plate: {trip.car.plate}</Text>
+                                                    <Text size="xs" c="dimmed">{t('dashboard.common.plate')}: {trip.car.plate}</Text>
                                                 ) : (
                                                     <Text size="xs" c="dimmed" fs="italic">
-                                                        {trip.status === 'done' || trip.status === 'cancelled' || trip.status === 'aborted' ? 'Trip Ended' : 'Visible when departed'}
+                                                        {trip.status === 'done' || trip.status === 'cancelled' || trip.status === 'aborted' ? t('tripDetails.status.tripEnded') : t('tripDetails.rider.statusMessages.visibleWhenDeparted')}
                                                     </Text>
                                                 )}
                                             </Stack>
                                         </Group>
-                                    ) : 'Not assigned'
+                                    ) : t('dashboard.common.notAssigned')
                                 }
                             />
                         </SimpleGrid>
 
                         <SimpleGrid cols={{ base: 1, sm: 2 }}>
                             <InfoItem
-                                label="Payment Methods"
+                                label={t('tripDetails.rider.labels.paymentMethods')}
                                 value={
                                     <Group gap="xs">
                                         <IconCreditCard size={16} style={{ opacity: 0.7 }} />
-                                        <span>{rulesToDisplay?.payment?.methods?.join(', ') || 'None'}</span>
+                                        <span>{rulesToDisplay?.payment?.methods?.join(', ') || t('dashboard.common.none')}</span>
                                     </Group>
                                 }
                             />
                             <InfoItem
-                                label="Payment Handle"
+                                label={t('tripDetails.rider.labels.paymentHandle')}
                                 value={
                                     trip.access?.contact ? (
-                                        rulesToDisplay?.payment?.handle || 'Not provided by driver'
+                                        rulesToDisplay?.payment?.handle || t('dashboard.common.notProvidedByDriver')
                                     ) : (
                                         <Text size="sm" c="dimmed" fs="italic">
                                             {(() => {
-                                                if (!trip.user_booking_status) return 'Book ride to view';
-                                                if (trip.user_booking_status === 'waiting_approval') return 'Contact hidden until approved';
-                                                if (['removed', 'rejected', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(trip.user_booking_status)) return 'Booking no longer active';
-                                                if (['done', 'cancelled', 'aborted'].includes(trip.status)) return 'Contact info expired';
-                                                return 'Booking not active';
+                                                if (!trip.user_booking_status) return t('tripDetails.rider.statusMessages.bookToView');
+                                                if (trip.user_booking_status === 'waiting_approval') return t('tripDetails.rider.statusMessages.contactHidden');
+                                                if (['removed', 'rejected', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(trip.user_booking_status)) return t('tripDetails.rider.statusMessages.bookingNotActive');
+                                                if (['done', 'cancelled', 'aborted'].includes(trip.status)) return t('tripDetails.rider.statusMessages.contactExpired');
+                                                return t('tripDetails.rider.statusMessages.bookingNotActive');
                                             })()}
                                         </Text>
                                     )
@@ -489,11 +498,11 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                         </SimpleGrid>
 
                         <InfoItem
-                            label="Driver's Notes"
+                            label={t('tripDetails.rider.labels.driverNotes')}
                             value={
                                 <Group gap="xs" align="start">
                                     <IconNote size={16} style={{ opacity: 0.7, marginTop: 3 }} />
-                                    <Text size="sm">{trip.notes || 'None'}</Text>
+                                    <Text size="sm">{trip.notes || t('dashboard.common.none')}</Text>
                                 </Group>
                             }
                         />

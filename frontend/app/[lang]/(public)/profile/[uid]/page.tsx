@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { Container, Paper, Avatar, Text, Group, Stack, Badge, Loader, Center, Title, Button, TextInput, ActionIcon, Box, Tabs, NumberInput, Divider } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { IconCheck, IconPhone, IconCalendar, IconPencil, IconX, IconDeviceFloppy, IconCar, IconSteeringWheel, IconCamera } from '@tabler/icons-react';
 
 interface UserProfile {
@@ -27,6 +28,7 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
+    const { t, i18n } = useTranslation('common');
     const params = useParams();
     const uid = params.uid as string;
     const { user } = useAuth();
@@ -78,7 +80,7 @@ export default function ProfilePage() {
         if (!user) return;
 
         if (!editName.trim()) {
-            setNameError('Name is required');
+            setNameError(t('profile.errors.nameRequired'));
             return;
         }
 
@@ -109,7 +111,7 @@ export default function ProfilePage() {
             setIsEditing(false);
         } catch (e) {
             console.error(e);
-            alert("Failed to save profile");
+            alert(t('profile.errors.saveFailed'));
         } finally {
             setSaving(false);
         }
@@ -127,8 +129,8 @@ export default function ProfilePage() {
 
                 const res = await fetch(`/api/user/${uid}`, { headers });
                 if (!res.ok) {
-                    if (res.status === 404) throw new Error("Profile not found");
-                    throw new Error("Failed to fetch profile");
+                    if (res.status === 404) throw new Error(t('profile.errors.notFound'));
+                    throw new Error(t('profile.errors.fetchFailed'));
                 }
                 const data = await res.json();
                 setProfile(data);
@@ -162,7 +164,7 @@ export default function ProfilePage() {
                                     leftSection={<IconCamera size={14} />}
                                     onClick={() => fileInputRef.current?.click()}
                                 >
-                                    Change Photo
+                                    {t('profile.changePhoto')}
                                 </Button>
                                 <input
                                     type="file"
@@ -191,7 +193,7 @@ export default function ProfilePage() {
                                 ) : (
                                     <Group>
                                         <Title order={2}>{profile.name}</Title>
-                                        {profile.verified && <Badge color="green" leftSection={<IconCheck size={12} />}>Verified Student</Badge>}
+                                        {profile.verified && <Badge color="green" leftSection={<IconCheck size={12} />}>{t('profile.verifiedStudent')}</Badge>}
                                     </Group>
                                 )}
                             </Box>
@@ -205,15 +207,15 @@ export default function ProfilePage() {
 
                         <Group gap="xs" c="dimmed" fz="sm">
                             <IconCalendar size={16} />
-                            <Text>Joined {new Date(profile.created_at).toLocaleDateString()}</Text>
+                            <Text>{t('profile.joined')} {new Date(profile.created_at).toLocaleDateString(i18n.language)}</Text>
                         </Group>
 
                         {isEditing ? (
                             <TextInput
                                 value={editPhone}
                                 onChange={(e) => setEditPhone(e.target.value)}
-                                label="Phone"
-                                placeholder="Used for coordination"
+                                label={t('profile.phone')}
+                                placeholder={t('profile.phonePlaceholder')}
                             />
                         ) : (
                             <>
@@ -228,9 +230,9 @@ export default function ProfilePage() {
                                     <Group gap="xs" align="flex-start">
                                         <IconPhone size={16} color="var(--mantine-color-dimmed)" style={{ marginTop: 4 }} />
                                         <Text c="dimmed" size="sm" style={{ flex: 1 }}>
-                                            Phone number hidden for privacy.
+                                            {t('profile.phoneHidden')}
                                             <Text span size="xs" display="block" mt={4} c="dimmed">
-                                                Contact details are only visible to users who share an active or recently completed trip with this person.
+                                                {t('profile.phoneHiddenDesc')}
                                             </Text>
                                         </Text>
                                     </Group>
@@ -240,7 +242,7 @@ export default function ProfilePage() {
                                     <Group gap="xs">
                                         <IconPhone size={16} color="var(--mantine-color-dimmed)" />
                                         <Text c="dimmed" size="sm" fs="italic">
-                                            No phone number added
+                                            {t('profile.noPhone')}
                                         </Text>
                                     </Group>
                                 )}
@@ -249,8 +251,8 @@ export default function ProfilePage() {
 
                         {isEditing && (
                             <Group mt="md">
-                                <Button leftSection={<IconDeviceFloppy size={16} />} onClick={saveProfile} loading={saving}>Save</Button>
-                                <Button leftSection={<IconX size={16} />} variant="default" onClick={cancelEditing} disabled={saving}>Cancel</Button>
+                                <Button leftSection={<IconDeviceFloppy size={16} />} onClick={saveProfile} loading={saving}>{t('profile.save')}</Button>
+                                <Button leftSection={<IconX size={16} />} variant="default" onClick={cancelEditing} disabled={saving}>{t('profile.cancel')}</Button>
                             </Group>
                         )}
 
@@ -261,35 +263,35 @@ export default function ProfilePage() {
             <Paper radius="md" withBorder mt="md" bg="var(--mantine-color-body)">
                 <Tabs defaultValue="rider">
                     <Tabs.List>
-                        <Tabs.Tab value="rider" leftSection={<IconCar size={16} />}>Rider Profile</Tabs.Tab>
-                        <Tabs.Tab value="driver" leftSection={<IconSteeringWheel size={16} />}>Driver Profile</Tabs.Tab>
+                        <Tabs.Tab value="rider" leftSection={<IconCar size={16} />}>{t('profile.riderProfile')}</Tabs.Tab>
+                        <Tabs.Tab value="driver" leftSection={<IconSteeringWheel size={16} />}>{t('profile.driverProfile')}</Tabs.Tab>
                     </Tabs.List>
 
                     <Tabs.Panel value="rider" p="lg">
                         <Stack>
                             <Group grow>
                                 <Paper withBorder p="xs" radius="sm">
-                                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Rides Taken</Text>
+                                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{t('profile.ridesTaken')}</Text>
                                     <Text fw={700} size="xl">{profile.rider_profile.completed_rides}</Text>
                                 </Paper>
                                 <Paper withBorder p="xs" radius="sm">
-                                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Rating</Text>
+                                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{t('profile.rating')}</Text>
                                     <Text fw={700} size="xl">{profile.rider_profile.rating ? profile.rider_profile.rating.toFixed(1) : 'N/A'}</Text>
                                 </Paper>
                             </Group>
 
                             {(profile.rider_profile.default_small_luggage !== null || isEditing) && (
                                 <>
-                                    <Divider label="Preferences" labelPosition="center" />
+                                    <Divider label={t('profile.preferences')} labelPosition="center" />
 
                                     <Box>
                                         <Text c="dimmed" size="xs" ta="center" mb="sm">
-                                            This field is only visible to you and will be used to autofill luggage while searching.
+                                            {t('profile.preferencesDesc')}
                                         </Text>
                                         <Group grow>
                                             <NumberInput
-                                                label="Small Luggage Preference"
-                                                description="Luggages that fit as carry-on"
+                                                label={t('profile.smallLuggage')}
+                                                description={t('profile.smallLuggageDesc')}
                                                 min={0}
                                                 max={10}
                                                 value={isEditing ? editSmallLuggage : (profile.rider_profile.default_small_luggage ?? 0)}
@@ -298,8 +300,8 @@ export default function ProfilePage() {
                                                 variant={isEditing ? 'default' : 'unstyled'}
                                             />
                                             <NumberInput
-                                                label="Big Luggage Preference"
-                                                description="Luggages that fit as checked baggage"
+                                                label={t('profile.bigLuggage')}
+                                                description={t('profile.bigLuggageDesc')}
                                                 min={0}
                                                 max={10}
                                                 value={isEditing ? editBigLuggage : (profile.rider_profile.default_big_luggage ?? 0)}
@@ -318,18 +320,18 @@ export default function ProfilePage() {
                         <Stack>
                             <Group grow>
                                 <Paper withBorder p="xs" radius="sm">
-                                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Trips Completed</Text>
+                                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{t('profile.tripsCompleted')}</Text>
                                     <Text fw={700} size="xl">{profile.driver_profile.completed_trips}</Text>
                                 </Paper>
                                 <Paper withBorder p="xs" radius="sm">
-                                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Rating</Text>
+                                    <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{t('profile.rating')}</Text>
                                     <Text fw={700} size="xl">{profile.driver_profile.rating ? profile.driver_profile.rating.toFixed(1) : 'N/A'}</Text>
                                 </Paper>
                             </Group>
 
                             {isEditing && (
                                 <Text c="dimmed" size="sm" fs="italic" ta="center" mt="md">
-                                    Driver statistics are automatically updated and cannot be manually edited.
+                                    {t('profile.driverStatsDesc')}
                                 </Text>
                             )}
                         </Stack>

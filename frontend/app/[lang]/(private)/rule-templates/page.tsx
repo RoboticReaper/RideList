@@ -4,8 +4,10 @@ import { Container, Title, Button, Group, Card, Text, SimpleGrid, Loader, Action
 import { IconPlus, IconDotsVertical, IconReceipt2 } from '@tabler/icons-react';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { LocalizedLink } from '@/components/LocalizedLink';
+import { useTranslation } from 'react-i18next';
 
 export default function RuleTemplatesPage() {
+    const { t } = useTranslation('common');
     const { user } = useAuth();
     const [templates, setTemplates] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -30,14 +32,14 @@ export default function RuleTemplatesPage() {
     return (
         <Container size="xl" py="xl">
             <Group justify="space-between" mb="lg">
-                <Title order={2}>Rule Templates</Title>
+                <Title order={2}>{t('templates.rules.title')}</Title>
                 <Button component={LocalizedLink} href="/rule-templates/new" leftSection={<IconPlus size={16} />}>
-                    Create Rule Template
+                    {t('templates.rules.create')}
                 </Button>
             </Group>
 
             {templates.length === 0 ? (
-                <Text c="dimmed">No rule templates found. Create one to get started!</Text>
+                <Text c="dimmed">{t('templates.rules.noTemplates')}</Text>
             ) : (
                 <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
                     {templates.map(t => (
@@ -50,19 +52,19 @@ export default function RuleTemplatesPage() {
                                     </Menu.Target>
                                     <Menu.Dropdown>
                                         <Menu.Item component={LocalizedLink} href={`/rule-templates/${t.id}`}>
-                                            Edit
+                                            {t('common.edit')}
                                         </Menu.Item>
                                     </Menu.Dropdown>
                                 </Menu>
                             </Group>
 
                             <Group gap="xs" mb="sm">
-                                {t.auto_accept && <Badge color="green" variant="light">Auto-Accept</Badge>}
+                                {t.auto_accept && <Badge color="green" variant="light">{t('templates.rules.form.autoAccept')}</Badge>}
                                 <Badge color="gray" variant="light">Luggage: {t.big_luggage_lim ?? '∞'}L {t.small_luggage_lim ?? '∞'}S</Badge>
                             </Group>
 
                             <Text size="sm" c="dimmed" lineClamp={2}>
-                                {t.pickup_rules || 'No pickup rules specified'}
+                                {t.pickup_rules || t('templates.rules.noPickupRules')}
                             </Text>
                         </Card>
                     ))}

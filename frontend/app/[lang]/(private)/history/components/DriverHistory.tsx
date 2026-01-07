@@ -1,8 +1,10 @@
+'use client'
 import { useEffect, useState, useCallback } from 'react';
 import { Stack, Text, Loader, Center, Group, Button } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { TripCard } from '../../dashboard/components/TripCard';
 import { IconRefresh } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 
 interface Trip {
     id: string;
@@ -21,6 +23,7 @@ interface Trip {
 }
 
 export function DriverHistory() {
+    const { t } = useTranslation('common');
     const { user } = useAuth();
     const [trips, setTrips] = useState<Trip[]>([]);
     const [loading, setLoading] = useState(true);
@@ -87,19 +90,19 @@ export function DriverHistory() {
     return (
         <Stack gap="lg">
             <Group>
-                <Text size="xl" fw={600}>Past Drives</Text>
+                <Text size="xl" fw={600}>{t('history.driver.pastDrives')}</Text>
                 <Button
                     variant="subtle"
                     leftSection={<IconRefresh size={16} />}
                     onClick={handleRefresh}
                     size="xs"
                 >
-                    Refresh
+                    {t('history.refresh')}
                 </Button>
             </Group>
 
             {trips.length === 0 ? (
-                <Text c="dimmed" ta="center">You have no past trips.</Text>
+                <Text c="dimmed" ta="center">{t('history.driver.noTrips')}</Text>
             ) : (
                 <Stack gap="md">
                     {trips.map(trip => (
@@ -109,7 +112,7 @@ export function DriverHistory() {
                     {nextCursor && (
                         <Center mt="md">
                             <Button variant="light" onClick={handleLoadMore} loading={loadingMore}>
-                                Load More
+                                {t('history.loadMore')}
                             </Button>
                         </Center>
                     )}

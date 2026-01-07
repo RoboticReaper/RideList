@@ -1,6 +1,7 @@
 import { RidesSearch } from '@/components/Rides/RidesSearch';
 import { RideCard } from '@/components/Rides/RideCard';
 import { Title, Container, Box, Text, Stack } from '@mantine/core';
+import { useServerTranslation } from '@/app/i18n/server';
 
 async function getRides(searchParams: any) {
     const params = new URLSearchParams();
@@ -33,15 +34,19 @@ async function getRides(searchParams: any) {
 
 export default async function RidesPage({
     searchParams,
+    params,
 }: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+    params: Promise<{ lang: string }>;
 }) {
     const resolvedSearchParams = await searchParams;
+    const { lang } = await params;
+    const { t } = await useServerTranslation(lang, 'common');
     const rides = await getRides(resolvedSearchParams);
 
     return (
         <Container size="lg" py="xl" w="100%">
-            <Title order={2} mb="lg">Find a Ride</Title>
+            <Title order={2} mb="lg">{t('rides.search.title')}</Title>
 
             <Box mb="md" w="100%">
                 <RidesSearch />
@@ -49,7 +54,7 @@ export default async function RidesPage({
 
             <Box>
                 {rides.length === 0 ? (
-                    <Text c="dimmed" fs="italic">No rides found matching your criteria.</Text>
+                    <Text c="dimmed" fs="italic">{t('rides.search.noResults')}</Text>
                 ) : (
                     <Stack>
                         {rides.map((ride: any) => (

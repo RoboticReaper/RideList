@@ -3,66 +3,65 @@
 import { useDashboard } from '@/app/[lang]/(private)/DashboardContext';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { useState, useEffect } from 'react';
-import { Container, Title, Paper, Text, Stack, Switch, Button, Group, LoadingOverlay, Anchor } from '@mantine/core';
+import { Container, Title, Paper, Text, Stack, Switch, Button, Group, LoadingOverlay, Anchor, Badge, ThemeIcon } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconCheck, IconX, IconDeviceMobile, IconDownload } from '@tabler/icons-react';
+import { IconCheck, IconX, IconDeviceMobile, IconDownload, IconBell } from '@tabler/icons-react';
 import { LocalizedLink } from '@/components/LocalizedLink';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useNotifications } from '@/components/Notifications/NotificationContext';
-
-const DRIVER_NOTIFICATIONS = [
-    { key: 'trip_full', label: 'Trip Full', description: 'Get notified when your trip has been fully booked.' },
-    { key: 'pay_timeout', label: 'Payment Timeout', description: 'Get notified when a rider fails to pay within the time limit.' }
-];
-
-const RIDER_NOTIFICATIONS = [
-    { key: 'trip_updated', label: 'Trip Updates', description: 'Get notified when the driver updates trip details.' },
-    { key: 'trip_completed', label: 'Trip Completed', description: 'Get notified when your trip is marked as completed.' }
-];
-
-import { Badge, ThemeIcon } from '@mantine/core';
-import { IconBell, IconBellOff, IconBellRinging } from '@tabler/icons-react';
+import { useTranslation, Trans } from 'react-i18next';
 
 export default function RoleSettingsPage() {
+    const { t } = useTranslation('common');
     const { role, setRole } = useDashboard();
     const { user } = useAuth();
     const { pushPermission, showPrompt } = useNotifications();
     const { isIOS, isAndroid, isStandalone } = usePWAInstall();
 
+    const DRIVER_NOTIFICATIONS = [
+        { key: 'trip_full', label: t('roleSettings.preferences.tripFull'), description: t('roleSettings.preferences.tripFullDesc') },
+        { key: 'pay_timeout', label: t('roleSettings.preferences.payTimeout'), description: t('roleSettings.preferences.payTimeoutDesc') }
+    ];
+
+    const RIDER_NOTIFICATIONS = [
+        { key: 'trip_updated', label: t('roleSettings.preferences.tripUpdates'), description: t('roleSettings.preferences.tripUpdatesDesc') },
+        { key: 'trip_completed', label: t('roleSettings.preferences.tripCompleted'), description: t('roleSettings.preferences.tripCompletedDesc') }
+    ];
+
     const PushStatusBadge = () => {
-        if (pushPermission === 'granted') return <Badge color="green">Enabled</Badge>;
-        if (pushPermission === 'denied') return <Badge color="red">Blocked</Badge>;
-        return <Badge color="yellow">{isIOS && !isStandalone ? 'Install Required' : 'Not Enabled'}</Badge>;
+        if (pushPermission === 'granted') return <Badge color="green">{t('roleSettings.push.enabled')}</Badge>;
+        if (pushPermission === 'denied') return <Badge color="red">{t('roleSettings.push.blocked')}</Badge>;
+        return <Badge color="yellow">{isIOS && !isStandalone ? t('roleSettings.push.installRequired') : t('roleSettings.push.notEnabled')}</Badge>;
     };
 
     const PushEnableButton = () => {
         // iOS Browser: Must Install First
         if (isIOS && !isStandalone) {
-            return <Button size="xs" onClick={() => showPrompt()} leftSection={<IconDeviceMobile size={16} />}>Install App</Button>;
+            return <Button size="xs" onClick={() => showPrompt()} leftSection={<IconDeviceMobile size={16} />}>{t('roleSettings.push.installApp')}</Button>;
         }
 
         // Android: If Granted but not installed, suggest install
         if (isAndroid && !isStandalone && pushPermission === 'granted') {
-            return <Button size="xs" onClick={() => showPrompt()} leftSection={<IconDownload size={16} />}>Install App</Button>;
+            return <Button size="xs" onClick={() => showPrompt()} leftSection={<IconDownload size={16} />}>{t('roleSettings.push.installApp')}</Button>;
         }
 
         if (pushPermission === 'granted') return <ThemeIcon color="green" variant="light"><IconCheck size={20} /></ThemeIcon>;
 
         if (pushPermission === 'denied') {
-            return <Button size="xs" color="red" variant="subtle" onClick={() => alert('Please unblock notifications in your browser settings.')}>Fix in Browser</Button>;
+            return <Button size="xs" color="red" variant="subtle" onClick={() => alert(t('roleSettings.push.unblockBrowser'))}>{t('roleSettings.push.fixBrowser')}</Button>;
         }
 
-        return <Button size="xs" onClick={() => showPrompt()} leftSection={<IconBell size={16} />}>Enable Push</Button>;
+        return <Button size="xs" onClick={() => showPrompt()} leftSection={<IconBell size={16} />}>{t('roleSettings.push.enablePush')}</Button>;
     };
 
     const getPushDescription = () => {
         if (isIOS && !isStandalone) return "Install to home screen to enable notifications.";
         if (pushPermission === 'granted') {
             if (isAndroid && !isStandalone) return "Notifications enabled. Install app for better experience.";
-            return "You are all set to receive push notifications.";
+            return t('roleSettings.push.allSet');
         }
-        if (pushPermission === 'denied') return "You have blocked notifications. You must enable them in your browser settings.";
-        return "Enable notifications to stay updated.";
+        if (pushPermission === 'denied') return t('roleSettings.push.blockedDesc');
+        return t('roleSettings.push.enableDesc');
     };
 
     // Default to true for all to match consistent backend behavior if missing
@@ -90,8 +89,8 @@ export default function RoleSettingsPage() {
                 } else {
                     console.error("Failed to fetch settings");
                     notifications.show({
-                        title: 'Error',
-                        message: 'Failed to fetch settings',
+                        title: t('rides.errors.errorTitle'),
+                        message: t('roleSettings.notifications.fetchError'),
                         color: 'red',
                         icon: <IconX size={16} />
                     });
@@ -99,8 +98,8 @@ export default function RoleSettingsPage() {
             } catch (err) {
                 console.error("Failed to fetch settings", err);
                 notifications.show({
-                    title: 'Error',
-                    message: 'An error occurred while fetching settings',
+                    title: t('rides.errors.errorTitle'),
+                    message: t('roleSettings.notifications.fetchError'),
                     color: 'red',
                     icon: <IconX size={16} />
                 });
@@ -110,7 +109,7 @@ export default function RoleSettingsPage() {
         };
 
         fetchSettings();
-    }, [user, role]);
+    }, [user, role, t]);
 
     const handleToggle = (key: string) => {
         setSettings(prev => ({
@@ -138,15 +137,15 @@ export default function RoleSettingsPage() {
 
             if (res.ok) {
                 notifications.show({
-                    title: 'Success',
-                    message: 'Settings saved successfully',
+                    title: t('rides.errors.successTitle'),
+                    message: t('roleSettings.notifications.saveSuccess'),
                     color: 'green',
                     icon: <IconCheck size={16} />
                 });
             } else {
                 notifications.show({
-                    title: 'Error',
-                    message: 'Failed to save settings',
+                    title: t('rides.errors.errorTitle'),
+                    message: t('roleSettings.notifications.saveError'),
                     color: 'red',
                     icon: <IconX size={16} />
                 });
@@ -154,8 +153,8 @@ export default function RoleSettingsPage() {
         } catch (err) {
             console.error(err);
             notifications.show({
-                title: 'Error',
-                message: 'An error occurred while saving',
+                title: t('rides.errors.errorTitle'),
+                message: t('roleSettings.notifications.saveError'),
                 color: 'red',
                 icon: <IconX size={16} />
             });
@@ -169,24 +168,31 @@ export default function RoleSettingsPage() {
     return (
         <Container size="sm" py="xl">
             <Stack gap="lg">
-                <Title order={2} style={{ textTransform: 'capitalize' }}>{role} Settings</Title>
+                <Title order={2} style={{ textTransform: 'capitalize' }}>{t('roleSettings.title', { role: t(`headerMenu.roles.${role}`) })}</Title>
 
                 <Text size="sm" c="dimmed">
-                    Want to configure the other role? <Anchor component="button" onClick={() => setRole(role === 'driver' ? 'rider' : 'driver')}>Switch to {role === 'driver' ? 'Rider' : 'Driver'} Settings</Anchor> or <Anchor component={LocalizedLink} href="/settings">Go to Account Settings</Anchor>
+                    <Trans
+                        i18nKey="roleSettings.switch"
+                        values={{ role: role === 'driver' ? t('headerMenu.roles.rider') : t('headerMenu.roles.driver') }}
+                        components={{
+                            1: <Anchor component="button" onClick={() => setRole(role === 'driver' ? 'rider' : 'driver')} />,
+                            2: <Anchor component={LocalizedLink} href="/settings" />
+                        }}
+                    />
                 </Text>
 
                 <Paper withBorder p="md" radius="md">
                     <Stack gap="md">
                         <div>
-                            <Title order={4}>Push Notifications</Title>
+                            <Title order={4}>{t('roleSettings.push.title')}</Title>
                             <Text c="dimmed" size="sm">
-                                Receive real-time updates for trips and bookings.
+                                {t('roleSettings.push.description')}
                             </Text>
                         </div>
                         <Group justify="space-between">
                             <div>
                                 <Group gap="xs">
-                                    <Text fw={500}>Status:</Text>
+                                    <Text fw={500}>{t('roleSettings.push.status')}</Text>
                                     <PushStatusBadge />
                                 </Group>
                                 <Text size="xs" c="dimmed">
@@ -202,10 +208,9 @@ export default function RoleSettingsPage() {
                     <LoadingOverlay visible={loading} overlayProps={{ radius: "sm", blur: 2 }} />
                     <Stack gap="md">
                         <div>
-                            <Title order={4}>Notification Preferences</Title>
+                            <Title order={4}>{t('roleSettings.prefs.title')}</Title>
                             <Text c="dimmed" size="sm">
-                                Manage which optional notifications you want to receive.
-                                Critical alerts cannot be disabled.
+                                {t('roleSettings.prefs.description')}
                             </Text>
                         </div>
 
@@ -237,7 +242,7 @@ export default function RoleSettingsPage() {
                         onClick={handleSave}
                         loading={saving}
                     >
-                        Save Settings
+                        {t('roleSettings.save')}
                     </Button>
                 </Group>
             </Stack>

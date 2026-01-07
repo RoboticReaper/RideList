@@ -3,38 +3,37 @@
 import { IconSearch, IconArrowsSort, IconCalendarCheck } from '@tabler/icons-react';
 import { Container, Text, Title, Grid, ThemeIcon, rem } from '@mantine/core';
 import classes from './DriverSteps.module.css';
-
-const data = [
-	{
-		title: 'Search',
-		description:
-			'Enter from, to, and time to see all available rides. No more scrolling through chats or comments.',
-		icon: IconSearch,
-	},
-	{
-		title: 'Compare',
-		description:
-			'Sort by price, driver rating, pickup time and distance. Filter with your own rules.',
-		icon: IconArrowsSort,
-	},
-	{
-		title: 'Book',
-		description:
-			'Reserve a spot with verified UIUC email and pay on time. All drivers are verified.',
-		icon: IconCalendarCheck,
-	},
-];
+import { useTranslation } from 'react-i18next';
 
 export function DriverSteps() {
+	const { t } = useTranslation('common');
+
+	const data = [
+		{
+			title: t('driverSteps.search'),
+			description: t('driverSteps.searchDesc'),
+			icon: IconSearch,
+		},
+		{
+			title: t('driverSteps.compare'),
+			description: t('driverSteps.compareDesc'),
+			icon: IconArrowsSort,
+		},
+		{
+			title: t('driverSteps.book'),
+			description: t('driverSteps.bookDesc'),
+			icon: IconCalendarCheck,
+		},
+	];
+
 	return (
 		<div className={classes.wrapper}>
 			<Container>
-				<Title className={classes.title}>Find Your Ride in 3 Steps</Title>
+				<Title className={classes.title}>{t('driverSteps.title')}</Title>
 
 				<Container p={0}>
 					<Text size="sm" className={classes.description}>
-						Search, compare, and book. All in one place without requiring accounts
-						up-front.
+						{t('driverSteps.description')}
 					</Text>
 				</Container>
 
@@ -58,7 +57,7 @@ export function DriverSteps() {
 							<Grid.Col span={{ base: 12, md: 6 }}>
 								<div className={classes.screenshotPlaceholder}>
 									<Text c="gray.3" size="sm">
-										Screenshot Placeholder
+										{t('driverSteps.screenshotPlaceholder')}
 									</Text>
 								</div>
 							</Grid.Col>

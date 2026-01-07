@@ -95,8 +95,8 @@ export function DashboardHeaderMenu({ role, onRoleChange, drawerOpened, toggleDr
                             radius="xl"
                             color="blue"
                             data={[
-                                { label: 'Rider', value: 'rider' },
-                                { label: 'Driver', value: 'driver' },
+                                { label: t('headerMenu.roles.rider'), value: 'rider' },
+                                { label: t('headerMenu.roles.driver'), value: 'driver' },
                             ]}
                         />
                     </Group>
@@ -149,7 +149,7 @@ export function DashboardHeaderMenu({ role, onRoleChange, drawerOpened, toggleDr
                                 </Menu.Target>
 
                                 <Menu.Dropdown>
-                                    <Menu.Label>Account</Menu.Label>
+                                    <Menu.Label>{t('headerMenu.account')}</Menu.Label>
                                     <Text size="sm" truncate px="sm">
                                         {user?.email}
                                     </Text>
@@ -159,28 +159,28 @@ export function DashboardHeaderMenu({ role, onRoleChange, drawerOpened, toggleDr
                                         href="/dashboard"
                                         leftSection={<IconLayoutDashboard size={14} />}
                                     >
-                                        Dashboard
+                                        {t('headerMenu.dashboard')}
                                     </Menu.Item>
                                     <Menu.Item
                                         component={LocalizedLink}
                                         href={"/profile/" + user?.uid}
                                         leftSection={<IconUser size={14} />}
                                     >
-                                        Profile
+                                        {t('headerMenu.profile')}
                                     </Menu.Item>
                                     <Menu.Item
                                         component={LocalizedLink}
                                         href="/history"
                                         leftSection={<IconHistory size={14} />}
                                     >
-                                        History
+                                        {t('headerMenu.history')}
                                     </Menu.Item>
                                     <Menu.Item
                                         component={LocalizedLink}
                                         href="/settings"
                                         leftSection={<IconSettings size={14} />}
                                     >
-                                        Settings
+                                        {t('headerMenu.settings')}
                                     </Menu.Item>
                                     <Menu.Divider />
                                     <Menu.Item
@@ -190,7 +190,7 @@ export function DashboardHeaderMenu({ role, onRoleChange, drawerOpened, toggleDr
                                             signOut(getAuth(app));
                                         }}
                                     >
-                                        Logout
+                                        {t('headerMenu.logout')}
                                     </Menu.Item>
                                 </Menu.Dropdown>
                             </Menu>

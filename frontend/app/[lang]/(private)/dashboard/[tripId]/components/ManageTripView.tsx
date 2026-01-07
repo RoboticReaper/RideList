@@ -4,6 +4,7 @@ import { useAuth } from '@/components/firebase/AuthContext';
 import { IconInfoCircle, IconCheck, IconX, IconTrash, IconCurrencyDollar, IconChevronRight, IconChevronDown, IconLock, IconLockOpen, IconUserCheck, IconSortAscending, IconSortDescending, IconExternalLink } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { notifications } from '@mantine/notifications';
+import { useTranslation, Trans } from 'react-i18next';
 import { getBookingStatusConfig, getTripStatusConfig } from '@/utils/statusUtils';
 import { LocalizedLink } from '@/components/LocalizedLink';
 
@@ -38,26 +39,13 @@ interface ManageTripViewProps {
 }
 
 
-const PRE_PAYMENT_REASONS = [
-    { value: 'Luggage requirements not met', label: 'Did not meet luggage requirements' },
-    { value: 'Pickup mismatch', label: 'Pickup expectations did not match trip rules' },
-    { value: 'No response', label: 'Did not respond / confirm in time' },
-    { value: 'Mistake booking', label: 'Joined by mistake / duplicate booking' },
-    { value: 'Driver mistake', label: 'Driver mistake (removed unintentionally)' },
-    { value: 'Other (pre-payment)', label: 'Other (requires short note)' }
-];
 
-const POST_PAYMENT_REASONS = [
-    { value: 'Violated rules', label: 'Violated trip rules after booking' },
-    { value: 'Late cancellation', label: 'Late cancellation after payment window' },
-    { value: 'No-show', label: 'No-show / unresponsive after payment' },
-    { value: 'Payment issue', label: 'Payment issue (invalid / reversed / disputed)' },
-    { value: 'Other (post-payment)', label: 'Other (requires note)' }
-];
 
 const INACTIVE_STATUSES = ['pay_timeout', 'removed', 'left_paid', 'left_unpaid', 'cancelled'];
+// Reasons are localized inside the component now
 
 function RemoveRiderModal({ booking, onClose, onConfirm, loading }: { booking: Booking | null, onClose: () => void, onConfirm: (reason: string) => void, loading: boolean }) {
+    const { t } = useTranslation('common');
     const [reason, setReason] = useState<string | null>(null);
     const [note, setNote] = useState('');
 
@@ -68,8 +56,27 @@ function RemoveRiderModal({ booking, onClose, onConfirm, loading }: { booking: B
 
     if (!booking) return null;
 
+
     const isPrePayment = booking.status === 'waiting_approval' || booking.status === 'joined_with_pay_window';
-    const reasons = isPrePayment ? PRE_PAYMENT_REASONS : POST_PAYMENT_REASONS;
+    // const reasons = isPrePayment ? PRE_PAYMENT_REASONS : POST_PAYMENT_REASONS; // Replaced by localized arrays
+    const prePaymentReasons = [
+        { value: 'Luggage requirements not met', label: t('tripDetails.manage.reasons.luggage') },
+        { value: 'Pickup mismatch', label: t('tripDetails.manage.reasons.pickup') },
+        { value: 'No response', label: t('tripDetails.manage.reasons.noResponse') },
+        { value: 'Mistake booking', label: t('tripDetails.manage.reasons.mistake') },
+        { value: 'Driver mistake', label: t('tripDetails.manage.reasons.driverMistake') },
+        { value: 'Other (pre-payment)', label: t('tripDetails.manage.reasons.otherPre') }
+    ];
+
+    const postPaymentReasons = [
+        { value: 'Violated rules', label: t('tripDetails.manage.reasons.violated') },
+        { value: 'Late cancellation', label: t('tripDetails.manage.reasons.lateCancel') },
+        { value: 'No-show', label: t('tripDetails.manage.reasons.noShow') },
+        { value: 'Payment issue', label: t('tripDetails.manage.reasons.paymentIssue') },
+        { value: 'Other (post-payment)', label: t('tripDetails.manage.reasons.otherPost') }
+    ];
+
+    const reasons = isPrePayment ? prePaymentReasons : postPaymentReasons;
     const isOther = reason?.toLowerCase().includes('other');
 
     const handleSubmit = () => {
@@ -82,15 +89,19 @@ function RemoveRiderModal({ booking, onClose, onConfirm, loading }: { booking: B
     };
 
     return (
-        <Modal opened={!!booking} onClose={onClose} title="Remove Rider">
+        <Modal opened={!!booking} onClose={onClose} title={t('tripDetails.manage.modals.removeRider.title')}>
             <Stack>
                 <Text size="sm">
-                    Please select a reason for removing <b>{booking.rider_name}</b>.
+                    <Trans
+                        i18nKey="tripDetails.manage.modals.removeRider.description"
+                        values={{ name: booking.rider_name }}
+                        components={{ 1: <b /> }}
+                    />
                 </Text>
 
                 <Select
-                    label="Reason"
-                    placeholder="Select a reason"
+                    label={t('tripDetails.manage.modals.removeRider.reasonLabel')}
+                    placeholder={t('tripDetails.manage.modals.removeRider.reasonPlaceholder')}
                     data={reasons}
                     value={reason}
                     onChange={setReason}
@@ -99,8 +110,8 @@ function RemoveRiderModal({ booking, onClose, onConfirm, loading }: { booking: B
 
                 {isOther && (
                     <Textarea
-                        label="Note"
-                        placeholder="Please provide a short explanation"
+                        label={t('tripDetails.manage.modals.removeRider.noteLabel')}
+                        placeholder={t('tripDetails.manage.modals.removeRider.notePlaceholder')}
                         value={note}
                         onChange={(event) => setNote(event.currentTarget.value)}
                         minRows={3}
@@ -109,14 +120,14 @@ function RemoveRiderModal({ booking, onClose, onConfirm, loading }: { booking: B
                 )}
 
                 <Group justify="flex-end" mt="md">
-                    <Button variant="default" onClick={onClose} disabled={loading}>Cancel</Button>
+                    <Button variant="default" onClick={onClose} disabled={loading}>{t('tripDetails.manage.actions.back')}</Button>
                     <Button
                         color="red"
                         onClick={handleSubmit}
                         loading={loading}
                         disabled={!reason || (isOther && !note.trim())}
                     >
-                        Remove Rider
+                        {t('tripDetails.manage.modals.removeRider.confirm')}
                     </Button>
                 </Group>
             </Stack>
@@ -125,6 +136,7 @@ function RemoveRiderModal({ booking, onClose, onConfirm, loading }: { booking: B
 }
 
 export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastRefreshed }: ManageTripViewProps) {
+    const { t } = useTranslation('common');
     const { user } = useAuth();
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
@@ -204,7 +216,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
-            if (!res.ok) throw new Error('Failed to fetch bookings');
+            if (!res.ok) throw new Error(t('tripDetails.manage.notifications.fetchError'));
             const data = await res.json();
             setBookings(data.bookings || []);
         } catch (err: any) {
@@ -234,25 +246,25 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
 
             const data = await res.json();
 
-            if (!res.ok) throw new Error(data.error || 'Action failed');
+            if (!res.ok) throw new Error(data.error || t('tripDetails.manage.notifications.actionFailed'));
 
             if (action === 'remove') {
                 notifications.show({
-                    title: 'Success',
-                    message: 'Rider removed. They will require your manual accept if they want to join again.',
+                    title: t('tripDetails.manage.notifications.success.title'),
+                    message: t('tripDetails.manage.notifications.removeSuccess.message'),
                     color: 'green',
                     autoClose: 5000
                 });
             } else if (action === 'mark_picked_up') {
                 notifications.show({
-                    title: 'Success',
-                    message: 'Rider marked as picked up',
+                    title: t('tripDetails.manage.notifications.success.title'),
+                    message: t('tripDetails.manage.notifications.pickedUpSuccess.message'),
                     color: 'green'
                 });
             } else {
                 notifications.show({
-                    title: 'Success',
-                    message: `Booking updated successfully`,
+                    title: t('tripDetails.manage.notifications.success.title'),
+                    message: t('tripDetails.manage.notifications.updateSuccess.message'),
                     color: 'green'
                 });
             }
@@ -265,7 +277,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
 
         } catch (err: any) {
             notifications.show({
-                title: 'Error',
+                title: t('tripDetails.manage.notifications.error.title'),
                 message: err.message,
                 color: 'red'
             });
@@ -295,11 +307,11 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
             });
 
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to update status');
+            if (!res.ok) throw new Error(data.error || t('tripDetails.manage.notifications.updateStatusFailed'));
 
             notifications.show({
-                title: 'Success',
-                message: `Trip marked as ${getTripStatusConfig(newStatus).label}`,
+                title: t('tripDetails.success.title'),
+                message: t(getTripStatusConfig(newStatus).labelKey),
                 color: 'green'
             });
 
@@ -321,7 +333,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
 
         } catch (err: any) {
             notifications.show({
-                title: 'Error',
+                title: t('tripDetails.manage.notifications.error.title'),
                 message: err.message,
                 color: 'red'
             });
@@ -343,21 +355,21 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                 },
                 body: JSON.stringify({ start_check_in: true })
             });
-            if (!res.ok) throw new Error('Failed to start check-in');
+            if (!res.ok) throw new Error(t('tripDetails.manage.notifications.startCheckInFailed'));
 
-            notifications.show({ title: 'Success', message: 'Check-in started!', color: 'green' });
+            notifications.show({ title: t('tripDetails.manage.notifications.success.title'), message: t('tripDetails.manage.notifications.checkInStarted'), color: 'green' });
 
             setCheckInModalOpen(false);
             onStatusChange();
         } catch (error) {
-            notifications.show({ title: 'Error', message: 'Failed to start check-in', color: 'red' });
+            notifications.show({ title: t('tripDetails.manage.notifications.error.title'), message: t('tripDetails.manage.notifications.startCheckInFailed'), color: 'red' });
         } finally {
             setStatusLoading(false);
         }
     };
 
     if (loading) return <Loader />;
-    if (error) return <Alert color="red" title="Error">{error}</Alert>;
+    if (error) return <Alert color="red" title={t('tripDetails.manage.notifications.error.title')}>{error}</Alert>;
 
 
     const activeBookings = bookings.filter(b => !INACTIVE_STATUSES.includes(b.status));
@@ -402,7 +414,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
         <Table.Thead>
             <Table.Tr>
                 <Table.Th style={{ width: columnWidths.rider, position: 'relative', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
-                    Rider
+                    {t('tripDetails.manage.table.rider')}
                     <div
                         style={{
                             position: 'absolute',
@@ -424,7 +436,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                     </div>
                 </Table.Th>
                 <Table.Th style={{ width: columnWidths.phone, position: 'relative', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
-                    Phone
+                    {t('tripDetails.manage.table.phone')}
                     <div
                         style={{
                             position: 'absolute',
@@ -446,7 +458,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                     </div>
                 </Table.Th>
                 <Table.Th style={{ width: columnWidths.status, position: 'relative', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
-                    Status
+                    {t('tripDetails.manage.table.status')}
                     <div
                         style={{
                             position: 'absolute',
@@ -468,7 +480,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                     </div>
                 </Table.Th>
                 <Table.Th style={{ width: columnWidths.seats, position: 'relative', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
-                    Seats
+                    {t('tripDetails.manage.table.seats')}
                     <div
                         style={{
                             position: 'absolute',
@@ -490,7 +502,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                     </div>
                 </Table.Th>
                 <Table.Th style={{ width: columnWidths.luggage, position: 'relative', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
-                    Luggage
+                    {t('tripDetails.manage.table.luggage')}
                     <div
                         style={{
                             position: 'absolute',
@@ -512,7 +524,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                     </div>
                 </Table.Th>
                 <Table.Th style={{ width: columnWidths.payment, position: 'relative', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
-                    Payment Method
+                    {t('tripDetails.manage.table.paymentMethod')}
                     <div
                         style={{
                             position: 'absolute',
@@ -534,7 +546,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                     </div>
                 </Table.Th>
                 <Table.Th style={{ width: columnWidths.createdAt, position: 'relative', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
-                    Booked At
+                    {t('tripDetails.manage.table.bookedAt')}
                     <div
                         style={{
                             position: 'absolute',
@@ -556,7 +568,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                     </div>
                 </Table.Th>
                 <Table.Th style={{ width: columnWidths.actions, position: 'relative', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
-                    Actions
+                    {t('tripDetails.manage.table.actions')}
                     <div
                         style={{
                             position: 'absolute',
@@ -619,24 +631,24 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                 <Table.Td>
                     {(() => {
                         if (b.rider_phone_visible === 'MISSING') {
-                            return <Text size="sm" c="dimmed">Missing<br /><Text span size="xs">(Not provided)</Text></Text>;
+                            return <Text size="sm" c="dimmed">{t('tripDetails.manage.phone.missing')}<br /><Text span size="xs">({t('tripDetails.manage.phone.notProvided')})</Text></Text>;
                         }
                         if (b.rider_phone_visible === 'REDACTED') {
-                            let reason = "Trip ended > 24h ago";
-                            if (b.status === 'removed') reason = "Rider removed";
-                            else if (b.status === 'waiting_approval') reason = "Not confirmed";
-                            else if (INACTIVE_STATUSES.includes(b.status)) reason = "Booking inactive";
+                            let reason = t('tripDetails.manage.phone.hiddenReasons.tripEnded');
+                            if (b.status === 'removed') reason = t('tripDetails.manage.phone.hiddenReasons.riderRemoved');
+                            else if (b.status === 'waiting_approval') reason = t('tripDetails.manage.phone.hiddenReasons.notConfirmed');
+                            else if (INACTIVE_STATUSES.includes(b.status)) reason = t('tripDetails.manage.phone.hiddenReasons.bookingInactive');
 
-                            return <Text size="sm" c="dimmed">Hidden<br /><Text span size="xs">({reason})</Text></Text>;
+                            return <Text size="sm" c="dimmed">{t('tripDetails.manage.phone.hidden')}<br /><Text span size="xs">({reason})</Text></Text>;
                         }
                         return <Text size="sm">{b.rider_phone}</Text>;
                     })()}
                 </Table.Td>
                 <Table.Td>
                     <Text size="sm" style={{ overflowWrap: 'break-word', whiteSpace: 'normal' }}>
-                        {getBookingStatusConfig(b.status).label}
-                        {b.status === 'removed' && b.removal_reason && `, (reason: ${b.removal_reason})`}
-                        {b.picked_up && ', picked up'}
+                        {t(getBookingStatusConfig(b.status).labelKey)}
+                        {b.status === 'removed' && b.removal_reason && `, (${t('tripDetails.manage.reasons.reason')}: ${b.removal_reason})`}
+                        {b.picked_up && t('tripDetails.manage.status.pickedUpSuffix')}
                     </Text>
                 </Table.Td>
                 <Table.Td>
@@ -671,7 +683,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                                         onClick={() => handleAction(b.id, 'accept')}
                                         leftSection={<IconCheck size={14} />}
                                     >
-                                        Accept
+                                        {t('tripDetails.manage.actions.accept')}
                                     </Button>
                                     <Button
                                         size="xs"
@@ -681,7 +693,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                                         onClick={() => handleAction(b.id, 'reject')}
                                         leftSection={<IconX size={14} />}
                                     >
-                                        Reject
+                                        {t('tripDetails.manage.actions.reject')}
                                     </Button>
                                 </Group>
                             )}
@@ -695,7 +707,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                                     onClick={() => setRiderToRemove(b)}
                                     leftSection={<IconTrash size={14} />}
                                 >
-                                    Remove...
+                                    {t('tripDetails.manage.actions.remove')}
                                 </Button>
                             )}
 
@@ -709,7 +721,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                                         onClick={() => handleAction(b.id, 'confirm_payment')}
                                         leftSection={<IconCurrencyDollar size={14} />}
                                     >
-                                        Confirm Paid
+                                        {t('tripDetails.manage.actions.confirmPaid')}
                                     </Button>
                                     <Button
                                         size="xs"
@@ -719,7 +731,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                                         onClick={() => setRiderToRemove(b)}
                                         leftSection={<IconTrash size={14} />}
                                     >
-                                        Remove...
+                                        {t('tripDetails.manage.actions.remove')}
                                     </Button>
                                 </Stack>
                             )}
@@ -735,7 +747,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                                             onClick={() => handleAction(b.id, 'mark_picked_up')}
                                             leftSection={<IconUserCheck size={14} />}
                                         >
-                                            Mark Picked Up
+                                            {t('tripDetails.manage.actions.markPickedUp')}
                                         </Button>
                                     )}
                                     {tripStatus !== 'departed' && tripStatus !== 'done' && tripStatus !== 'cancelled' && (
@@ -747,7 +759,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                                             onClick={() => setRiderToRemove(b)}
                                             leftSection={<IconTrash size={14} />}
                                         >
-                                            Remove...
+                                            {t('tripDetails.manage.actions.removeEllipsis')}
                                         </Button>
                                     )}
                                 </Stack>
@@ -780,7 +792,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                             onClick={() => setCheckInModalOpen(true)}
                             loading={statusLoading}
                         >
-                            Enable Check-in
+                            {t('tripDetails.manage.actions.enableCheckIn')}
                         </Button>
                     )}
                     {tripStatus !== 'departed' && tripStatus !== 'cancelled' && tripStatus !== 'done' && tripStatus !== 'aborted' && (
@@ -790,11 +802,15 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                             onClick={() => {
                                 if (!trip.driver?.phone) {
                                     notifications.show({
-                                        title: 'Profile incomplete',
+                                        title: t('tripDetails.manage.notifications.profileIncomplete.title'),
                                         message: (
-                                            <Text size="sm">
-                                                You must add a phone number to your <Anchor component={LocalizedLink} href={`/profile/${trip.driver.id}`} style={{ textDecoration: 'underline' }}>profile</Anchor> before you can start pickup.
-                                            </Text>
+                                            <Trans
+                                                i18nKey="tripDetails.manage.notifications.profileIncomplete.message"
+                                                t={t}
+                                                components={{
+                                                    1: <Anchor component={LocalizedLink} href={`/profile/${trip.driver.id}`} style={{ textDecoration: 'underline' }} />
+                                                }}
+                                            />
                                         ),
                                         color: 'red',
                                         autoClose: 6000,
@@ -803,8 +819,8 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                                 }
                                 if (!trip.car) {
                                     notifications.show({
-                                        title: 'No vehicle assigned',
-                                        message: 'You must assign a vehicle to this trip before you can start pickup. Please select a vehicle in the "Edit Trip" tab.',
+                                        title: t('tripDetails.manage.notifications.noVehicle.title'),
+                                        message: t('tripDetails.manage.notifications.noVehicle.message'),
                                         color: 'red'
                                     });
                                     return;
@@ -813,7 +829,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                             }}
                             loading={statusLoading}
                         >
-                            Start Pickup
+                            {t('tripDetails.manage.actions.startPickup')}
                         </Button>
                     )}
                     {tripStatus === 'departed' && (
@@ -823,7 +839,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                             onClick={() => setCompleteModalOpen(true)}
                             loading={statusLoading}
                         >
-                            Trip Completed
+                            {t('tripDetails.manage.actions.tripCompleted')}
                         </Button>
                     )}
                     {tripStatus === 'departed' && (
@@ -833,7 +849,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                             onClick={() => setAbortModalOpen(true)}
                             loading={statusLoading}
                         >
-                            Abort Trip
+                            {t('tripDetails.manage.actions.abortTrip')}
                         </Button>
                     )}
                     {(tripStatus === 'bookable' || tripStatus === 'full' || tripStatus === 'locked') && (
@@ -844,7 +860,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                             loading={statusLoading}
                             leftSection={tripStatus === 'locked' ? <IconLock size={16} /> : undefined}
                         >
-                            {tripStatus === 'locked' ? 'Unlock Trip' : 'Lock Trip'}
+                            {tripStatus === 'locked' ? t('tripDetails.manage.actions.unlockTrip') : t('tripDetails.manage.actions.lockTrip')}
                         </Button>
                     )}
                     {tripStatus !== 'cancelled' && tripStatus !== 'done' && tripStatus !== 'departed' && tripStatus !== 'aborted' && (
@@ -854,135 +870,141 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                             onClick={() => setCancelModalOpen(true)}
                             loading={statusLoading}
                         >
-                            Cancel Trip
+                            {t('tripDetails.manage.actions.cancelTrip')}
                         </Button>
                     )}
                 </Group>
 
 
 
-                <Modal opened={departModalOpen} onClose={() => setDepartModalOpen(false)} title="Start Pickup?">
+                <Modal opened={departModalOpen} onClose={() => setDepartModalOpen(false)} title={t('tripDetails.manage.modals.startPickup.title')}>
                     <Stack>
                         <Text size="sm">
-                            Are you sure you want to start pickup?
+                            {t('tripDetails.manage.modals.startPickup.description')}
                         </Text>
-                        <Alert color="indigo" icon={<IconInfoCircle size={16} />} title="What this means">
+                        <Alert color="indigo" icon={<IconInfoCircle size={16} />} title={t('tripDetails.manage.modals.startPickup.impactTitle')}>
                             <Text size="sm">
-                                This will notify riders that you have started picking people up.
+                                {t('tripDetails.manage.modals.startPickup.impactDescription')}
                             </Text>
                         </Alert>
                         <Group justify="flex-end" mt="md">
-                            <Button variant="default" onClick={() => setDepartModalOpen(false)}>Back</Button>
+                            <Button variant="default" onClick={() => setDepartModalOpen(false)}>{t('tripDetails.manage.actions.back')}</Button>
                             <Button color="indigo" onClick={() => handleStatusUpdate('departed')} loading={statusLoading}>
-                                Confirm Start Pickup
+                                {t('tripDetails.manage.modals.startPickup.confirm')}
                             </Button>
                         </Group>
                     </Stack>
                 </Modal>
 
-                <Modal opened={checkInModalOpen} onClose={() => setCheckInModalOpen(false)} title="Enable Check-in?">
+                <Modal opened={checkInModalOpen} onClose={() => setCheckInModalOpen(false)} title={t('tripDetails.manage.modals.enableCheckIn.title')}>
                     <Stack>
                         <Text size="sm">
-                            Are you sure you want to enable check-in?
+                            {t('tripDetails.manage.modals.enableCheckIn.description')}
                         </Text>
-                        <Alert color="orange" icon={<IconInfoCircle size={16} />} title="What this means">
+                        <Alert color="orange" icon={<IconInfoCircle size={16} />} title={t('tripDetails.manage.modals.enableCheckIn.impactTitle')}>
                             <Text size="sm">
-                                Riders will be able to mark themselves as "Ready" for pickup.
+                                {t('tripDetails.manage.modals.enableCheckIn.impactDescription')}
                             </Text>
                         </Alert>
                         <Group justify="flex-end" mt="md">
-                            <Button variant="default" onClick={() => setCheckInModalOpen(false)}>Back</Button>
+                            <Button variant="default" onClick={() => setCheckInModalOpen(false)}>{t('tripDetails.manage.actions.back')}</Button>
                             <Button color="orange" onClick={handleEnableCheckIn} loading={statusLoading}>
-                                Enable Check-in
+                                {t('tripDetails.manage.modals.enableCheckIn.confirm')}
                             </Button>
                         </Group>
                     </Stack>
                 </Modal>
 
-                <Modal opened={lockModalOpen} onClose={() => setLockModalOpen(false)} title="Lock Trip">
+                <Modal opened={lockModalOpen} onClose={() => setLockModalOpen(false)} title={t('tripDetails.manage.modals.lockTrip.title')}>
                     <Stack>
                         <Text size="sm">
-                            Are you sure you want to lock this trip?
+                            {t('tripDetails.manage.modals.lockTrip.description')}
                         </Text>
-                        <Alert color="blue" icon={<IconInfoCircle size={16} />} title="What this means">
+                        <Alert color="blue" icon={<IconInfoCircle size={16} />} title={t('tripDetails.manage.modals.lockTrip.impactTitle')}>
                             <Stack gap="xs">
                                 <Text size="sm">
-                                    • Active bookings will remain active.
+                                    • {t('tripDetails.manage.modals.lockTrip.impact1')}
                                 </Text>
                                 <Text size="sm">
-                                    • No new riders will be able to book this trip.
+                                    • {t('tripDetails.manage.modals.lockTrip.impact2')}
                                 </Text>
                                 <Text size="sm">
-                                    • You can only lock a trip if it is currently 'Bookable' or 'Full'.
+                                    • {t('tripDetails.manage.modals.lockTrip.impact3')}
                                 </Text>
                             </Stack>
                         </Alert>
                         <Group justify="flex-end" mt="md">
-                            <Button variant="default" onClick={() => setLockModalOpen(false)}>Back</Button>
+                            <Button variant="default" onClick={() => setLockModalOpen(false)}>{t('tripDetails.manage.actions.back')}</Button>
                             <Button color="orange" onClick={() => handleStatusUpdate('locked')} loading={statusLoading} leftSection={<IconLock size={16} />}>
-                                Confirm Lock
+                                {t('tripDetails.manage.modals.lockTrip.confirm')}
                             </Button>
                         </Group>
                     </Stack>
                 </Modal>
 
-                <Modal opened={unlockModalOpen} onClose={() => setUnlockModalOpen(false)} title="Unlock Trip">
+                <Modal opened={unlockModalOpen} onClose={() => setUnlockModalOpen(false)} title={t('tripDetails.manage.modals.unlockTrip.title')}>
                     <Stack>
                         <Text size="sm">
-                            Are you sure you want to unlock this trip?
+                            {t('tripDetails.manage.modals.unlockTrip.description')}
                         </Text>
-                        <Alert color="green" icon={<IconLockOpen size={16} />} title="What this means">
+                        <Alert color="green" icon={<IconLockOpen size={16} />} title={t('tripDetails.manage.modals.unlockTrip.impactTitle')}>
                             <Stack gap="xs">
                                 <Text size="sm">
-                                    • Riders will be able to book this trip again (if seats are available).
+                                    • {t('tripDetails.manage.modals.unlockTrip.impact1')}
                                 </Text>
                                 <Text size="sm">
-                                    • If the trip has passed its booking cutoff time, it cannot be unlocked.
+                                    • {t('tripDetails.manage.modals.unlockTrip.impact2')}
                                 </Text>
                             </Stack>
                         </Alert>
                         <Group justify="flex-end" mt="md">
-                            <Button variant="default" onClick={() => setUnlockModalOpen(false)}>Back</Button>
+                            <Button variant="default" onClick={() => setUnlockModalOpen(false)}>{t('tripDetails.manage.actions.back')}</Button>
                             <Button color="green" onClick={() => handleStatusUpdate('bookable')} loading={statusLoading} leftSection={<IconLockOpen size={16} />}>
-                                Confirm Unlock
+                                {t('tripDetails.manage.modals.unlockTrip.confirm')}
                             </Button>
                         </Group>
                     </Stack>
                 </Modal>
 
-                <Modal opened={cancelModalOpen} onClose={() => setCancelModalOpen(false)} title="Cancel Trip">
-                    <Text size="sm" mb="md">Are you sure you want to cancel this trip? This action cannot be undone.</Text>
+                <Modal opened={cancelModalOpen} onClose={() => setCancelModalOpen(false)} title={t('tripDetails.manage.modals.cancelTrip.title')}>
+                    <Text size="sm" mb="md">{t('tripDetails.manage.modals.cancelTrip.description')}</Text>
                     <Group justify="flex-end">
-                        <Button variant="default" onClick={() => setCancelModalOpen(false)}>Back</Button>
-                        <Button color="red" onClick={() => handleStatusUpdate('cancelled')} loading={statusLoading}>Confirm Cancel</Button>
+                        <Button variant="default" onClick={() => setCancelModalOpen(false)}>{t('tripDetails.manage.actions.back')}</Button>
+                        <Button color="red" onClick={() => handleStatusUpdate('cancelled')} loading={statusLoading}>{t('tripDetails.manage.modals.cancelTrip.confirm')}</Button>
                     </Group>
                 </Modal>
 
-                <Modal opened={abortModalOpen} onClose={() => setAbortModalOpen(false)} title="Abort Trip">
+                <Modal opened={abortModalOpen} onClose={() => setAbortModalOpen(false)} title={t('tripDetails.manage.modals.abortTrip.title')}>
                     <Stack>
-                        <Text size="sm">Are you sure you want to abort this trip? This indicates something went wrong mid-trip.</Text>
-                        <Alert color="red" icon={<IconInfoCircle size={16} />} title="Impact">
+                        <Text size="sm">{t('tripDetails.manage.modals.abortTrip.description')}</Text>
+                        <Alert color="red" icon={<IconInfoCircle size={16} />} title={t('tripDetails.manage.modals.abortTrip.impactTitle')}>
                             <Stack gap={0}>
                                 <Text size="sm">
-                                    • Riders already <b>picked up</b> will be marked as <b>Completed</b>.
+                                    <Trans
+                                        i18nKey="tripDetails.manage.modals.abortTrip.impact1"
+                                        components={{ 1: <b />, 2: <b /> }}
+                                    />
                                 </Text>
                                 <Text size="sm">
-                                    • Riders <b>NOT picked up</b> will be marked as <b>Cancelled</b>.
+                                    <Trans
+                                        i18nKey="tripDetails.manage.modals.abortTrip.impact2"
+                                        components={{ 1: <b />, 2: <b /> }}
+                                    />
                                 </Text>
                             </Stack>
                         </Alert>
                         <Group justify="flex-end" mt="md">
-                            <Button variant="default" onClick={() => setAbortModalOpen(false)}>Back</Button>
-                            <Button color="red" onClick={() => handleStatusUpdate('aborted')} loading={statusLoading}>Confirm Abort</Button>
+                            <Button variant="default" onClick={() => setAbortModalOpen(false)}>{t('tripDetails.manage.actions.back')}</Button>
+                            <Button color="red" onClick={() => handleStatusUpdate('aborted')} loading={statusLoading}>{t('tripDetails.manage.modals.abortTrip.confirm')}</Button>
                         </Group>
                     </Stack>
                 </Modal>
 
-                <Modal opened={completeModalOpen} onClose={() => setCompleteModalOpen(false)} title="Complete Trip">
-                    <Text size="sm" mb="md">Are you sure you want to mark this trip as completed?</Text>
+                <Modal opened={completeModalOpen} onClose={() => setCompleteModalOpen(false)} title={t('tripDetails.manage.modals.completeTrip.title')}>
+                    <Text size="sm" mb="md">{t('tripDetails.manage.modals.completeTrip.description')}</Text>
                     <Group justify="flex-end">
-                        <Button variant="default" onClick={() => setCompleteModalOpen(false)}>Back</Button>
-                        <Button color="green" onClick={() => handleStatusUpdate('done')} loading={statusLoading}>Confirm Complete</Button>
+                        <Button variant="default" onClick={() => setCompleteModalOpen(false)}>{t('tripDetails.manage.actions.back')}</Button>
+                        <Button color="green" onClick={() => handleStatusUpdate('done')} loading={statusLoading}>{t('tripDetails.manage.modals.completeTrip.confirm')}</Button>
                     </Group>
                 </Modal>
 
@@ -992,20 +1014,20 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                         <>
                             <Group justify="space-between" mb="xs" align="center">
                                 <Text size="sm" c="dimmed">
-                                    {activeBookings.length} Active Booking{activeBookings.length !== 1 ? 's' : ''}
+                                    {t('tripDetails.manage.activeBookingsCount', { count: activeBookings.length })}
                                 </Text>
                                 <Group gap="xs">
                                     <Select
                                         size="xs"
-                                        placeholder="Sort by"
+                                        placeholder={t('tripDetails.manage.sort.placeholder')}
                                         data={[
-                                            { value: 'created_at', label: 'Booked At' },
-                                            { value: 'rider_name', label: 'Rider Name' },
-                                            { value: 'ready', label: 'Rider Ready' },
-                                            { value: 'status', label: 'Status' },
-                                            { value: 'picked_up', label: 'Picked Up' },
-                                            { value: 'seats_booked', label: 'Seats' },
-                                            { value: 'luggage', label: 'Luggage' },
+                                            { value: 'created_at', label: t('tripDetails.manage.sort.bookedAt') },
+                                            { value: 'rider_name', label: t('tripDetails.manage.sort.riderName') },
+                                            { value: 'ready', label: t('tripDetails.manage.sort.riderReady') },
+                                            { value: 'status', label: t('tripDetails.manage.sort.status') },
+                                            { value: 'picked_up', label: t('tripDetails.manage.sort.pickedUp') },
+                                            { value: 'seats_booked', label: t('tripDetails.manage.sort.seats') },
+                                            { value: 'luggage', label: t('tripDetails.manage.sort.luggage') },
                                         ]}
                                         value={sortBy}
                                         onChange={setSortBy}
@@ -1017,7 +1039,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                                         color="gray"
                                         size="md"
                                         onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
-                                        title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
+                                        title={sortDirection === 'asc' ? t('tripDetails.manage.sort.ascending') : t('tripDetails.manage.sort.descending')}
                                     >
                                         {sortDirection === 'asc' ? <IconSortAscending size={16} /> : <IconSortDescending size={16} />}
                                     </ActionIcon>
@@ -1031,8 +1053,8 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                             </div>
                         </>
                     ) : (
-                        <Alert icon={<IconInfoCircle size={16} />} title="No Bookings" color="blue">
-                            No one has booked this trip yet.
+                        <Alert icon={<IconInfoCircle size={16} />} title={t('tripDetails.alerts.noBookings.title')} color="blue">
+                            {t('tripDetails.alerts.noBookings.description')}
                         </Alert>
                     )
                 }

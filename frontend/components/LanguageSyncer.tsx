@@ -4,11 +4,21 @@ import { useEffect } from 'react';
 import { useAuth } from './firebase/AuthContext';
 import { usePathname, useRouter } from 'next/navigation';
 import { languages, cookieName } from '@/app/i18n/settings';
+import dayjs from 'dayjs';
+import 'dayjs/locale/zh';
+import 'dayjs/locale/en';
 
 export function LanguageSyncer() {
     const { user, loading } = useAuth();
     const pathname = usePathname();
     const router = useRouter();
+
+    // Sync dayjs locale with current URL language
+    useEffect(() => {
+        const pathSegments = pathname.split('/');
+        const currentLang = languages.includes(pathSegments[1]) ? pathSegments[1] : 'en';
+        dayjs.locale(currentLang);
+    }, [pathname]);
 
     useEffect(() => {
         const syncLanguage = async () => {
@@ -24,6 +34,9 @@ export function LanguageSyncer() {
                     const preferredLanguage = data.language; // 'en' or 'zh'
 
                     if (preferredLanguage) {
+                        // Sync dayjs locale
+                        dayjs.locale(preferredLanguage);
+
                         // Get current cookie value
                         const currentCookie = document.cookie
                             .split('; ')

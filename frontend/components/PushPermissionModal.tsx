@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { Modal, Button, Text, Group, Stack, ThemeIcon, List } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { IconBellRinging, IconDeviceMobile, IconShare, IconSquarePlus, IconDownload, IconBan } from '@tabler/icons-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useNotifications } from '@/components/Notifications/NotificationContext';
 
 export function PushPermissionModal() {
+    const { t } = useTranslation('common');
     const { isModalOpen, closePrompt, showPrompt, requestPermission, pushPermission } = useNotifications();
     const { isIOS, isAndroid, isStandalone, activePrompt } = usePWAInstall();
 
@@ -76,7 +78,7 @@ export function PushPermissionModal() {
             <Modal
                 opened={isModalOpen}
                 onClose={closePrompt}
-                title="Notifications Blocked"
+                title={t('pwa.blockedTitle')}
                 centered
                 size="sm"
             >
@@ -86,15 +88,15 @@ export function PushPermissionModal() {
                     </ThemeIcon>
 
                     <Text ta="center">
-                        Notifications are blocked by your browser settings.
+                        {t('pwa.blockedMessage')}
                     </Text>
 
                     <Text ta="center" size="sm" c="dimmed">
-                        Tap the lock icon 🔒 or info icon ⓘ in your address bar and reset permissions to receive updates.
+                        {t('pwa.blockedGuide')}
                     </Text>
 
                     <Button variant="default" fullWidth onClick={closePrompt}>
-                        I've Fixed It
+                        {t('pwa.fixedBtn')}
                     </Button>
                 </Stack>
             </Modal>
@@ -108,7 +110,7 @@ export function PushPermissionModal() {
             <Modal
                 opened={isModalOpen}
                 onClose={closePrompt}
-                title="Install App Required"
+                title={t('pwa.installRequiredTitle')}
                 centered
                 size="sm"
             >
@@ -118,16 +120,16 @@ export function PushPermissionModal() {
                     </ThemeIcon>
 
                     <Text ta="center" fw={500}>
-                        To reliably receive ride updates, please install the app to your home screen.
+                        {t('pwa.installRequiredMessage')}
                     </Text>
 
                     <List type="ordered" spacing="sm" size="sm" center>
-                        <List.Item icon={<IconShare size={16} />}>Tap the Share button in Safari</List.Item>
-                        <List.Item icon={<IconSquarePlus size={16} />}>Scroll down and tap "Add to Home Screen"</List.Item>
+                        <List.Item icon={<IconShare size={16} />}>{t('pwa.installGuideIOS1')}</List.Item>
+                        <List.Item icon={<IconSquarePlus size={16} />}>{t('pwa.installGuideIOS2')}</List.Item>
                     </List>
 
                     <Button variant="default" fullWidth onClick={closePrompt}>
-                        I'll do it later
+                        {t('pwa.laterBtn')}
                     </Button>
                 </Stack>
             </Modal>
@@ -141,7 +143,7 @@ export function PushPermissionModal() {
             <Modal
                 opened={isModalOpen}
                 onClose={closePrompt}
-                title="Install App"
+                title={t('pwa.installTitle')}
                 centered
                 size="sm"
             >
@@ -151,22 +153,22 @@ export function PushPermissionModal() {
                     </ThemeIcon>
 
                     <Text ta="center">
-                        Notifications enabled! Install the app for a better experience.
+                        {t('pwa.installMessage')}
                     </Text>
 
                     {!activePrompt && (
                         <Text ta="center" size="sm" c="dimmed">
-                            To install, tap the browser menu (⋮) and select "Install App" or "Add to Home Screen".
+                            {t('pwa.installGuideAndroid')}
                         </Text>
                     )}
 
                     <Group w="100%" grow>
                         <Button variant="default" onClick={closePrompt}>
-                            {activePrompt ? 'Not Now' : 'Close'}
+                            {activePrompt ? t('pwa.notNowBtn') : t('pwa.closeBtn')}
                         </Button>
                         {activePrompt && (
                             <Button onClick={handleAndroidInstall} leftSection={<IconDownload size={16} />}>
-                                Install App
+                                {t('pwa.installBtn')}
                             </Button>
                         )}
                     </Group>
@@ -180,7 +182,7 @@ export function PushPermissionModal() {
         <Modal
             opened={isModalOpen}
             onClose={closePrompt}
-            title="Get Updates"
+            title={t('pwa.getUpdatesTitle')}
             centered
             size="sm"
         >
@@ -190,15 +192,15 @@ export function PushPermissionModal() {
                 </ThemeIcon>
 
                 <Text ta="center">
-                    Would you like to be notified about updates to this ride?
+                    {t('pwa.getUpdatesMessage')}
                 </Text>
 
                 <Group w="100%" grow>
                     <Button variant="default" onClick={closePrompt}>
-                        Not Now
+                        {t('pwa.notNowBtn')}
                     </Button>
                     <Button onClick={handleEnable}>
-                        Enable Notifications
+                        {t('pwa.enableBtn')}
                     </Button>
                 </Group>
             </Stack>

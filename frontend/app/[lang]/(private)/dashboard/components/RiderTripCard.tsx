@@ -1,3 +1,4 @@
+'use client'
 import { useState } from 'react';
 import { Card, Text, Group, Stack, Button, Flex, ActionIcon, Tooltip, Badge } from '@mantine/core';
 import { getTripStatusConfig, getBookingStatusConfig } from '@/utils/statusUtils';
@@ -6,6 +7,7 @@ import dayjs from 'dayjs';
 import { LocalizedLink } from '@/components/LocalizedLink';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { notifications } from '@mantine/notifications';
+import { useTranslation } from 'react-i18next';
 
 interface Trip {
     id: string; // trip_id
@@ -29,6 +31,7 @@ interface RiderTripCardProps {
 }
 
 export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
+    const { t } = useTranslation('common');
     const { user } = useAuth();
     const [markingPaid, setMarkingPaid] = useState(false);
 
@@ -52,15 +55,15 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
             }
 
             notifications.show({
-                title: 'Success',
-                message: 'Marked as paid. Waiting for driver confirmation.',
+                title: t('rides.errors.successTitle'),
+                message: t('dashboard.tripCard.paymentSuccess'),
                 color: 'green'
             });
             onRefresh();
 
         } catch (error: any) {
             notifications.show({
-                title: 'Error',
+                title: t('rides.errors.errorTitle'),
                 message: error.message,
                 color: 'red'
             });
@@ -70,7 +73,7 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
     };
 
     const handleCancelBooking = async () => {
-        if (!user || !window.confirm('Are you sure you want to cancel this booking?')) return;
+        if (!user || !window.confirm(t('dashboard.tripCard.confirmCancel'))) return;
 
         setCancelling(true);
         try {
@@ -86,15 +89,15 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
             }
 
             notifications.show({
-                title: 'Success',
-                message: 'Booking cancelled (left unpaid).',
+                title: t('rides.errors.successTitle'),
+                message: t('dashboard.tripCard.cancelSuccess'),
                 color: 'green'
             });
             onRefresh();
 
         } catch (error: any) {
             notifications.show({
-                title: 'Error',
+                title: t('rides.errors.errorTitle'),
                 message: error.message,
                 color: 'red'
             });
@@ -123,7 +126,7 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
                             <Text fw={600} size="lg" lineClamp={1} title={trip.to_text}>
                                 {trip.to_text.split(',')[0]}
                             </Text>
-                            <Tooltip label="View Public Posting">
+                            <Tooltip label={t('dashboard.tripCard.viewPosting')}>
                                 <ActionIcon
                                     component={LocalizedLink}
                                     href={`/rides/${trip.id}`}
@@ -135,7 +138,7 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
                                 </ActionIcon>
                             </Tooltip>
                             {trip.start_check_in && trip.trip_status !== 'done' && trip.trip_status !== 'cancelled' && (
-                                <Badge size="sm" color="cyan" variant="filled">Check-in Started</Badge>
+                                <Badge size="sm" color="cyan" variant="filled">{t('dashboard.tripCard.checkInStarted')}</Badge>
                             )}
                         </Group>
                         <Text size="xs" c="dimmed" ml={28}>
@@ -145,14 +148,14 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
 
                     <Flex direction="column" align={{ base: 'flex-start', sm: 'flex-end' }} gap={0}>
                         <Group gap={6}>
-                            <Text size="xs" fw={700} c="dimmed">TRIP:</Text>
+                            <Text size="xs" fw={700} c="dimmed">{t('dashboard.tripCard.labels.trip')}</Text>
                             <Text c={getTripStatusConfig(trip.trip_status).color} fw={700} size="sm">
-                                {getTripStatusConfig(trip.trip_status).label.toUpperCase()}
+                                {t(getTripStatusConfig(trip.trip_status).labelKey).toUpperCase()}
                             </Text>
 
                         </Group>
                         <Group gap={6} align="flex-start">
-                            <Text size="xs" fw={700} c="dimmed" style={{ whiteSpace: 'nowrap', marginTop: 1 }}>BOOKING:</Text>
+                            <Text size="xs" fw={700} c="dimmed" style={{ whiteSpace: 'nowrap', marginTop: 1 }}>{t('dashboard.tripCard.labels.booking')}</Text>
                             <Text
                                 c={getBookingStatusConfig(trip.booking_status).color}
                                 fw={700}
@@ -160,7 +163,7 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
                                 ta={{ base: 'left', sm: 'right' }}
                                 style={{ lineHeight: 1.3 }}
                             >
-                                {getBookingStatusConfig(trip.booking_status).label}
+                                {t(getBookingStatusConfig(trip.booking_status).labelKey)}
                             </Text>
                         </Group>
                     </Flex>
@@ -181,12 +184,12 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
                             <Group gap="xs">
                                 <IconUserCheck size={16} />
                                 <Text size="sm">
-                                    {trip.seats_booked} seat{trip.seats_booked > 1 ? 's' : ''}
+                                    {trip.seats_booked} {trip.seats_booked > 1 ? t('dashboard.tripCard.labels.seats_plural') : t('dashboard.tripCard.labels.seats')}
                                 </Text>
                             </Group>
                             {trip.price && parseFloat(trip.price) > 0 && (
                                 <Text size="sm" fw={500}>
-                                    ${trip.price} / seat
+                                    ${trip.price} / {t('dashboard.tripCard.labels.seats')}
                                 </Text>
                             )}
                         </Group>
@@ -195,7 +198,7 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
                         <Group gap="xs">
                             <IconLuggage size={16} />
                             <Text size="sm">
-                                {trip.big_luggage} Big, {trip.small_luggage} Small
+                                {trip.big_luggage} {t('dashboard.tripCard.labels.big')}, {trip.small_luggage} {t('dashboard.tripCard.labels.small')}
                             </Text>
                         </Group>
                     </Group>
@@ -209,7 +212,7 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
                         leftSection={<IconUserCheck size={16} />}
                         fullWidth
                     >
-                        Manage Booking
+                        {t('dashboard.tripCard.manageBooking')}
                     </Button>
 
                     {showCancelButton && (
@@ -220,7 +223,7 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
                             loading={cancelling}
                             fullWidth
                         >
-                            Cancel Booking
+                            {t('dashboard.tripCard.cancelBooking')}
                         </Button>
                     )}
 
@@ -232,7 +235,7 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
                             leftSection={<IconCash size={16} />}
                             fullWidth
                         >
-                            Mark Payment Sent
+                            {t('dashboard.tripCard.markPayment')}
                         </Button>
                     )}
                 </Flex>

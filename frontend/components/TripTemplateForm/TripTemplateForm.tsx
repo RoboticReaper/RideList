@@ -7,6 +7,7 @@ import { IconDeviceFloppy, IconTrash, IconX } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { LocalizedLink } from '@/components/LocalizedLink';
+import { useTranslation, Trans } from 'react-i18next';
 
 interface TripTemplateFormProps {
     templateId?: string; // 'new' or uuid
@@ -14,6 +15,7 @@ interface TripTemplateFormProps {
 }
 
 export function TripTemplateForm({ templateId, initialData }: TripTemplateFormProps) {
+    const { t } = useTranslation('common');
     const { user } = useAuth();
     const router = useRouter();
     const isNew = templateId === 'new';
@@ -149,7 +151,7 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
     // On Submit
     const handleSubmit = async () => {
         if (!name.trim()) {
-            notifications.show({ title: 'Error', message: 'Template name is required', color: 'red' });
+            notifications.show({ title: t('rides.errors.errorTitle'), message: t('templates.trips.form.notifications.nameRequired'), color: 'red' });
             return;
         }
 
@@ -219,12 +221,12 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
 
             if (!res.ok) throw new Error('Failed to save template');
 
-            notifications.show({ title: 'Success', message: 'Template saved successfully', color: 'green' });
+            notifications.show({ title: t('rides.errors.successTitle'), message: t('templates.trips.form.notifications.saveSuccess'), color: 'green' });
             router.push('/trip-templates');
 
         } catch (error) {
             console.error(error);
-            notifications.show({ title: 'Error', message: 'Failed to save template', color: 'red' });
+            notifications.show({ title: t('rides.errors.errorTitle'), message: t('templates.trips.form.notifications.saveError'), color: 'red' });
         } finally {
             setLoading(false);
         }
@@ -241,7 +243,7 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
             router.push('/trip-templates');
         } catch (error) {
             console.error(error);
-            notifications.show({ title: 'Error', message: 'Failed to delete template', color: 'red' });
+            notifications.show({ title: t('rides.errors.errorTitle'), message: t('templates.trips.form.notifications.deleteError'), color: 'red' });
             setLoading(false);
             close();
         }
@@ -250,35 +252,35 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
     return (
         <Stack gap="md" maw={800} mx="auto">
             <Group justify="space-between">
-                <Title order={3}>{isNew ? 'New Trip Template' : 'Edit Trip Template'}</Title>
+                <Title order={3}>{isNew ? t('templates.trips.form.addTitle') : t('templates.trips.form.editTitle')}</Title>
                 {!isNew && (
                     <Button color="red" variant="subtle" leftSection={<IconTrash size={16} />} onClick={open} loading={loading}>
-                        Delete
+                        {t('templates.trips.form.delete')}:
                     </Button>
                 )}
             </Group>
 
             <TextInput
-                label="Template Name"
-                placeholder="e.g. Work Commute"
+                label={t('templates.trips.form.name')}
+                placeholder={t('templates.trips.form.namePlaceholder')}
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
             />
 
             <Textarea
-                label="Driver Notes"
-                description="Message to passengers (e.g. pickup details)"
-                placeholder="I will be driving a blue sedan..."
+                label={t('templates.trips.form.driverNotes')}
+                description={t('templates.trips.form.driverNotesDesc')}
+                placeholder={t('templates.trips.form.driverNotesPlaceholder')}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
             />
 
             <Paper withBorder p="md" radius="md">
-                <Title order={4} mb="md">Route & Vehicle</Title>
+                <Title order={4} mb="md">{t('templates.trips.form.sectionRoute')}</Title>
                 <Stack>
                     <Autocomplete
-                        label="From"
+                        label={t('templates.trips.form.from')}
                         placeholder="Start Location"
                         data={startSuggestions}
                         value={startLocation}
@@ -286,7 +288,7 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
                         rightSection={loadingStart ? <Loader size="xs" /> : (startLocation && <ActionIcon variant="subtle" onClick={() => setStartLocation('')}><IconX size={14} /></ActionIcon>)}
                     />
                     <Autocomplete
-                        label="To"
+                        label={t('templates.trips.form.to')}
                         placeholder="Destination"
                         data={endSuggestions}
                         value={endLocation}
@@ -295,15 +297,15 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
                     />
 
                     <Group grow>
-                        <NumberInput label="Price ($)" value={price} onChange={(val) => setPrice(val === '' ? '' : Number(val))} min={0} />
-                        <NumberInput label="Total Seats" value={seats} onChange={(val) => setSeats(val === '' ? '' : Number(val))} min={1} />
+                        <NumberInput label={t('templates.trips.form.price')} value={price} onChange={(val) => setPrice(val === '' ? '' : Number(val))} min={0} />
+                        <NumberInput label={t('templates.trips.form.totalSeats')} value={seats} onChange={(val) => setSeats(val === '' ? '' : Number(val))} min={1} />
                     </Group>
 
                     <Select
-                        label="Vehicle"
-                        placeholder="Select a vehicle..."
+                        label={t('templates.trips.form.vehicle')}
+                        placeholder={t('templates.trips.form.vehiclePlaceholder')}
                         data={[
-                            { value: 'none', label: 'No Vehicle' },
+                            { value: 'none', label: t('templates.trips.form.noVehicle') },
                             ...myCars.map(c => ({ value: c.id, label: `${c.make} ${c.model}` }))
                         ]}
                         value={selectedCar}
@@ -312,37 +314,37 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
                         clearable
                     />
                     <Text size="xs" c="dimmed" mt={-10}>
-                        To add a new vehicle, save your changes and go to <LocalizedLink href="/cars" style={{ textDecoration: 'underline' }}>My Vehicles</LocalizedLink> page.
+                        <Trans i18nKey="templates.trips.form.vehicleHelp" components={{ 1: <LocalizedLink href="/cars" style={{ textDecoration: 'underline' }} /> }} />
                     </Text>
 
                     <Select
-                        label="Rule Template"
-                        placeholder="Attach a rule set..."
+                        label={t('templates.trips.form.ruleTemplate')}
+                        placeholder={t('templates.trips.form.ruleTemplatePlaceholder')}
                         data={[
-                            { value: 'none', label: 'No Rules' },
+                            { value: 'none', label: t('templates.trips.form.noRules') },
                             ...myRules.map(r => ({ value: r.id, label: r.name }))
                         ]}
                         value={selectedRule}
                         onChange={setSelectedRule}
                         searchable
                         clearable
-                        description="Prefills luggage limits, payment methods, etc."
+                        description={t('templates.trips.form.ruleTemplateDesc')}
                     />
 
                 </Stack>
             </Paper>
 
             <Button leftSection={<IconDeviceFloppy size={16} />} onClick={handleSubmit} loading={loading}>
-                Save Trip Template
+                {t('templates.trips.form.save')}
             </Button>
 
-            <Modal opened={opened} onClose={close} title="Confirm Deletion" centered>
+            <Modal opened={opened} onClose={close} title={t('templates.trips.form.modals.deleteTitle')} centered>
                 <Text size="sm" mb="lg">
-                    Are you sure you want to delete this trip template? This action cannot be undone.
+                    {t('templates.trips.form.modals.deleteMessage')}
                 </Text>
                 <Group justify="flex-end">
-                    <Button variant="default" onClick={close}>Cancel</Button>
-                    <Button color="red" onClick={handleDelete} loading={loading}>Delete Template</Button>
+                    <Button variant="default" onClick={close}>{t('templates.trips.form.cancel')}</Button>
+                    <Button color="red" onClick={handleDelete} loading={loading}>{t('templates.trips.form.modals.confirmDelete')}</Button>
                 </Group>
             </Modal>
         </Stack>

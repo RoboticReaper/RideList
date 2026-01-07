@@ -5,6 +5,7 @@ import { useAuth } from '@/components/firebase/AuthContext';
 import { IconUsers, IconEdit, IconArrowLeft, IconExternalLink, IconRefresh, IconCalendar } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { ManageTripView } from './components/ManageTripView';
 import { EditTripView } from './components/EditTripView';
 import { RiderTripView } from './components/RiderTripView';
@@ -13,6 +14,7 @@ import { useDashboard } from '../../DashboardContext';
 import { getTripStatusConfig } from '@/utils/statusUtils';
 
 export default function TripManagementPage({ params }: { params: Promise<{ tripId: string }> }) {
+    const { t } = useTranslation('common');
     const { tripId } = use(params);
     const { user } = useAuth();
     const { role, setRole } = useDashboard();
@@ -107,11 +109,11 @@ export default function TripManagementPage({ params }: { params: Promise<{ tripI
         if (role === 'rider' && trip.isDriver) {
             return (
                 <Container py="xl">
-                    <Alert color="blue" title="Incorrect Role" icon={<IconUsers />}>
+                    <Alert color="blue" title={t('tripDetails.alerts.incorrectRole')} icon={<IconUsers />}>
                         <Stack gap="md">
-                            <Text>You are the driver for this trip, but you are viewing it as a rider.</Text>
+                            <Text>{t('tripDetails.alerts.driverViewingRider')}</Text>
                             <Button onClick={() => setRole('driver')} variant="white" color="blue">
-                                Switch to Driver View
+                                {t('tripDetails.alerts.switchToDriver')}
                             </Button>
                         </Stack>
                     </Alert>
@@ -123,11 +125,11 @@ export default function TripManagementPage({ params }: { params: Promise<{ tripI
         if (role === 'driver' && !trip.isDriver) {
             return (
                 <Container py="xl">
-                    <Alert color="blue" title="Incorrect Role" icon={<IconUsers />}>
+                    <Alert color="blue" title={t('tripDetails.alerts.incorrectRole')} icon={<IconUsers />}>
                         <Stack gap="md">
-                            <Text>You are a rider for this trip, but you are viewing it as a driver.</Text>
+                            <Text>{t('tripDetails.alerts.riderViewingDriver')}</Text>
                             <Button onClick={() => setRole('rider')} variant="white" color="blue">
-                                Switch to Rider View
+                                {t('tripDetails.alerts.switchToRider')}
                             </Button>
                         </Stack>
                     </Alert>
@@ -144,13 +146,13 @@ export default function TripManagementPage({ params }: { params: Promise<{ tripI
                 <>
                     <Group mb="md" gap="xs">
                         <Button component={LocalizedLink} href={backLink} variant="subtle" leftSection={<IconArrowLeft size={16} />} pr="xs" size="xs" pl={0}>
-                            Back
+                            {t('tripDetails.manage.actions.back')}
                         </Button>
                         <Button component={LocalizedLink} href={`/rides/${tripId}`} variant="outline" leftSection={<IconExternalLink size={16} />} px="xs" size="xs">
-                            Details
+                            {t('dashboard.tripCard.viewPosting')}
                         </Button>
                         <Button variant="outline" leftSection={<IconRefresh size={16} />} onClick={refreshTrip} px="xs" size="xs">
-                            Refresh
+                            {t('dashboard.common.refresh')}
                         </Button>
                     </Group>
                     <RiderTripView trip={trip} onRefresh={refreshTrip} />
@@ -163,13 +165,13 @@ export default function TripManagementPage({ params }: { params: Promise<{ tripI
             <>
                 <Group mb="md" gap="xs">
                     <Button component={LocalizedLink} href={backLink} variant="subtle" leftSection={<IconArrowLeft size={16} />} pr="xs" size="xs" pl={0}>
-                        Back
+                        {t('tripDetails.manage.actions.back')}
                     </Button>
                     <Button component={LocalizedLink} href={`/rides/${tripId}`} variant="outline" leftSection={<IconExternalLink size={16} />} px="xs" size="xs">
-                        Details
+                        {t('dashboard.tripCard.viewPosting')}
                     </Button>
                     <Button variant="outline" leftSection={<IconRefresh size={16} />} onClick={refreshTrip} px="xs" size="xs">
-                        Refresh
+                        {t('dashboard.common.refresh')}
                     </Button>
                 </Group>
 
@@ -188,14 +190,14 @@ export default function TripManagementPage({ params }: { params: Promise<{ tripI
                             size="md"
                             color={getTripStatusConfig(trip.status).color}
                         >
-                            {getTripStatusConfig(trip.status).label.toUpperCase()}
+                            {t(getTripStatusConfig(trip.status).labelKey).toUpperCase()}
                         </Badge>
                         {trip.status !== "done" && trip.status !== "cancelled" && trip.start_check_in && (
                             <Badge
                                 size="md"
                                 color="cyan"
                             >
-                                Check-in Started
+                                {t('dashboard.tripCard.checkInStarted')}
                             </Badge>
                         )}
                     </Group>
@@ -204,10 +206,10 @@ export default function TripManagementPage({ params }: { params: Promise<{ tripI
                 <Tabs value={activeTab} onChange={setActiveTab}>
                     <Tabs.List>
                         <Tabs.Tab value="manage" leftSection={<IconUsers size={14} />}>
-                            Manage Trip
+                            {t('tripDetails.tabs.manage')}
                         </Tabs.Tab>
                         <Tabs.Tab value="edit" leftSection={<IconEdit size={14} />}>
-                            Edit Trip
+                            {t('tripDetails.tabs.edit')}
                         </Tabs.Tab>
                     </Tabs.List>
 

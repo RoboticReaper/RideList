@@ -6,7 +6,10 @@ import { useAuth } from '@/components/firebase/AuthContext';
 import { Container, Loader, Alert } from '@mantine/core';
 import CarForm from '@/components/CarForm/CarForm';
 
+import { useTranslation } from 'react-i18next';
+
 export default function CarEditorPage() {
+    const { t } = useTranslation('common');
     const params = useParams();
     const router = useRouter();
     const carId = params.carId as string;
@@ -24,7 +27,7 @@ export default function CarEditorPage() {
                 const res = await fetch(`/api/user/cars/${carId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                if (!res.ok) throw new Error('Failed to fetch car details');
+                if (!res.ok) throw new Error(t('cars.errors.fetchDetailsFailed'));
                 const data = await res.json();
                 setInitialData(data.car);
             } catch (err: any) {

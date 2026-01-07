@@ -4,8 +4,10 @@ import { Container, Title, Button, Group, Card, Text, SimpleGrid, Loader, Badge,
 import { IconPlus, IconDotsVertical, IconCar, IconMapPin } from '@tabler/icons-react';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { LocalizedLink } from '@/components/LocalizedLink';
+import { useTranslation } from 'react-i18next';
 
 export default function TripTemplatesPage() {
+    const { t } = useTranslation('common');
     const { user } = useAuth();
     const [templates, setTemplates] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -30,14 +32,14 @@ export default function TripTemplatesPage() {
     return (
         <Container size="xl" py="xl">
             <Group justify="space-between" mb="lg">
-                <Title order={2}>Trip Templates</Title>
+                <Title order={2}>{t('templates.trips.title')}</Title>
                 <Button component={LocalizedLink} href="/trip-templates/new" leftSection={<IconPlus size={16} />}>
-                    Create Trip Template
+                    {t('templates.trips.create')}
                 </Button>
             </Group>
 
             {templates.length === 0 ? (
-                <Text c="dimmed">No trip templates found. Create one to get started!</Text>
+                <Text c="dimmed">{t('templates.trips.noTemplates')}</Text>
             ) : (
                 <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
                     {templates.map(t => (
@@ -50,7 +52,7 @@ export default function TripTemplatesPage() {
                                     </Menu.Target>
                                     <Menu.Dropdown>
                                         <Menu.Item component={LocalizedLink} href={`/trip-templates/${t.id}`}>
-                                            Edit
+                                            {t('common.edit')}
                                         </Menu.Item>
                                     </Menu.Dropdown>
                                 </Menu>

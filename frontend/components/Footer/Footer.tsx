@@ -1,17 +1,19 @@
 'use client'
 
+import { useTranslation } from 'react-i18next';
 import { Anchor, Container, Group, Image } from '@mantine/core';
 import { LocalizedLink } from '../LocalizedLink';
 import classes from './Footer.module.css';
 
-const links = [
-  { link: '#', label: 'Contact' },
-  { link: '#', label: 'Privacy' },
-  { link: '#', label: 'Blog' },
-  { link: '#', label: 'Careers' },
-];
-
 export function Footer() {
+  const { t } = useTranslation('common');
+  const links = [
+    { link: '#', label: t('footer.contact') },
+    { link: '#', label: t('footer.privacy') },
+    { link: '#', label: t('footer.blog') },
+    { link: '#', label: t('footer.careers') },
+  ];
+
   const items = links.map((link) => (
     <Anchor<'a'>
       c="dimmed"

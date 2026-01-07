@@ -5,7 +5,74 @@
         "how": "How It Works",
         "trust": "Trust",
         "login": "Log in",
-        "signup": "Sign up"
+        "signup": "Sign up",
+        "account": "Account",
+        "dashboard": "Dashboard",
+        "profile": "Profile",
+        "settings": "Settings",
+        "history": "History",
+        "logout": "Logout",
+        "language": "Language",
+        "roles": {
+            "rider": "Rider",
+            "driver": "Driver"
+        },
+        "notifications": {
+            "ui": {
+                "title": "Notifications",
+                "markAllRead": "Mark all read",
+                "markRead": "Mark Read",
+                "empty": "No notifications",
+                "loadMore": "Load More"
+            }
+        }
+    },
+    "dashboard": {
+        "driver": {
+            "title": "Upcoming Drives",
+            "noTrips": "You have no upcoming trips scheduled.",
+            "postRide": "Post Ride"
+        },
+        "rider": {
+            "title": "Upcoming Rides",
+            "noTrips": "You have no upcoming trips.",
+            "findRide": "Find Ride"
+        },
+        "common": {
+            "refresh": "Refresh",
+            "loadMore": "Load More"
+        },
+        "tripCard": {
+            "seatsLeft": "seats left",
+            "actionRequired": "Action Required",
+            "driverPhoneRequired": "Please add a phone number to <1>your profile</1> to start this trip.",
+            "carRequired": "Please <1>assign a car</1> to this trip.",
+            "manageTrip": "Manage Trip",
+            "manageBooking": "Manage Booking",
+            "viewPosting": "View Public Posting",
+            "checkInStarted": "Check-in Started",
+            "labels": {
+                "trip": "TRIP:",
+                "booking": "BOOKING:",
+                "seats": "seat",
+                "seats_plural": "seats",
+                "big": "Big",
+                "small": "Small"
+            },
+            "cancelBooking": "Cancel Booking",
+            "confirmCancel": "Are you sure you want to cancel this booking?",
+            "cancelSuccess": "Booking cancelled (left unpaid).",
+            "markPayment": "Mark Payment Sent",
+            "paymentSuccess": "Marked as paid. Waiting for driver confirmation."
+        },
+        "navbar": {
+            "dashboard": "Dashboard",
+            "history": "History",
+            "roleSettings": "Role-based Settings",
+            "tripTemplates": "Trip Templates",
+            "ruleTemplates": "Rule Templates",
+            "myVehicles": "My Vehicles"
+        }
     },
     "hero": {
         "title1": "Ride info you can understand",
@@ -16,6 +83,21 @@
         "list2": "Live seat availability — no more guessing",
         "list3": "Clear driver info with ride history",
         "actionTxt": "Browse rides →"
+    },
+    "settings": {
+        "title": "Account Settings",
+        "roleLinkPre": "Want to configure role-specific settings?",
+        "roleLink": "Go to Role Settings",
+        "general": "General Preferences",
+        "generalDesc": "Manage your account-level preferences.",
+        "language": "Language",
+        "languagePlaceholder": "Select language",
+        "save": "Save Settings",
+        "notifications": {
+            "saveSuccess": "Settings saved successfully",
+            "saveError": "Failed to save settings",
+            "fetchError": "Failed to fetch settings"
+        }
     },
     "metadata": {
         "title": "RideList",
@@ -29,6 +111,1052 @@
         "compare": "Compare",
         "compareDesc": "Sort by price, driver rating, pickup time and distance. Filter with your own rules.",
         "book": "Book",
-        "bookDesc": "Reserve a spot with verified UIUC email and pay on time. All drivers are verified."
+        "bookDesc": "Reserve a spot with verified UIUC email and pay on time. All drivers are verified.",
+        "screenshotPlaceholder": "Screenshot Placeholder"
+    },
+    "driverSteps": {
+        "title": "Find Your Ride in 3 Steps",
+        "description": "Search, compare, and book. All in one place without requiring accounts up-front.",
+        "search": "Search",
+        "searchDesc": "Enter from, to, and time to see all available rides. No more scrolling through chats or comments.",
+        "compare": "Compare",
+        "compareDesc": "Sort by price, driver rating, pickup time and distance. Filter with your own rules.",
+        "book": "Book",
+        "bookDesc": "Reserve a spot with verified UIUC email and pay on time. All drivers are verified.",
+        "screenshotPlaceholder": "Screenshot Placeholder"
+    },
+    "footer": {
+        "contact": "Contact",
+        "privacy": "Privacy",
+        "blog": "Blog",
+        "careers": "Careers"
+    },
+    "trustSafety": {
+        "title": "Frequently Asked Questions",
+        "questions": {
+            "resetPass": "How can I reset my password?",
+            "multiAccount": "Can I create more that one account?",
+            "newsletter": "How can I subscribe to monthly newsletter?",
+            "creditCard": "Do you store credit card information securely?",
+            "payment": "What payment systems to you work with?"
+        },
+        "placeholder": "It can’t help but hear a pin drop from over half a mile away, so it lives deep in the mountains where there aren’t many people or Pokémon.It was born from sludge on the ocean floor. In a sterile environment, the germs within its body can’t multiply, and it dies.It has no eyeballs, so it can’t see. It checks its surroundings via the ultrasonic waves it emits from its mouth."
+    },
+    "auth": {
+        "loginWelcome": "Welcome to RideList, login with",
+        "uiucOnly": "Only UIUC accounts (@illinois.edu) are currently allowed for student verification.",
+        "agreementsLabel": "Agreements",
+        "agreementsCheckbox": "I agree to privacy policy and terms of service",
+        "agreementsError": "Please check agreements to login",
+        "completeProfileTitle": "Complete your Profile",
+        "fullNameLabel": "Full Name",
+        "fullNamePlaceholder": "Your name",
+        "nameRequired": "Name is required",
+        "phoneLabel": "Phone Number",
+        "phonePlaceholder": "Optional",
+        "saveProfile": "Save Profile",
+        "saveProfileError": "Failed to save profile",
+        "testerLogin": "Tester login"
+    },
+    "rides": {
+        "errors": {
+            "invalidStart": "Please select a valid location from the suggestions",
+            "invalidStartTitle": "Invalid Start",
+            "invalidEnd": "Please select a valid destination from the dropdown menu.",
+            "invalidEndTitle": "Invalid Destination",
+            "dateRequired": "Please select a departure time.",
+            "dateRequiredTitle": "Date Required",
+            "pastDate": "Departure time cannot be in the past.",
+            "pastDateTitle": "Invalid Date",
+            "priceRequired": "Please enter a valid price.",
+            "priceRequiredTitle": "Price Required",
+            "seatsRequired": "Please enter at least 1 seat.",
+            "seatsRequiredTitle": "Seats Required",
+            "carSeatsRequired": "If you are adding a vehicle, please specify the number of seats.",
+            "carSeatsRequiredTitle": "Car Seats Required",
+            "capacityExceeded": "Vehicle's capacity ({{capacity}}) cannot be less than the trip's seats ({{seats}}).",
+            "capacityExceededTitle": "Capacity Exceeded",
+            "luggageCheck": "Luggage Check Reminder",
+            "bigLuggageExceeded": "Big luggage limit ({{limit}}) exceeds car capacity ({{capacity}}). Go back to adjust luggage limits to prevent overloading the car.",
+            "smallLuggageExceeded": "Small luggage limit ({{limit}}) exceeds car capacity ({{capacity}}). Go back to adjust luggage limits to prevent overloading the car.",
+            "bigLuggageRequired": "Please specify big luggage capacity (or 0).",
+            "bigLuggageRequiredTitle": "Big Luggage Limit Required",
+            "smallLuggageRequired": "Please specify small luggage capacity (or 0).",
+            "smallLuggageRequiredTitle": "Small Luggage Limit Required",
+            "templateNameRequired": "Please provide a name for your Trip Template.",
+            "templateNameRequiredTitle": "Template Name Required",
+            "ruleTemplateNameRequired": "Please provide a name for your Rule Template.",
+            "paymentMethodRequired": "Please select at least one method.",
+            "paymentMethodRequiredTitle": "Payment Method Required",
+            "flexibilityRequired": "Please specify departure flexibility.",
+            "flexibilityRequiredTitle": "Flexibility Required",
+            "pickupRadiusRequired": "Please specify pickup radius.",
+            "pickupRadiusRequiredTitle": "Pickup Radius Required",
+            "dropoffRadiusRequired": "Please specify drop-off radius.",
+            "dropoffRadiusRequiredTitle": "Drop-off Radius Required",
+            "payWindowRequired": "Please specify the pay window duration.",
+            "payWindowRequiredTitle": "Pay Window Required",
+            "invalidCutoffTime": "Please enter a valid number of hours for booking cutoff.",
+            "invalidCutoffTimeTitle": "Invalid Cutoff Time",
+            "postingTrip": "Creating your ride...",
+            "postingTripTitle": "Posting Trip",
+            "success": "Trip created successfully",
+            "successTitle": "Success!",
+            "error": "Failed to create trip",
+            "errorTitle": "Error",
+            "templateLoaded": "Rules have been populated from template.",
+            "templateLoadedTitle": "Template Loaded"
+        },
+        "common": {
+            "startLocation": "Start Location",
+            "endLocation": "End Location",
+            "date": "Date & Time",
+            "price": "Price",
+            "seats": "Seats",
+            "bigLuggage": "Big Luggage",
+            "smallLuggage": "Small Luggage",
+            "paymentMethods": "Payment Methods",
+            "autoAccept": "Auto Accept",
+            "vehicle": "Vehicle",
+            "logistics": "Logistics",
+            "settings": "Settings"
+        },
+        "search": {
+            "title": "Find a Ride",
+            "noResults": "No rides found matching your criteria.",
+            "startPlaceholder": "Where from?",
+            "endPlaceholder": "Where to?",
+            "datePlaceholder": "Pick date",
+            "searchBtn": "Search",
+            "more": "More",
+            "hide": "Hide",
+            "advancedFilters": "Advanced Filters",
+            "maxPrice": "Max Price",
+            "autoAcceptOnly": "Auto Accept Only",
+            "paymentPlaceholder": "Select relevant methods"
+        },
+        "card": {
+            "today": "Today",
+            "seatsAvailable": "{{count}} / {{total}} seats available",
+            "viewDetails": "View Details",
+            "instant": "Instant",
+            "trips": "{{count}} trips",
+            "autoAcceptTooltip": "Auto Accept: Booking confirmed instantly",
+            "luggageTooltip": "Luggage: {{big}} Big, {{small}} Small"
+        },
+        "detail": {
+            "alerts": {
+                "errorTitle": "Error",
+                "notFoundTitle": "Not Found",
+                "notFound": "Ride not found"
+            },
+            "header": {
+                "bookingClosed": "BOOKING CLOSED",
+                "posted": "Posted {{time}}"
+            },
+            "time": {
+                "exact": "(Exact time)",
+                "flexibility": "(+/- {{time}})"
+            },
+            "cutoff": {
+                "bookingCloses": "Booking closes {{time}} before departure"
+            },
+            "summary": {
+                "perSeat": "per seat",
+                "status": "Status",
+                "seatsAvailable": "{{count}} seats available",
+                "totalSeats": "Total seats: {{count}}",
+                "paymentNote": "Payment handled directly with driver",
+                "driversNote": "Driver's Note"
+            },
+            "buttons": {
+                "manageTrip": "Manage Trip",
+                "bookingCancelled": "Booking Cancelled",
+                "bookingClosed": "Booking Closed",
+                "manageDashboard": "Manage in Dashboard",
+                "bookNow": "Book Now",
+                "loginToBook": "Login to Book",
+                "cannotBook": "Trip cannot be booked"
+            },
+            "driver": {
+                "title": "Your Driver",
+                "verifiedStudent": "Verified Student",
+                "memberSince": "Member since {{year}}",
+                "phoneNotProvided": "Not provided by driver",
+                "bookToView": "Book ride to view",
+                "hiddenUntilApproved": "Contact hidden until approved",
+                "bookingInactive": "Booking no longer active",
+                "contactExpired": "Contact info expired",
+                "bookingNotActive": "Booking not active",
+                "rating": "Rating",
+                "tripsCompleted": "Trips Completed"
+            },
+            "vehicle": {
+                "title": "Vehicle",
+                "tripEnded": "Trip Ended",
+                "notProvided": "Not provided",
+                "visibleWhenDeparted": "Visible when departed",
+                "hidden": "Hidden",
+                "bookToView": "Book to view",
+                "confirmedNote": "Vehicle details confirmed by driver before departure."
+            },
+            "rules": {
+                "title": "Trip Rules",
+                "luggage": "Luggage",
+                "big": "Big",
+                "small": "Small",
+                "autoAccept": "Auto-Accept",
+                "autoAcceptTooltip": "If auto-accept is on, you will instantly move on to payment step upon booking. If it's off, you will need to wait for driver's manual approval to continue payment step.",
+                "instantlyAccepted": "Bookings are instantly accepted",
+                "approvalRequired": "Driver approval required",
+                "cancellationPolicy": "Cancellation Policy",
+                "cancellationDefault": "Cancellation policy will be communicated by the driver before departure.",
+                "pickupInstructions": "Pickup Instructions",
+                "noRestrictions": "No special restrictions"
+            },
+            "payment": {
+                "title": "Payment Methods",
+                "none": "None",
+                "handleLabel": "Payment handle / contact",
+                "notProvided": "Not provided by driver",
+                "disclaimer": "RideList does not process payments."
+            },
+            "safety": {
+                "disclaimer": "RideList does not employ drivers. Always meet in public places and confirm details with the driver."
+            },
+            "booking": {
+                "modalTitle": "Booking Details",
+                "seats": "Seats",
+                "maxSeats": "Max {{count}}",
+                "bigLuggage": "Big Luggage",
+                "smallLuggage": "Small Luggage",
+                "maxLuggage": "Max {{count}}",
+                "intendedPayment": "Intended Payment Method",
+                "selectPayment": "Select how you plan to pay",
+                "noPaymentMethods": "No specific payment methods listed by driver",
+                "preferredPickup": "Preferred Pickup Time",
+                "resetToDeparture": "Reset to Departure",
+                "exactTimeOnly": "Exact time only",
+                "flexibilityLabel": "Flexibility: +/- {{time}}",
+                "optional": "Optional",
+                "confirmBooking": "Confirm Booking"
+            },
+            "notifications": {
+                "ownTripError": {
+                    "title": "Error",
+                    "message": "You cannot book your own trip."
+                },
+                "profileRequired": {
+                    "title": "Profile Required",
+                    "message": "You need to complete your profile before booking."
+                },
+                "bookingAccepted": {
+                    "title": "Booking Accepted",
+                    "message": "Please arrange payment with the driver."
+                },
+                "success": {
+                    "title": "Success",
+                    "messageWaiting": "Booking request sent! Waiting for approval.",
+                    "messagePayment": "Booking initiated! Proceeding to payment..."
+                },
+                "error": {
+                    "title": "Error",
+                    "defaultMessage": "Failed to book"
+                }
+            }
+        },
+        "create": {
+            "title": "Post a New Ride",
+            "restoredDraftTitle": "Restored Draft",
+            "restoredDraftMessage": "We restored your previous trip details.",
+            "steps": {
+                "route": "Route",
+                "routeDesc": "Where & When",
+                "details": "Details",
+                "detailsDesc": "Price & Capacity",
+                "vehicle": "Vehicle",
+                "vehicleDesc": "Your Car",
+                "logistics": "Logistics",
+                "logisticsDesc": "Payment & Luggage",
+                "settings": "Settings",
+                "settingsDesc": "Advanced Rules"
+            },
+            "labels": {
+                "loadTemplate": "Load from Template",
+                "tripRoute": "Trip Route",
+                "from": "From",
+                "to": "To",
+                "startingLoc": "Starting Location",
+                "dest": "Destination",
+                "departure": "Departure",
+                "pickDateTime": "Pick date & time",
+                "nextDetails": "Next: Trip Details",
+                "tripDetails": "Trip Details",
+                "pricePerPerson": "Price per Person ($)",
+                "totalSeats": "Total Seats Available",
+                "capacityDesc": "How many passengers can you take?",
+                "back": "Back",
+                "nextVehicle": "Next: Vehicle",
+                "vehicleDetails": "Vehicle Details",
+                "selectSavedVehicle": "Select a Saved Vehicle",
+                "addVehicleDesc": "Or choose to add a new one",
+                "noVehicle": "No Vehicle / Walking",
+                "addNewVehicle": "Add a New Vehicle",
+                "vehicleInfoOptional": "Vehicle Info (Optional)",
+                "make": "Make",
+                "model": "Model",
+                "color": "Color",
+                "year": "Year",
+                "plate": "License Plate",
+                "templates": "Templates",
+                "totalBigLuggage": "Total Big Luggage Cap.",
+                "totalSmallLuggage": "Total Small Luggage Cap.",
+                "carCapacity": "Number of Seats (Car Capacity)",
+                "carCapacityDesc": "Total seats in the car (inc. driver)",
+                "nextLogistics": "Next: Logistics",
+                "loadSavedTemplate": "Load Saved Template",
+                "paymentMethodsPlaceholder": "Select or type accepted methods. Leaving empty = None accepted.",
+                "paymentHandle": "Payment Handle / ID",
+                "paymentHandleDesc": "Who should riders pay? (e.g. @username)",
+                "pickupRules": "Pickup Rules",
+                "pickupRulesPlaceholder": "e.g. Wait at the bus stop, look for a red car",
+                "cancelPolicy": "Cancellation Policy",
+                "cancelPolicyPlaceholder": "e.g. Free cancellation up to 24h before departure",
+                "bigLuggageCap": "Big Luggage Cap. Per Person",
+                "smallLuggageCap": "Small Luggage Cap. Per Person",
+                "largeSuitcases": "Large suitcases",
+                "carryOns": "Carry-ons",
+                "nextSettings": "Next: Settings",
+                "advancedSettings": "Advanced Settings",
+                "flexibility": "Departure Flexibility (Hours)",
+                "flexibilityDesc": "How long might you leave early or late? Riders will search and book within this time range.",
+                "pickupRadius": "Pickup Radius (m)",
+                "dropoffRadius": "Dropoff Radius (m)",
+                "pickupRadiusDesc": "The area around your departure location where you are willing to pick up passengers",
+                "dropoffRadiusDesc": "The area around your arrival location where you are willing to drop off passengers",
+                "advancedRules": "Advanced Rules",
+                "autoAccept": "Auto Accept Bookings",
+                "autoAcceptDesc": "Automatically approve requests that meet your criteria",
+                "autoStartCheckIn": "Auto Start Check-in",
+                "autoStartCheckInDesc": "Automatically ask passengers to check-in before the trip starts. Upon departure, check-in will begin automatically.",
+                "startCheckInHrs": "Start Check-in (Hours before departure)",
+                "enableCutoff": "Enable Booking Cutoff",
+                "enableCutoffDesc": "Stop accepting bookings X hours before departure",
+                "hoursBefore": "Hours before departure",
+                "hoursBeforeDesc": "e.g. 1.5 for 1 hour 30 mins",
+                "payWindow": "Pay Window (Minutes)",
+                "payWindowDesc": "Time allowed for rider to pay after approval",
+                "tripNotes": "Trip Notes",
+                "tripNotesPlaceholder": "Any specific instructions? e.g. 'Meeting at the main entrance', 'No pets', etc.",
+                "saveLogistics": "Save logistics and rules (Rule Template)",
+                "saveTrip": "Save entire trip details (Trip Template)",
+                "linkTemplate": "Link Rule Template to Trip Template",
+                "linkTemplateDesc": "Associate this rule set with the trip template for automatic loading.",
+                "ruleTemplateName": "Rule Template Name",
+                "tripTemplateName": "Trip Template Name",
+                "postTrip": "Post Trip"
+            },
+            "placeholders": {
+                "make": "Optional (e.g. Toyota)",
+                "model": "Optional (e.g. Camry)",
+                "color": "Optional (e.g. White)",
+                "year": "Optional (e.g. 2022)",
+                "optional": "Optional",
+                "seats": "Required (e.g. 5)"
+            },
+            "errors": {
+                "flexibilityRequired": "Please specify departure flexibility.",
+                "pickupRadiusRequired": "Please specify pickup radius.",
+                "dropoffRadiusRequired": "Please specify drop-off radius.",
+                "payWindowRequired": "Please specify the pay window duration.",
+                "invalidCutoff": "Please enter a valid number of hours for booking cutoff.",
+                "templateNameRequired": "Please provide a name for your Template."
+            },
+            "success": {
+                "title": "Success!",
+                "message": "Your trip has been posted."
+            },
+            "loading": {
+                "title": "Posting Trip",
+                "message": "Please wait..."
+            }
+        }
+    },
+    "common": {
+        "loading": "Loading...",
+        "edit": "Edit",
+        "delete": "Delete",
+        "save": "Save",
+        "cancel": "Cancel"
+    },
+    "status": {
+        "trip": {
+            "bookable": "Bookable",
+            "locked": "Locked",
+            "full": "Full",
+            "departed": "Departed",
+            "completed": "Completed",
+            "cancelled": "Cancelled",
+            "aborted": "Aborted"
+        },
+        "booking": {
+            "waiting_approval": "Waiting Approval",
+            "joined_with_pay_window": "Joined (Pay Window)",
+            "pending_pay_confirmation_from_driver": "Pending Confirmation",
+            "confirmed": "Confirmed",
+            "pay_timeout": "Payment Timeout",
+            "left_paid": "Left (Paid)",
+            "left_unpaid": "Left (Unpaid)",
+            "removed": "Removed",
+            "cancelled": "Cancelled",
+            "completed": "Completed",
+            "no_show": "No Show"
+        }
+    },
+    "tripDetails": {
+        "tabs": {
+            "manage": "Manage Trip",
+            "edit": "Edit Trip"
+        },
+        "alerts": {
+            "incorrectRole": "Incorrect Role",
+            "driverViewingRider": "You are the driver for this trip, but you are viewing it as a rider.",
+            "switchToDriver": "Switch to Driver View",
+            "riderViewingDriver": "You are a rider for this trip, but you are viewing it as a driver.",
+            "switchToRider": "Switch to Rider View",
+            "readOnly": "Read Only",
+            "readOnlyMessage": "This trip has been {{status}} and cannot be modified.",
+            "editingMode": "Editing Mode",
+            "editingModeMessage": "Modifying and saving changes will update the listing immediately.",
+            "bookingRemoved": "Booking removed",
+            "bookingRemovedMessage": "The driver is unable to accomodate you. {{phone}} You can re-book this trip but it will require driver manual approval.",
+            "contactDriverForRefund": "Please contact the driver at {{phone}} for refund.",
+            "manageBookingInfo": "Manage your booking state here or view public posting for more details. Contact the driver for any questions.",
+            "tripCancelledPaid": "Trip Cancelled/Aborted",
+            "tripCancelledPaidMessage": "This trip was cancelled or aborted. Since you have already paid, please contact the driver at <1>{{phone}}</1> for a refund.",
+            "viewingSnapshot": "Viewing Booked Rules",
+            "viewingSnapshotMessage": "You are viewing the trip rules as they were when you booked.",
+            "noBookings": {
+                "title": "No Bookings",
+                "description": "No one has booked this trip yet."
+            }
+        },
+        "manage": {
+            "notifications": {
+                "noVehicle": {
+                    "title": "No Vehicle",
+                    "message": "Please assign a vehicle before starting pickup."
+                },
+                "profileIncomplete": {
+                    "title": "Profile incomplete",
+                    "message": "You must add a phone number to your <1>profile</1> before you can start pickup."
+                },
+                "statusUpdateSuccess": "Trip status updated",
+                "statusUpdateError": "Failed to update status"
+            },
+            "table": {
+                "rider": "Rider",
+                "phone": "Phone",
+                "status": "Status",
+                "seats": "Seats",
+                "luggage": "Luggage",
+                "paymentMethod": "Payment Method",
+                "bookedAt": "Booked At",
+                "actions": "Actions"
+            },
+            "activeBookingsCount": "Active Bookings ({{count}})",
+            "activeBookings": "Active Booking",
+            "activeBookings_plural": "Active Bookings",
+            "inactiveBookings": "Inactive Bookings",
+            "sort": {
+                "label": "Sort by",
+                "placeholder": "Sort...",
+                "ascending": "Ascending",
+                "descending": "Descending",
+                "createdAt": "Booked At",
+                "riderName": "Rider Name",
+                "ready": "Rider Ready",
+                "status": "Status",
+                "pickedUp": "Picked Up",
+                "seats": "Seats",
+                "luggage": "Luggage"
+            },
+            "actions": {
+                "accept": "Accept",
+                "reject": "Reject",
+                "remove": "Remove...",
+                "removeEllipsis": "Remove...",
+                "confirmPaid": "Confirm Paid",
+                "markPickedUp": "Mark Picked Up",
+                "enableCheckIn": "Enable Check-in",
+                "startPickup": "Start Pickup",
+                "tripCompleted": "Trip Completed",
+                "abortTrip": "Abort Trip",
+                "unlockTrip": "Unlock Trip",
+                "lockTrip": "Lock Trip",
+                "cancelTrip": "Cancel Trip",
+                "back": "Back"
+            },
+            "modals": {
+                "removeRider": {
+                    "title": "Remove Rider",
+                    "description": "Please select a reason for removing <1>{{name}}</1>.",
+                    "reasonLabel": "Reason",
+                    "reasonPlaceholder": "Select a reason",
+                    "noteLabel": "Note",
+                    "notePlaceholder": "Please provide a short explanation",
+                    "confirm": "Remove Rider"
+                },
+                "startPickup": {
+                    "title": "Start Pickup?",
+                    "description": "Are you sure you want to start pickup?",
+                    "impactTitle": "What this means",
+                    "impactDescription": "This will notify riders that you have started picking people up.",
+                    "confirm": "Confirm Start Pickup"
+                },
+                "enableCheckIn": {
+                    "title": "Enable Check-in?",
+                    "description": "Are you sure you want to enable check-in?",
+                    "impactTitle": "What this means",
+                    "impactDescription": "Riders will be able to mark themselves as \"Ready\" for pickup.",
+                    "confirm": "Enable Check-in"
+                },
+                "lockTrip": {
+                    "title": "Lock Trip",
+                    "description": "Are you sure you want to lock this trip?",
+                    "impactTitle": "What this means",
+                    "impact1": "Active bookings will remain active.",
+                    "impact2": "No new riders will be able to book this trip.",
+                    "impact3": "You can only lock a trip if it is currently 'Bookable' or 'Full'.",
+                    "confirm": "Confirm Lock"
+                },
+                "unlockTrip": {
+                    "title": "Unlock Trip",
+                    "description": "Are you sure you want to unlock this trip?",
+                    "impactTitle": "What this means",
+                    "impact1": "Riders will be able to book this trip again (if seats are available).",
+                    "impact2": "If the trip has passed its booking cutoff time, it cannot be unlocked.",
+                    "confirm": "Confirm Unlock"
+                },
+                "cancelTrip": {
+                    "title": "Cancel Trip",
+                    "description": "Are you sure you want to cancel this trip? This action cannot be undone.",
+                    "confirm": "Confirm Cancel"
+                },
+                "abortTrip": {
+                    "title": "Abort Trip",
+                    "description": "Are you sure you want to abort this trip? This indicates something went wrong mid-trip.",
+                    "impactTitle": "Impact",
+                    "impact1": "Riders already <1>picked up</1> will be marked as <2>Completed</2>.",
+                    "impact2": "Riders <1>NOT picked up</1> will be marked as <2>Cancelled</2>.",
+                    "confirm": "Confirm Abort"
+                },
+                "completeTrip": {
+                    "title": "Complete Trip",
+                    "description": "Are you sure you want to mark this trip as completed?",
+                    "confirm": "Confirm Complete"
+                }
+            },
+            "phone": {
+                "missing": "Not Provided",
+                "notProvided": "Rider has not provided a phone number",
+                "hidden": "Hidden",
+                "hiddenReasons": {
+                    "tripEnded": "Trip has ended",
+                    "riderRemoved": "Rider has been removed",
+                    "notConfirmed": "Waiting for confirmation",
+                    "bookingInactive": "Booking is no longer active"
+                }
+            },
+            "status": {
+                "pickedUpSuffix": " (Picked Up)"
+            },
+            "reasons": {
+                "reason": "Reason",
+                "luggage": "Did not meet luggage requirements",
+                "pickup": "Pickup expectations did not match trip rules",
+                "noResponse": "Did not respond / confirm in time",
+                "mistake": "Joined by mistake / duplicate booking",
+                "driverMistake": "Driver mistake (removed unintentionally)",
+                "otherPre": "Other (requires short note)",
+                "violated": "Violated trip rules after booking",
+                "lateCancel": "Late cancellation after payment window",
+                "noShow": "No-show / unresponsive after payment",
+                "paymentIssue": "Payment issue (invalid / reversed / disputed)",
+                "otherPost": "Other (requires note)"
+            }
+        },
+        "edit": {
+            "sections": {
+                "tripDetails": "Trip Details",
+                "rulesLogistics": "Rules & Logistics",
+                "settings": "Settings",
+                "advancedRules": "Advanced Rules"
+            },
+            "alerts": {
+                "readOnly": {
+                    "title": "Read Only",
+                    "completed": "This trip has been completed and cannot be modified.",
+                    "cancelled": "This trip has been cancelled and cannot be modified."
+                },
+                "editingMode": {
+                    "title": "Editing Mode",
+                    "description": "Modifying and saving changes will update the listing immediately."
+                }
+            },
+            "labels": {
+                "from": "From",
+                "to": "To",
+                "pickupRadius": "Pickup Radius (m)",
+                "dropoffRadius": "Dropoff Radius (m)",
+                "departureTime": "Departure Time",
+                "price": "Price ($)",
+                "totalSeats": "Total Seats",
+                "vehicle": "Vehicle",
+                "tripNotes": "Trip Notes",
+                "paymentMethods": "Payment Methods",
+                "paymentHandle": "Payment Handle",
+                "pickupRules": "Pickup Rules",
+                "cancellationPolicy": "Cancellation Policy",
+                "bigLuggageLimit": "Big Luggage Limit",
+                "smallLuggageLimit": "Small Luggage Limit",
+                "departureFlexibility": "Departure Flexibility (Hours)",
+                "autoAccept": "Auto Accept Bookings",
+                "autoStartCheckIn": "Auto Start Check-in",
+                "startCheckInTime": "Start Check-in (Hours before departure)",
+                "bookingCutoff": "Enable Booking Cutoff",
+                "cutoffHours": "Hours before departure",
+                "payWindow": "Pay Window (Minutes)"
+            },
+            "placeholders": {
+                "from": "Start Location",
+                "to": "Destination",
+                "selectCar": "Select a car",
+                "pickDate": "Pick date & time",
+                "tripNotes": "Any specific instructions?",
+                "paymentMethods": "Select or type methods",
+                "paymentHandle": "e.g. @username",
+                "pickupRules": "e.g. Wait at the bus stop",
+                "cancellationPolicy": "e.g. Free cancellation up to 24h before"
+            },
+            "descriptions": {
+                "pickupRadius": "The area around your departure location where you are willing to pick up passengers",
+                "dropoffRadius": "The area around your arrival location where you are willing to drop off passengers",
+                "departureFlexibility": "How long might you leave early or late? Riders will search and book within this time range.",
+                "autoAccept": "Automatically approve requests that meet your criteria",
+                "autoStartCheckIn": "Automatically ask passengers to check-in before the trip starts. Upon departure, check-in will begin automatically.",
+                "bookingCutoff": "Stop accepting bookings X hours before departure",
+                "cutoffHours": "Hours before departure",
+                "payWindow": "Time allowed for rider to pay after approval"
+            },
+            "notes": {
+                "addVehicle": "Save changes and go to <1>My Vehicles</1> to add new vehicle"
+            },
+            "actions": {
+                "saveChanges": "Save Changes"
+            },
+            "notifications": {
+                "missingStart": {
+                    "title": "Missing Start Location",
+                    "message": "Please select a start location."
+                },
+                "missingDest": {
+                    "title": "Missing Destination",
+                    "message": "Please select a destination."
+                },
+                "invalidStart": {
+                    "title": "Invalid Start Location",
+                    "message": "Please select a valid start location from the suggestions."
+                },
+                "invalidDest": {
+                    "title": "Invalid Destination",
+                    "message": "Please select a valid destination from the suggestions."
+                },
+                "missingDeparture": {
+                    "title": "Missing Departure Time",
+                    "message": "Please select a departure time."
+                },
+                "invalidDeparture": {
+                    "title": "Invalid Departure Time",
+                    "message": "Departure time cannot be in the past."
+                },
+                "invalidSeats": {
+                    "title": "Invalid Seats",
+                    "message": "Total seats must be at least 1."
+                },
+                "invalidPrice": {
+                    "title": "Invalid Price",
+                    "message": "Please enter a valid price (0 or greater)."
+                },
+                "invalidPickupRadius": {
+                    "title": "Invalid Pickup Radius",
+                    "message": "Pickup radius must be greater than 0 meters."
+                },
+                "invalidDropoffRadius": {
+                    "title": "Invalid Dropoff Radius",
+                    "message": "Dropoff radius must be greater than 0 meters."
+                },
+                "invalidFlexibility": {
+                    "title": "Invalid Flexibility",
+                    "message": "Please specify flexibility (0 for none)."
+                },
+                "capacityExceeded": {
+                    "title": "Capacity Exceeded",
+                    "message": "Total seats ({{total}}) cannot exceed car capacity ({{capacity}})."
+                },
+                "bigLuggageExceeded": {
+                    "title": "Big Luggage Limit",
+                    "message": "Big luggage limit ({{limit}}) exceeds car capacity ({{capacity}}). Please adjust."
+                },
+                "smallLuggageExceeded": {
+                    "title": "Small Luggage Limit",
+                    "message": "Small luggage limit ({{limit}}) exceeds car capacity ({{capacity}}). Please adjust."
+                },
+                "updateFailed": "Failed to update trip",
+                "success": {
+                    "title": "Success",
+                    "message": "Trip updated successfully"
+                },
+                "error": {
+                    "title": "Error"
+                }
+            }
+        },
+        "rider": {
+            "bookingDetails": "Booking Details",
+            "tripDetails": "Trip Details",
+            "labels": {
+                "bookedAt": "Booked At",
+                "seatsBooked": "Seats Booked",
+                "luggage": "Luggage",
+                "intendedPayment": "Intended Payment Method",
+                "paymentStatus": "Payment Status (Confirmed by Driver)",
+                "pickedUpAt": "Picked Up At",
+                "readyForPickup": "Ready For Pickup",
+                "preferredPickup": "Preferred Pickup",
+                "departure": "Departure",
+                "tripStatus": "Trip Status",
+                "cancellationPolicy": "Cancellation Policy",
+                "pickupInstructions": "Pickup Instructions",
+                "driverContact": "Driver Contact",
+                "vehicle": "Vehicle",
+                "paymentMethods": "Payment Methods",
+                "paymentHandle": "Payment Handle",
+                "driverNotes": "Driver's Notes"
+            },
+            "values": {
+                "paid": "Paid",
+                "unpaid": "Unpaid",
+                "ready": "Ready",
+                "notReady": "Not marked ready",
+                "checkInBegins": "Check-in begins {{time}}",
+                "standard": "Standard",
+                "noneProvided": "None provided",
+                "contactHidden": "Contact hidden until approved",
+                "bookingInactive": "Booking no longer active",
+                "contactExpired": "Contact info expired",
+                "bookToView": "Book ride to view",
+                "notAssigned": "Not assigned",
+                "tripEnded": "Trip Ended",
+                "visibleWhenDeparted": "Visible when departed",
+                "none": "None",
+                "big": "Big",
+                "small": "Small"
+            },
+            "actions": {
+                "cancelBooking": "Cancel Booking",
+                "markPayment": "Mark Payment Sent",
+                "checkInNow": "Check-in Now",
+                "viewSnapshot": "View Booking Snapshot"
+            },
+            "modals": {
+                "leaveTrip": {
+                    "title": "Leave Trip",
+                    "description": "Are you sure you want to cancel this booking? This action cannot be undone.",
+                    "cancel": "Cancel",
+                    "confirm": "Confirm"
+                }
+            }
+        },
+        "validation": {
+            "missingStart": "Missing Start Location",
+            "missingStartMessage": "Please select a start location.",
+            "missingDest": "Missing Destination",
+            "missingDestMessage": "Please select a destination.",
+            "invalidStart": "Invalid Start Location",
+            "invalidStartMessage": "Please select a valid start location from the suggestions.",
+            "invalidDest": "Invalid Destination",
+            "invalidDestMessage": "Please select a valid destination from the suggestions.",
+            "missingDep": "Missing Departure Time",
+            "missingDepMessage": "Please select a departure time.",
+            "invalidDep": "Invalid Departure Time",
+            "invalidDepMessage": "Departure time cannot be in the past.",
+            "invalidSeats": "Invalid Seats",
+            "invalidSeatsMessage": "Total seats must be at least 1.",
+            "invalidPrice": "Invalid Price",
+            "invalidPriceMessage": "Please enter a valid price (0 or greater).",
+            "invalidPickupRadius": "Invalid Pickup Radius",
+            "invalidPickupRadiusMessage": "Pickup radius must be greater than 0 meters.",
+            "invalidDropoffRadius": "Invalid Dropoff Radius",
+            "invalidDropoffRadiusMessage": "Dropoff radius must be greater than 0 meters.",
+            "invalidFlexibility": "Invalid Flexibility",
+            "invalidFlexibilityMessage": "Please specify flexibility (0 for none).",
+            "capacityExceeded": "Capacity Exceeded",
+            "capacityExceededMessage": "Total seats ({{seats}}) cannot exceed car capacity ({{capacity}}).",
+            "bigLuggageLimit": "Big Luggage Limit",
+            "bigLuggageLimitMessage": "Big luggage limit ({{limit}}) exceeds car capacity ({{capacity}}). Please adjust the luggage limits to avoid overloading the car.",
+            "smallLuggageLimit": "Small Luggage Limit",
+            "smallLuggageLimitMessage": "Small luggage limit ({{limit}}) exceeds car capacity ({{capacity}}). Please adjust the luggage limits to avoid overloading the car."
+        }
+    },
+    "history": {
+        "driverTitle": "Driver History",
+        "riderTitle": "Rider History",
+        "refresh": "Refresh",
+        "loadMore": "Load More",
+        "driver": {
+            "title": "Driver History",
+            "pastDrives": "Past Drives",
+            "noTrips": "You have no past trips."
+        },
+        "rider": {
+            "title": "Rider History",
+            "pastRides": "Past Rides",
+            "noRides": "You have no past rides."
+        }
+    },
+    "cars": {
+        "title": "Your Vehicles",
+        "noVehicles": "No Vehicles Found",
+        "noVehiclesDesc": "Add your first vehicle to start creating trips.",
+        "addCar": "Add New Vehicle",
+        "addCarShort": "Add Vehicle",
+        "form": {
+            "editTitle": "Edit Vehicle",
+            "addTitle": "Add New Vehicle",
+            "delete": "Delete",
+            "save": "Save Vehicle",
+            "cancel": "Cancel",
+            "make": "Make",
+            "makePlaceholder": "Toyota",
+            "model": "Model",
+            "modelPlaceholder": "Camry",
+            "color": "Color",
+            "colorPlaceholder": "Silver",
+            "year": "Year",
+            "plate": "License Plate",
+            "platePlaceholder": "ABC-1234",
+            "plateDesc": "Used for riders to identify your vehicle.",
+            "capacity": "Capacity",
+            "seats": "Passenger Seats",
+            "bigLuggage": "Big Luggage Capacity",
+            "smallLuggage": "Small Luggage Capacity",
+            "notifications": {
+                "seatsError": "Passenger Seats must be greater than 0",
+                "saveSuccess": "Car saved successfully",
+                "saveError": "Failed to save car",
+                "deleteSuccess": "Car deleted",
+                "deleteError": "Failed to delete car"
+            },
+            "modals": {
+                "deleteTitle": "Confirm Deletion",
+                "deleteMessage": "Are you sure you want to delete this vehicle? This action cannot be undone.",
+                "confirmDelete": "Delete Vehicle"
+            }
+        },
+        "errors": {
+            "fetchFailed": "Failed to fetch vehicles",
+            "fetchDetailsFailed": "Failed to fetch car details"
+        }
+    },
+    "templates": {
+        "rules": {
+            "title": "Rule Templates",
+            "create": "Create Rule Template",
+            "noTemplates": "No rule templates found. Create one to get started!",
+            "noPickupRules": "No pickup rules specified",
+            "form": {
+                "editTitle": "Edit Rule Template",
+                "addTitle": "New Rule Template",
+                "name": "Template Name",
+                "namePlaceholder": "e.g. Standard Rules",
+                "sectionRules": "Rules & Logistics",
+                "bigLuggage": "Big Luggage Limit",
+                "smallLuggage": "Small Luggage Limit",
+                "flexibility": "Departure Flexibility (Hours)",
+                "autoAccept": "Auto-accept Bookings",
+                "autoAcceptDesc": "Automatically confirm bookings that meet your criteria",
+                "payWindow": "Pay Window (Minutes)",
+                "payWindowDesc": "Time for rider to pay after joining",
+                "pickupRules": "Pickup Rules",
+                "pickupRulesPlaceholder": "e.g. Curb side only",
+                "cancellationPolicy": "Cancellation Policy",
+                "cancellationPolicyPlaceholder": "e.g. Free cancellation until 24h before",
+                "pickupRadius": "Pickup Radius (meters)",
+                "dropoffRadius": "Drop-off Radius (meters)",
+                "cutoff": "Booking Cutoff Time",
+                "cutoffHrs": "Hours before departure",
+                "autoStartCheckIn": "Auto-start Check-in",
+                "autoStartCheckInDesc": "Automatically enable check-in for this rule set",
+                "paymentMethods": "Payment Methods",
+                "paymentHandle": "Payment Handle (optional)",
+                "paymentHandlePlaceholder": "e.g. @username",
+                "save": "Save Template",
+                "notifications": {
+                    "nameRequired": "Template name is required",
+                    "saveSuccess": "Template saved successfully",
+                    "saveError": "Failed to save template",
+                    "deleteError": "Failed to delete template"
+                },
+                "modals": {
+                    "deleteTitle": "Confirm Deletion",
+                    "deleteMessage": "Are you sure you want to delete this rule template? This action cannot be undone.",
+                    "confirmDelete": "Delete Template"
+                }
+            },
+            "errors": {
+                "notFound": "Template not found",
+                "loadFailed": "Failed to load template"
+            }
+        },
+        "trips": {
+            "title": "Trip Templates",
+            "create": "Create Trip Template",
+            "noTemplates": "No trip templates found. Create one to get started!",
+            "form": {
+                "editTitle": "Edit Trip Template",
+                "addTitle": "New Trip Template",
+                "name": "Template Name",
+                "namePlaceholder": "e.g. Work Commute",
+                "driverNotes": "Driver Notes",
+                "driverNotesDesc": "Message to passengers (e.g. pickup details)",
+                "driverNotesPlaceholder": "I will be driving a blue sedan...",
+                "sectionRoute": "Route & Vehicle",
+                "from": "From",
+                "to": "To",
+                "price": "Price ($)",
+                "totalSeats": "Total Seats",
+                "vehicle": "Vehicle",
+                "vehiclePlaceholder": "Select a vehicle...",
+                "noVehicle": "No Vehicle",
+                "vehicleHelp": "To add a new vehicle, save your changes and go to <1>My Vehicles</1> page.",
+                "ruleTemplate": "Rule Template",
+                "ruleTemplatePlaceholder": "Attach a rule set...",
+                "ruleTemplateDesc": "Prefills luggage limits, payment methods, etc.",
+                "noRules": "No Rules",
+                "save": "Save Trip Template",
+                "notifications": {
+                    "nameRequired": "Template name is required",
+                    "saveSuccess": "Template saved successfully",
+                    "saveError": "Failed to save template",
+                    "deleteError": "Failed to delete template"
+                },
+                "modals": {
+                    "deleteTitle": "Confirm Deletion",
+                    "deleteMessage": "Are you sure you want to delete this trip template? This action cannot be undone.",
+                    "confirmDelete": "Delete Template"
+                }
+            },
+            "errors": {
+                "notFound": "Template not found",
+                "loadFailed": "Failed to load template"
+            }
+        }
+    },
+    "roleSettings": {
+        "title": "{{role}} Settings",
+        "switch": "<1>Switch to {{role}} Settings</1> or go to <2>Account Settings</2>.",
+        "goToAccount": "Go to Account Settings",
+        "prefs": {
+            "title": "Notification Preferences",
+            "description": "Manage which optional notifications you want to receive. Critical alerts cannot be disabled."
+        },
+        "push": {
+            "title": "Push Notifications",
+            "desc": "Receive real-time updates for trips and bookings.",
+            "description": "Receive real-time updates for trips and bookings.",
+            "status": "Status",
+            "installRequired": "Install Required",
+            "notEnabled": "Not Enabled",
+            "enabled": "Enabled",
+            "blocked": "Blocked",
+            "installApp": "Install App",
+            "fixInBrowser": "Fix in Browser",
+            "enablePush": "Enable Push",
+            "iosInstall": "Install to home screen to enable notifications.",
+            "androidInstall": "Notifications enabled. Install app for better experience.",
+            "allSet": "You are all set to receive push notifications.",
+            "blockedDesc": "You have blocked notifications. You must enable them in your browser settings.",
+            "enableDesc": "Enable notifications to stay updated."
+        },
+        "preferences": {
+            "title": "Notification Preferences",
+            "desc": "Manage which optional notifications you want to receive. Critical alerts cannot be disabled.",
+            "tripFull": "Trip Full",
+            "tripFullDesc": "Get notified when your trip has been fully booked.",
+            "payTimeout": "Payment Timeout",
+            "payTimeoutDesc": "Get notified when a rider fails to pay within the time limit.",
+            "tripUpdates": "Trip Updates",
+            "tripUpdatesDesc": "Get notified when the driver updates trip details.",
+            "tripCompleted": "Trip Completed",
+            "tripCompletedDesc": "Get notified when your trip is marked as completed."
+        },
+        "save": "Save Settings",
+        "notifications": {
+            "saveSuccess": "Settings saved successfully",
+            "saveError": "Failed to save settings",
+            "fetchError": "Failed to fetch settings",
+            "ui": {
+                "title": "Notifications",
+                "markAllRead": "Mark all read",
+                "markRead": "Mark Read",
+                "empty": "No notifications",
+                "loadMore": "Load More"
+            }
+        }
+    },
+    "about": {
+        "title": "About Us",
+        "description": "Connecting the UIUC community with safe, affordable rides.",
+        "content": "RideList was built to solve the fragmentation of ride-sharing at UIUC. No more digging through Facebook groups or group chats. We provide a centralized, searchable, and verified platform for students to find and post rides."
+    },
+    "how": {
+        "title": "How It Works",
+        "description": "Simple steps to get where you need to go.",
+        "steps": {
+            "step1": "Search for a ride by date and location",
+            "step2": "Compare verified drivers and prices",
+            "step3": "Book your seat and pay securely"
+        }
+    },
+    "profile": {
+        "changePhoto": "Change Photo",
+        "verifiedStudent": "Verified Student",
+        "joined": "Joined",
+        "phone": "Phone",
+        "phonePlaceholder": "Used for coordination",
+        "phoneHidden": "Phone Hidden",
+        "phoneHiddenDesc": "Visible only to confirmed riders/drivers",
+        "noPhone": "No phone number provided",
+        "save": "Save Changes",
+        "cancel": "Cancel",
+        "riderProfile": "Rider Profile",
+        "driverProfile": "Driver Profile",
+        "ridesTaken": "Rides Taken",
+        "rating": "Rating",
+        "preferences": "Preferences",
+        "preferencesDesc": "Default luggage requirements for new ride requests",
+        "smallLuggage": "Small Luggage",
+        "smallLuggageDesc": "Backpacks, tote bags, etc.",
+        "bigLuggage": "Big Luggage",
+        "bigLuggageDesc": "Suitcases, large duffels, etc.",
+        "tripsCompleted": "Trips Completed",
+        "driverStatsDesc": "Driver stats cannot be edited directly.",
+        "errors": {
+            "nameRequired": "Name is required",
+            "saveFailed": "Failed to save profile",
+            "notFound": "Profile not found",
+            "fetchFailed": "Failed to fetch profile"
+        }
     }
 }

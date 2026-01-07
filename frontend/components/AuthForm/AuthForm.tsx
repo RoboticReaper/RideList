@@ -11,8 +11,8 @@ import {
   Stack,
   Text,
   Input,
-  TextInput,
 } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { useForm } from '@mantine/form';
 import { upperFirst, useToggle } from '@mantine/hooks';
 import { MicrosoftButton } from './MicrosoftButton';
@@ -27,6 +27,7 @@ import { app } from '../firebase/firebase';
 
 
 export function AuthForm(props: PaperProps) {
+  const { t } = useTranslation('common');
   const [checked, setChecked] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { user, loading } = useAuth()
@@ -38,7 +39,7 @@ export function AuthForm(props: PaperProps) {
 
   const msLogin = () => {
     if (!checked) {
-      setError("Please check agreements to login")
+      setError(t('auth.agreementsError'))
       return
     }
 
@@ -67,7 +68,7 @@ export function AuthForm(props: PaperProps) {
   return (
     <Paper radius="md" p="lg" withBorder {...props} maw={400}>
       <Text size="lg" fw={500}>
-        Welcome to RideList, login with
+        {t('auth.loginWelcome')}
       </Text>
 
       <Group grow mb="md" mt="md">
@@ -75,7 +76,7 @@ export function AuthForm(props: PaperProps) {
       </Group>
 
       <Text size="xs" mb="md">
-        Only UIUC accounts (@illinois.edu) are currently allowed for student verification.
+        {t('auth.uiucOnly')}
       </Text>
 
       <Button
@@ -92,7 +93,7 @@ export function AuthForm(props: PaperProps) {
           })
         }}
       >
-        Tester login 1
+        {t('auth.testerLogin')} 1
       </Button>
       <Button
         radius="xl"
@@ -108,7 +109,7 @@ export function AuthForm(props: PaperProps) {
           })
         }}
       >
-        Tester login 2
+        {t('auth.testerLogin')} 2
       </Button>
       <Button
         radius="xl"
@@ -124,12 +125,12 @@ export function AuthForm(props: PaperProps) {
           })
         }}
       >
-        Tester login 3
+        {t('auth.testerLogin')} 3
       </Button>
 
-      <Input.Wrapper label="Agreements" withAsterisk error={error}>
+      <Input.Wrapper label={t('auth.agreementsLabel')} withAsterisk error={error}>
         <Checkbox
-          label="I agree to privacy policy and terms of service"
+          label={t('auth.agreementsCheckbox')}
           mt="xs"
           mb={error ? 'xs' : undefined}
           checked={checked}

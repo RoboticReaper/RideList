@@ -16,6 +16,7 @@ import {
 } from '@tabler/icons-react';
 import Link from 'next/link';
 import { getTripStatusConfig } from '@/utils/statusUtils';
+import { useTranslation } from 'react-i18next';
 
 interface RideCardProps {
     ride: {
@@ -70,13 +71,14 @@ const formatFlexibility = (flex: string | undefined) => {
 };
 
 export function RideCard({ ride }: RideCardProps) {
+    const { t, i18n } = useTranslation('common');
     const seatsLeft = Math.max(0, ride.total_seats - ride.seats_taken);
     const date = new Date(ride.departure_time);
 
-    // Format Date
+    // Format Date using current i18n locale
     const isToday = new Date().toDateString() === date.toDateString();
-    const dateStr = isToday ? 'Today' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    const timeStr = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    const dateStr = isToday ? t('rides.card.today') : date.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' });
+    const timeStr = date.toLocaleTimeString(i18n.language, { hour: 'numeric', minute: '2-digit' });
 
     // Relative time
     const diffMs = date.getTime() - new Date().getTime();
@@ -100,7 +102,7 @@ export function RideCard({ ride }: RideCardProps) {
                         </Text>
                         {/* Status Badge Moved Here */}
                         <Badge color={statusConfig.color} variant="light" size="xs" radius="sm">
-                            {statusConfig.label}
+                            {t(statusConfig.labelKey)}
                         </Badge>
                     </Group>
 
@@ -128,7 +130,7 @@ export function RideCard({ ride }: RideCardProps) {
                     {/* Progress Bar moved here */}
                     <Stack gap={2} align="flex-end" w={{ base: '100%', xs: '150px' }}>
                         <Text size="xs" c="dimmed" lh={1.2}>
-                            {seatsLeft} / {ride.total_seats} seats available
+                            {t('rides.card.seatsAvailable', { count: seatsLeft, total: ride.total_seats })}
                         </Text>
                         <Progress
                             value={((ride.total_seats - ride.seats_taken) / ride.total_seats) * 100}
@@ -155,7 +157,7 @@ export function RideCard({ ride }: RideCardProps) {
                             <Group gap={6}>
                                 <Text size="xs" c="dimmed">★ {ride.driver_rating?.toFixed(1) || 'New'}</Text>
                                 <Text size="xs" c="dimmed">•</Text>
-                                <Text size="xs" c="dimmed">{ride.driver_completed_trips || 0} trips</Text>
+                                <Text size="xs" c="dimmed">{t('rides.card.trips', { count: ride.driver_completed_trips || 0 })}</Text>
                             </Group>
                         </Stack>
                     </Group>
@@ -168,7 +170,7 @@ export function RideCard({ ride }: RideCardProps) {
                         size="xs"
                         radius="xl"
                     >
-                        View Details
+                        {t('rides.card.viewDetails')}
                     </Button>
                 </Group>
 
@@ -176,18 +178,18 @@ export function RideCard({ ride }: RideCardProps) {
                 <Group gap="lg" mt={4}>
                     {/* Auto Accept */}
                     {ride.auto_accept && (
-                        <Tooltip label="Auto Accept: Booking confirmed instantly">
+                        <Tooltip label={t('rides.card.autoAcceptTooltip')}>
                             <Group gap={4}>
                                 <ThemeIcon size="xs" variant="transparent" color="yellow">
                                     <IconBolt size={16} />
                                 </ThemeIcon>
-                                <Text size="xs" c="dimmed">Instant</Text>
+                                <Text size="xs" c="dimmed">{t('rides.card.instant')}</Text>
                             </Group>
                         </Tooltip>
                     )}
 
                     {/* Luggage */}
-                    <Tooltip label={`Luggage: ${ride.big_luggage_lim} Big, ${ride.small_luggage_lim} Small`}>
+                    <Tooltip label={t('rides.card.luggageTooltip', { big: ride.big_luggage_lim, small: ride.small_luggage_lim })}>
                         <Group gap={4}>
                             <ThemeIcon size="xs" variant="transparent" color="gray">
                                 <IconLuggage size={16} />

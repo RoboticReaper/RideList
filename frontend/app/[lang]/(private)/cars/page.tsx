@@ -5,8 +5,10 @@ import { useAuth } from '@/components/firebase/AuthContext';
 import { Container, Title, Button, Group, Paper, Text, Stack, Loader, Alert, ThemeIcon, Badge, Grid } from '@mantine/core';
 import { IconPlus, IconCar, IconAlertCircle } from '@tabler/icons-react';
 import { LocalizedLink } from '@/components/LocalizedLink';
+import { useTranslation } from 'react-i18next';
 
 export default function CarsPage() {
+    const { t } = useTranslation('common');
     const { user } = useAuth();
     const [cars, setCars] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -21,7 +23,7 @@ export default function CarsPage() {
                 const res = await fetch('/api/user/cars', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                if (!res.ok) throw new Error('Failed to fetch vehicles');
+                if (!res.ok) throw new Error(t('cars.errors.fetchFailed'));
                 const data = await res.json();
                 setCars(data.cars || []);
             } catch (err: any) {
@@ -33,7 +35,7 @@ export default function CarsPage() {
         };
 
         fetchCars();
-    }, [user]);
+    }, [user, t]);
 
     if (loading) return <Container py="xl"><Loader /></Container>;
     if (error) return <Container py="xl"><Alert color="red" icon={<IconAlertCircle />}>{error}</Alert></Container>;
@@ -41,9 +43,9 @@ export default function CarsPage() {
     return (
         <Container size="md" py="xl">
             <Group justify="space-between" mb="lg">
-                <Title order={2}>Your Vehicles</Title>
+                <Title order={2}>{t('cars.title')}</Title>
                 <Button component={LocalizedLink} href="/cars/new" leftSection={<IconPlus size={16} />}>
-                    Add New Vehicle
+                    {t('cars.addCar')}
                 </Button>
             </Group>
 
@@ -52,10 +54,10 @@ export default function CarsPage() {
                     <ThemeIcon size={64} radius="xl" color="gray" variant="light" mb="md">
                         <IconCar size={32} />
                     </ThemeIcon>
-                    <Title order={3} mb="sm">No Vehicles Found</Title>
-                    <Text c="dimmed" mb="lg">Add your first vehicle to start creating trips.</Text>
+                    <Title order={3} mb="sm">{t('cars.noVehicles')}</Title>
+                    <Text c="dimmed" mb="lg">{t('cars.noVehiclesDesc')}</Text>
                     <Button component={LocalizedLink} href="/cars/new" variant="outline">
-                        Add Vehicle
+                        {t('cars.addCarShort')}
                     </Button>
                 </Paper>
             ) : (
