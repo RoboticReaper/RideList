@@ -224,6 +224,7 @@ create table bookings (
 
   -- 3 fields below are available after driver accepts booking.
   pickup_geog geography(Point, 4326),
+  pickup_location_text text,
   driver_note text, -- driver note to rider
   rider_note text, -- rider pick up note
 
@@ -397,6 +398,17 @@ CREATE TABLE user_devices (
     -- Prevent duplicate device rows per user
     UNIQUE (user_id, device_id)
 );
+
+CREATE TABLE booking_mutations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  booking_id UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+  actor text NOT NULL, -- rider or driver
+  change jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX ON booking_mutations (booking_id, created_at, actor);
+
 
 
 -- ======================

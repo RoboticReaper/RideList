@@ -47,7 +47,7 @@ export default function CarForm({ initialData, isEditing = false, carId }: CarFo
                 make,
                 model,
                 color,
-                year: Number(year),
+                year: year === '' ? null : Number(year),
                 plate,
                 seats: Number(seats),
                 big_luggage: Number(bigLuggage),

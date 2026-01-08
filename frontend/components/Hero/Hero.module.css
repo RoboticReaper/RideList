@@ -69,3 +69,21 @@
     width: 100%;
   }
 }
+
+.secondaryControl {
+  padding-left: 50px;
+  padding-right: 50px;
+  font-family: Outfit, var(--mantine-font-family);
+  font-size: 22px;
+
+  @media (max-width: $mantine-breakpoint-md) {
+    width: 100%;
+  }
+
+  color: var(--mantine-color-white);
+  background-color: rgba(255, 255, 255, 0.4);
+
+  @mixin hover {
+    background-color: rgba(255, 255, 255, 0.45);
+  }
+}

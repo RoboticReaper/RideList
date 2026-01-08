@@ -169,6 +169,10 @@ export async function POST(
                 const releaseRes = await client.query(releaseSeatsQuery, [booking.seats_booked, booking.trip]);
 
                 if (releaseRes.rows.length > 0) {
+                    let message = booking.status === 'pending_pay_confirmation_from_driver'
+                        ? 'A rider pending your pay confirmation has left the trip'
+                        : 'Your unpaid rider has left the trip';
+
                     if (releaseRes.rows[0].status === 'full') {
                         await client.query("UPDATE trips SET status = 'bookable' WHERE id = $1", [booking.trip]);
                         // Log Status Change (Full -> Bookable)
@@ -188,7 +192,7 @@ export async function POST(
                             client,
                             type: 'rider_left',
                             title: 'Rider Left',
-                            message: 'Your unpaid rider has left the trip and the trip is now bookable again.',
+                            message: message + ' and the trip is now bookable again.',
                             userId: booking.driver,
                             entityType: 'bookings',
                             entityId: bookingId,
@@ -204,7 +208,7 @@ export async function POST(
                             client,
                             type: 'rider_left',
                             title: 'Rider Left',
-                            message: 'Your unpaid rider has left the trip.',
+                            message: message + '.',
                             userId: booking.driver,
                             entityType: 'bookings',
                             entityId: bookingId,

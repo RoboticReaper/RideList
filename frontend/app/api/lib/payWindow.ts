@@ -1,6 +1,8 @@
 
 import { PoolClient } from 'pg';
 import { createNotification } from './createNotification';
+import { logTripEvent } from '@/app/api/lib/tripEvents';
+import { checkAndProcessTripCutoff } from '@/app/api/lib/tripCutoff';
 
 /**
  * Checks if a booking has timed out its pay window.
@@ -48,6 +50,8 @@ export async function checkAndProcessPayWindowTimeout(client: PoolClient, bookin
                 bi.trip_id,
                 bi.pay_window,
                 bi.trip_status,
+                bi.rider,
+                bi.driver,
                 ss.start_time,
                 NOW() as current_time
             FROM booking_info bi
@@ -115,14 +119,14 @@ export async function checkAndProcessPayWindowTimeout(client: PoolClient, bookin
                 await client.query("UPDATE trips SET status = 'bookable', modified_at = NOW() WHERE id = $1", [trip_id]);
 
                 // Log Status Change (Full -> Bookable)
-                const { logTripEvent } = await import('@/app/api/lib/tripEvents');
                 await logTripEvent({
                     client,
                     tripId: trip_id,
                     actorId: null, // System
                     eventType: 'trip_updated',
                     affectedEntities: ['trips'],
-                    changes: { trip: { status: { old: 'full', new: 'bookable' } } }
+                    changes: { trip: { status: { old: 'full', new: 'bookable' } } },
+                    notes: 'status change due to pay_window_timeout'
                 });
             }
 
@@ -153,18 +157,17 @@ export async function checkAndProcessPayWindowTimeout(client: PoolClient, bookin
             });
 
             // Check cutoff immediately (might re-lock it if past cutoff)
-            const { checkAndProcessTripCutoff } = await import('@/app/api/lib/tripCutoff');
             await checkAndProcessTripCutoff(client, trip_id);
 
             // 3. Log Trip Event (System Cancellation)
-            const { logTripEvent } = await import('@/app/api/lib/tripEvents');
             const eventId = await logTripEvent({
                 client,
                 tripId: trip_id,
                 actorId: null, // System
                 eventType: 'system_cancelled', // Mapped from requirement: 'system_cancelled' for pay window timeout
                 affectedEntities: ['bookings', 'trips'],
-                changes: { booking_id: bookingId, seats_released: seats_booked, reason: 'pay_window_timeout' }
+                changes: { booking_id: bookingId, seats_released: seats_booked },
+                notes: 'pay_window_timeout'
             });
 
             // 4. Log History

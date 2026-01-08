@@ -31,6 +31,7 @@ interface NotificationContextType {
     requestPermission: () => Promise<void>;
     showPrompt: (options?: { force?: boolean }) => void;
     closePrompt: () => void;
+    dismissPrompt: () => void; // New method for user-initiated dismissal
     isModalOpen: boolean;
 }
 
@@ -41,6 +42,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
     // --- Notification Data State ---
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const offsetRef = useRef(0);
@@ -164,6 +166,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                     };
 
                     setNotifications(prev => [newNotification, ...prev]);
+                    setUnreadCount(prev => prev + 1);
                 }
             });
         }
@@ -199,6 +202,11 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
     const closePrompt = useCallback(() => {
         setIsModalOpen(false);
+    }, []);
+
+    const dismissPrompt = useCallback(() => {
+        setIsModalOpen(false);
+        localStorage.setItem('push_prompt_dismissed_at', Date.now().toString());
     }, []);
 
     const requestPermission = useCallback(async () => {
@@ -248,18 +256,28 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
             if (res.ok) {
                 const data = await res.json();
+                // data is { items: [], unreadCount: number }
+                // OR fallback to array if older API version (though we just changed it)
+                const items = Array.isArray(data) ? data : data.items;
+                const backendUnreadCount = data.unreadCount !== undefined ? data.unreadCount : 0;
+
+                // Update unread count only on refresh to sync true total
+                if (isRefresh && data.unreadCount !== undefined) {
+                    setUnreadCount(backendUnreadCount);
+                }
+
                 if (isRefresh) {
-                    setNotifications(data);
-                    offsetRef.current = data.length;
-                    setHasMore(data.length >= fetchLimit);
+                    setNotifications(items);
+                    offsetRef.current = items.length;
+                    setHasMore(items.length >= fetchLimit);
                 } else {
                     setNotifications(prev => {
-                        const newIds = new Set(data.map((n: NotificationItem) => n.id));
+                        const newIds = new Set(items.map((n: NotificationItem) => n.id));
                         const filteredPrev = prev.filter(n => !newIds.has(n.id));
-                        return [...filteredPrev, ...data];
+                        return [...filteredPrev, ...items];
                     });
-                    offsetRef.current += data.length;
-                    setHasMore(data.length === LIMIT);
+                    offsetRef.current += items.length;
+                    setHasMore(items.length === LIMIT);
                 }
             }
         } catch (error) {
@@ -312,7 +330,11 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     const markAsRead = async (ids: string[]) => {
         if (!user) return;
         try {
-            setNotifications(prev => prev.map(n => ids.includes(n.id) ? { ...n, read: true } : n));
+            const toMark = notifications.filter(n => ids.includes(n.id) && !n.read);
+            if (toMark.length > 0) {
+                setNotifications(prev => prev.map(n => ids.includes(n.id) ? { ...n, read: true } : n));
+                setUnreadCount(prev => Math.max(0, prev - toMark.length));
+            }
             const token = await user.getIdToken();
             await fetch('/api/notifications', {
                 method: 'PATCH',
@@ -324,7 +346,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         }
     };
 
-    const unreadCount = notifications.filter(n => !n.read).length;
+
 
     return (
         <NotificationContext.Provider value={{
@@ -339,6 +361,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             requestPermission,
             showPrompt,
             closePrompt,
+            dismissPrompt,
             isModalOpen
         }}>
             {children}

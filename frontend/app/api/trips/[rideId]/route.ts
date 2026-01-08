@@ -6,7 +6,7 @@ import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
 import { checkAndProcessTripCutoff } from '@/app/api/lib/tripCutoff';
 import { createNotification } from '@/app/api/lib/createNotification';
 import { extractPublicArea } from '@/app/api/lib/extractPublicArea';
-
+import { createObfuscatedBounds } from '@/app/api/lib/geoUtils';
 
 export async function GET(
     req: Request,
@@ -25,7 +25,7 @@ export async function GET(
             // Continue as guest
         }
 
-        // Lazy Cleanup/Processes (Preserved from original)
+        // Lazy Cleanup/Processes
         const timeouts = await client.query(
             "SELECT id FROM bookings WHERE trip = $1 AND status = 'joined_with_pay_window'",
             [rideId]
@@ -43,8 +43,8 @@ export async function GET(
         t.total_seats, t.seats_taken, t.status, t.start_check_in,
         t.created_at, t.modified_at, t.from_input_text, t.to_input_text,
         ST_X(t.origin_geog::geometry) as origin_lng, ST_Y(t.origin_geog::geometry) as origin_lat,
+        ST_X(ST_SnapToGrid(t.origin_geog::geometry, 0.002)) as fuzzy_lng, ST_Y(ST_SnapToGrid(t.origin_geog::geometry, 0.002)) as fuzzy_lat,
         ST_X(t.destination_geog::geometry) as dest_lng, ST_Y(t.destination_geog::geometry) as dest_lat,
-
         
         -- Event Info (End Time)
         tc.created_at as trip_end_event_at,
@@ -56,13 +56,16 @@ export async function GET(
         tr.cancellation_policy, tr.payment_handle, tr.auto_accept,
         tr.cutoff_time, tr.pay_window, tr.start_check_in_hrs_before_departure,
         
-        -- Car Info (Strict Snapshot if Departed/Done)
+        -- Car Info
         CASE WHEN (t.status in ('departed', 'done', 'aborted')) THEN cs.original_car_id ELSE c.id END as car_id,
         CASE WHEN (t.status in ('departed', 'done', 'aborted')) THEN cs.make ELSE c.make END as car_make,
         CASE WHEN (t.status in ('departed', 'done', 'aborted')) THEN cs.model ELSE c.model END as car_model,
         CASE WHEN (t.status in ('departed', 'done', 'aborted')) THEN cs.color ELSE c.color END as car_color,
         CASE WHEN (t.status in ('departed', 'done', 'aborted')) THEN cs.year ELSE c.year END as car_year,
         CASE WHEN (t.status in ('departed', 'done', 'aborted')) THEN cs.plate ELSE c.plate END as car_plate,
+        CASE WHEN (t.status in ('departed', 'done', 'aborted')) THEN cs.seats ELSE c.seats END as car_seats,
+        CASE WHEN (t.status in ('departed', 'done', 'aborted')) THEN cs.big_luggage ELSE c.big_luggage END as car_big_luggage,
+        CASE WHEN (t.status in ('departed', 'done', 'aborted')) THEN cs.small_luggage ELSE c.small_luggage END as car_small_luggage,
         
         -- Driver Info
         pg.id as driver_id,
@@ -88,11 +91,12 @@ export async function GET(
         br.created_at as user_removed_at,
         ub.picked_up_at as user_picked_up_at,
         ub.intended_payment_method as user_intended_payment_method,
+        ub.pickup_location_text as user_pickup_location_text,
+        ub.rider_note as user_rider_note,
 
         -- Snapshot Rules
         brs.payment_handle as snapshot_payment_handle,
         brs.payment_methods as snapshot_payment_methods
-        -- (Include other snapshot fields as needed from original query)
 
       FROM trips t
       LEFT JOIN trip_rules tr ON t.id = tr.id
@@ -101,7 +105,7 @@ export async function GET(
       LEFT JOIN profile_global pg ON t.driver = pg.id
       LEFT JOIN profile_driver pd ON t.driver = pd.id
       LEFT JOIN LATERAL (
-        SELECT id, status, seats_booked, big_luggage, small_luggage, paid, ready, ready_at, preferred_pickup_time, created_at, picked_up_at, intended_payment_method
+        SELECT id, status, seats_booked, big_luggage, small_luggage, paid, ready, ready_at, preferred_pickup_time, created_at, picked_up_at, intended_payment_method, pickup_location_text, rider_note
         FROM bookings b 
         WHERE b.trip = t.id AND b.rider = $2 
         ORDER BY b.created_at DESC 
@@ -113,7 +117,7 @@ export async function GET(
         SELECT created_at
         FROM trip_events
         WHERE trip = t.id 
-        AND event_type in ('trip_cancelled', 'trip_aborted', 'trip_completed') -- UPDATED: Include completion
+        AND event_type in ('trip_cancelled', 'trip_aborted', 'trip_completed') 
         ORDER BY created_at DESC
         LIMIT 1
       ) tc ON true
@@ -133,48 +137,73 @@ export async function GET(
         // --- 1. Define Permissions ---
 
         // A. Receipt Access (Permanent Identity)
-        // If you had a booking (even if removed later), you have the right to know WHO you dealt with.
         const canViewReceipt = isDriver || hasBooking;
 
-        // B. Contact Access (Temporary Operational)
-        // Phone numbers and Payment Handles are only for ACTIVE coordination or immediate follow-up.
-        let canViewContact = false;
+        // B. Define States
+        const isRemoved = row.user_booking_status === 'removed';
+
+        const activeBookingStatuses = [
+            'joined_with_pay_window',
+            'pending_pay_confirmation_from_driver',
+            'confirmed',
+        ];
+        const isInteractionActive = activeBookingStatuses.includes(row.user_booking_status);
+
+        // Grace Period: 24 Hours
+        let isRecent = false;
+        if (row.trip_end_event_at) {
+            isRecent = row.trip_end_event_at > new Date(Date.now() - 24 * 60 * 60 * 1000);
+        } else {
+            isRecent = true; // trip end event is null, means trip is still ongoing
+        }
+
+        // C. Phone Permissions (Strict Safety)
+        // Rule: HIDE if Removed, even if Paid.
+        // Visible only if active coordination is needed OR recent successful drop-off.
+        let canViewPhone = false;
 
         if (isDriver) {
-            canViewContact = true;
-        } else if (hasBooking) {
-            const activeBookingStatuses = [
-                'joined_with_pay_window',
-                'pending_pay_confirmation_from_driver',
-                'confirmed',
-            ];
-
-            const isInteractionActive = activeBookingStatuses.includes(row.user_booking_status);
-
-            // Grace Period: 24 Hours after the trip event (Completion, Cancellation, Abort)
-            let isRecent = false;
-            if (row.trip_end_event_at) {
-                isRecent = row.trip_end_event_at > new Date(Date.now() - 24 * 60 * 60 * 1000);
-            }
-
-            // Grant contact access if actively riding OR recently finished
+            canViewPhone = true;
+        } else if (hasBooking && !isRemoved) { // Explicitly BLOCK removed riders
             if (isInteractionActive || isRecent) {
-                canViewContact = true;
+                canViewPhone = true;
+            }
+        }
+
+        // D. Financial Permissions (Transparency)
+        // Rule: SHOW if Active OR (Paid AND Recent).
+        // Allows removed riders to verify the Venmo/CashApp handle for fraud reporting.
+        let canViewPaymentHandle = false;
+
+        if (isDriver) {
+            canViewPaymentHandle = true;
+        } else if (hasBooking) {
+            // If they are active, they need to pay.
+            // If they PAID, they need to see where the money went (even if removed).
+            if (isInteractionActive || (row.user_paid && isRecent)) {
+                canViewPaymentHandle = true;
             }
         }
 
         // --- 2. Apply Redaction ---
 
-        // Identity: Redacted if no booking receipt
+        // Geo Privacy for Requests
+        let obfuscatedBounds = null;
+        if (!isDriver && row.origin_lat && row.origin_lng) {
+            obfuscatedBounds = createObfuscatedBounds(row.origin_lat, row.origin_lng, row.pickup_radius_meters || 5000, rideId);
+        }
+
+        // Identity
         const displayName = canViewReceipt ? row.driver_name : (row.driver_name ? (row.driver_name.substring(0, 3) + '***') : 'Anon');
         const photoUrl = canViewReceipt ? row.driver_photo_url : null;
 
-        // Contact: Strictly gated by time window
-        const driverPhone = canViewContact ? row.driver_phone : null;
-        const paymentHandle = canViewContact ? row.snapshot_payment_handle : null;
+        // Contact Fields
+        const driverPhone = canViewPhone ? row.driver_phone : null;
 
-        // Plate: strictly operational (Safety)
-        // Only show if the car is effectively "in play" (Departed/Active)
+        // Use snapshot handle for stability, fallback to current rule if needed (though query prioritizes snapshot)
+        const paymentHandle = canViewPaymentHandle ? row.payment_handle : null;
+
+        // Plate: strictly operational
         const vehiclePlate = (canViewReceipt && row.status === "departed") ? row.car_plate : null;
 
         const ride = {
@@ -187,10 +216,10 @@ export async function GET(
             // Flags for frontend UI logic
             access: {
                 receipt: canViewReceipt,
-                contact: canViewContact
+                contact: canViewPhone, // "Contact" usually implies phone/messaging
+                financial: canViewPaymentHandle // New flag for UI
             },
 
-            // only return exact address for driver.
             from_input_text: isDriver ? row.from_input_text : null,
             from_text: row.from_text,
             to_input_text: isDriver ? row.to_input_text : null,
@@ -203,16 +232,18 @@ export async function GET(
             },
             notes: row.notes,
 
-            // only show lat lng to driver as it may expose private information
             origin: {
                 lat: isDriver ? row.origin_lat : null,
-                lng: isDriver ? row.origin_lng : null
+                lng: isDriver ? row.origin_lng : null,
+                // Fuzzy Data for Riders
+                fuzzy_lat: !isDriver ? row.fuzzy_lat : null,
+                fuzzy_lng: !isDriver ? row.fuzzy_lng : null,
+                obfuscated_bounds: !isDriver ? obfuscatedBounds : null,
             },
             destination: {
                 lat: isDriver ? row.dest_lat : null,
                 lng: isDriver ? row.dest_lng : null
             },
-
 
             car: row.car_id ? {
                 id: row.car_id,
@@ -220,7 +251,7 @@ export async function GET(
                 model: row.car_model,
                 color: row.car_color,
                 year: row.car_year,
-                plate: vehiclePlate // Hidden if trip is done
+                plate: vehiclePlate,
             } : null,
 
             driver: {
@@ -231,8 +262,8 @@ export async function GET(
                 member_since: row.driver_since,
                 rating: row.driver_rating ?? null,
                 completed_trips: row.driver_completed_trips ?? 0,
-                phone: driverPhone, // Hidden > 24h
-                payment_handle: paymentHandle // Hidden > 24h
+                phone: driverPhone,
+                payment_handle: paymentHandle
             },
 
             rules: {
@@ -270,15 +301,16 @@ export async function GET(
                 created_at: row.user_booking_created_at,
                 removed_at: row.user_removed_at,
                 picked_up_at: row.user_picked_up_at,
-                intended_payment_method: row.user_intended_payment_method
+                intended_payment_method: row.user_intended_payment_method,
+                pickup_location_text: row.user_pickup_location_text || null,
+                rider_note: row.user_rider_note || null
             } : null,
             user_booking_status: row.user_booking_status || null,
             snapshot_rules: {
                 payment: {
                     methods: row.snapshot_payment_methods,
-                    handle: paymentHandle
+                    handle: row.snapshot_payment_handle
                 }
-                // ... include other snapshot rules as needed
             }
         };
 
@@ -402,11 +434,16 @@ export async function PATCH(
         // Update TRIPS table
         // Fields: price, seats (total_seats), notes, car, departure_time, from_text, to_text, origin_geog, destination_geog
 
-        // --- Auto-Status Update Logic (Seats Capacity) ---
         // If driver changes total_seats, we might need to toggle between 'bookable' and 'full'.
         if (body.total_seats !== undefined) {
             const seatsTaken = oldTripState.seats_taken;
             const newTotalSeats = body.total_seats;
+
+            if (newTotalSeats < seatsTaken) {
+                await client.query('ROLLBACK');
+                return NextResponse.json({ error: `Cannot reduce total seats below seats taken (${seatsTaken}).` }, { status: 400 });
+            }
+
             const currentStatus = oldTripState.status;
             // Use provided status or fallback to current
             let nextStatus = body.status !== undefined ? body.status : currentStatus;
@@ -939,11 +976,18 @@ export async function PATCH(
         // Check for Content Updates (trip_updated)
         // Helper to check equality loosely
         const isDiff = (a: any, b: any) => {
+            // Normalize strings/nulls/undefined to empty string for comparison
+            const norm = (v: any) => (v === null || v === undefined) ? '' : (typeof v === 'string' ? v.trim() : v);
+            const nA = norm(a);
+            const nB = norm(b);
+
+            if (nA === nB) return false;
+
             if (a instanceof Date && b instanceof Date) return a.getTime() !== b.getTime();
             if (a instanceof Date && typeof b === 'string') return a.getTime() !== new Date(b).getTime();
             if (Array.isArray(a) && Array.isArray(b)) return JSON.stringify(a.sort()) !== JSON.stringify(b.sort());
             if (typeof a === 'object' && a !== null && typeof b === 'object' && b !== null) return JSON.stringify(a) !== JSON.stringify(b); // basic strict equality for objects
-            if (a == b) return false; // fast path for primitives
+
             return true;
         };
 
@@ -1028,6 +1072,7 @@ export async function PATCH(
             'cutoffTime',
             'payWindow',
             'startCheckInHrs',
+            'flexibility',
         ];
 
         const intervalFields = ['departure_time_flexibility', 'cutoff_time', 'pay_window', 'start_check_in_hrs_before_departure'];
@@ -1098,51 +1143,56 @@ export async function PATCH(
             pickup_rules: 'Pickup rules',
             pickup_radius_meters: 'Pickup radius',
             drop_off_radius_meters: 'Dropoff radius',
-            payment_methods: 'Payment methods',
-            payment_handle: 'Payment handle',
+            // payment_methods: 'Payment methods', // Excluded from notification text
+            // payment_handle: 'Payment handle',   // Excluded from notification text
             cancellation_policy: 'Cancellation policy',
             cutoff_time: 'Booking cutoff time',
             pay_window: 'Payment window',
             start_check_in_hrs_before_departure: 'Check-in time',
+            departure_time_flexibility: 'Departure flexibility',
         };
-
-        const changedFields = [
-            ...Object.keys(tripNotificationChanges),
-            ...Object.keys(ruleNotificationChanges),
-        ].map(f => FIELD_LABELS[f]).filter(Boolean);
-
-        let message = 'Trip updated';
-
-        if (
-            Object.keys(tripNotificationChanges).length > 0 ||
-            Object.keys(ruleNotificationChanges).length > 0
-        ) {
-            const changedFields = [
-                ...Object.keys(tripNotificationChanges),
-                ...Object.keys(ruleNotificationChanges),
-            ].map(f => FIELD_LABELS[f]).filter(Boolean);
-
-            if (changedFields.length === 1) {
-                message = `${changedFields[0]} was updated`;
-            } else if (changedFields.length <= 3) {
-                message = `${changedFields.join(', ')} were updated`;
-            } else {
-                message = `${changedFields.slice(0, 2).join(', ')} and others were updated`;
-            }
-        }
-
-
 
         // --- SEND NOTIFICATIONS ---
         if (Object.keys(tripNotificationChanges).length > 0 || Object.keys(ruleNotificationChanges).length > 0) {
+            const allChangedKeys = [
+                ...Object.keys(tripNotificationChanges),
+                ...Object.keys(ruleNotificationChanges),
+            ];
+
+            // List of fields that are considered "Payment Info"
+            const paymentFields = ['payment_methods', 'payment_handle'];
+
+            // Check if ONLY payment fields were changed
+            const isOnlyPaymentUpdate = allChangedKeys.every(k => paymentFields.includes(k));
+
+            // Generate message (excluding payment info from the text)
+            const changedFieldLabels = allChangedKeys
+                .filter(k => !paymentFields.includes(k)) // Exclude payment fields from text
+                .map(f => FIELD_LABELS[f])
+                .filter(Boolean);
+
+            let message = 'Trip details updated';
+            if (changedFieldLabels.length === 1) {
+                message = `${changedFieldLabels[0]} was updated`;
+            } else if (changedFieldLabels.length > 1 && changedFieldLabels.length <= 3) {
+                message = `${changedFieldLabels.join(', ')} were updated`;
+            } else if (changedFieldLabels.length > 3) {
+                message = `${changedFieldLabels.slice(0, 2).join(', ')} and others were updated`;
+            }
+
             // Notify Riders: Trip Info/Rules Updated
             const activeRidersForUpdate = await client.query(`
-                SELECT rider FROM bookings 
+                SELECT rider, paid FROM bookings 
                 WHERE trip = $1 
                 AND status IN ('confirmed', 'joined_with_pay_window', 'pending_pay_confirmation_from_driver')
             `, [rideId]);
 
             for (const r of activeRidersForUpdate.rows) {
+                // If the rider has PAID and the ONLY changes are payment info, SKIP notification
+                if (r.paid && isOnlyPaymentUpdate) {
+                    continue;
+                }
+
                 await createNotification({
                     client,
                     type: 'trip_updated',

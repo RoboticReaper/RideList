@@ -25,6 +25,7 @@ interface Trip {
     driver_id?: string;
     from_input_text?: string;
     to_input_text?: string;
+    car_id?: string;
 }
 
 interface TripCardProps {
@@ -107,7 +108,7 @@ export function TripCard({ trip }: TripCardProps) {
                                 <Trans i18nKey="dashboard.tripCard.driverPhoneRequired" components={{ 1: <Anchor component={LocalizedLink} href={`/profile/${trip.driver_id}`} style={{ textDecoration: 'underline' }} /> }} />
                             </Alert>
                         )}
-                        {!trip.id && (
+                        {!trip.car_id && (
                             <Alert color="red" variant="light" title={t('dashboard.tripCard.actionRequired')} icon={<IconAlertTriangle size={16} />}>
                                 <Trans i18nKey="dashboard.tripCard.carRequired" components={{ 1: <Anchor component={LocalizedLink} href={`/dashboard/${trip.id}?tab=edit`} style={{ textDecoration: 'underline' }} /> }} />
                             </Alert>

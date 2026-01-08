@@ -37,6 +37,7 @@ export async function GET(req: Request) {
                 c.make,
                 c.model,
                 c.plate,
+                c.id as car_id,
                 c.color,
                 pg.phone as driver_phone
             FROM trips t

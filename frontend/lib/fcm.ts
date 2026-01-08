@@ -45,10 +45,21 @@ export const onMessageListener = () => {
 };
 
 export const deleteFcmToken = async () => {
+    // Basic check to see if we're in a browser and have SW support
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+        return;
+    }
+
     try {
         const messaging = getMessaging(app);
         await deleteToken(messaging);
-    } catch (err) {
+    } catch (err: any) {
+        // If the service worker failed to register (e.g. quick logout/timeout), 
+        // we can probably ignore it as the token won't be usable anyway or doesn't exist.
+        if (err?.code === 'messaging/failed-service-worker-registration') {
+            console.debug('FCM token deletion skipped: Service worker not registered.');
+            return;
+        }
         console.error('Failed to delete FCM token', err);
     }
 };

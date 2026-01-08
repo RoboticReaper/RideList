@@ -1,12 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Table, Avatar, Text, Group, Badge, Loader, Stack, Alert, Button, ActionIcon, Tooltip, Modal, Select, Textarea, Collapse, UnstyledButton, Anchor } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
-import { IconInfoCircle, IconCheck, IconX, IconTrash, IconCurrencyDollar, IconChevronRight, IconChevronDown, IconLock, IconLockOpen, IconUserCheck, IconSortAscending, IconSortDescending, IconExternalLink } from '@tabler/icons-react';
+import { IconInfoCircle, IconCheck, IconX, IconTrash, IconCurrencyDollar, IconChevronRight, IconChevronDown, IconLock, IconLockOpen, IconUserCheck, IconSortAscending, IconSortDescending, IconPencil, IconExternalLink } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { notifications } from '@mantine/notifications';
 import { useTranslation, Trans } from 'react-i18next';
 import { getBookingStatusConfig, getTripStatusConfig } from '@/utils/statusUtils';
 import { LocalizedLink } from '@/components/LocalizedLink';
+import { EditDriverNoteModal } from './EditDriverNoteModal';
 
 interface Booking {
     id: string;
@@ -28,6 +29,11 @@ interface Booking {
     rider_phone: string | null;
     rider_phone_visible: 'VISIBLE' | 'REDACTED' | 'MISSING';
     removal_reason?: string | null;
+    pickup_location_text?: string | null;
+    driver_note?: string | null;
+    rider_note?: string | null;
+    preferred_pickup_time?: string | null;
+    pickup_info_visible?: 'VISIBLE' | 'REDACTED';
 }
 
 interface ManageTripViewProps {
@@ -156,9 +162,15 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
     const [lockModalOpen, setLockModalOpen] = useState(false);
     const [unlockModalOpen, setUnlockModalOpen] = useState(false);
 
+
     const [departModalOpen, setDepartModalOpen] = useState(false);
     const [checkInModalOpen, setCheckInModalOpen] = useState(false);
     const [statusLoading, setStatusLoading] = useState(false);
+
+    // Edit Driver Note Modal
+    const [editNoteModalOpen, setEditNoteModalOpen] = useState(false);
+    const [bookingToEdit, setBookingToEdit] = useState<Booking | null>(null);
+    const [noteLoading, setNoteLoading] = useState(false);
 
 
 
@@ -169,6 +181,9 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
     const [columnWidths, setColumnWidths] = useState({
         rider: 150,
         phone: 120,
+        pickupLocation: 150,
+        riderNote: 150,
+        preferredTime: 120,
         status: 150,
         seats: 80,
         luggage: 80,
@@ -368,6 +383,50 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
         }
     };
 
+    const handleOpenEditNote = (booking: Booking) => {
+        setBookingToEdit(booking);
+        setEditNoteModalOpen(true);
+    };
+
+    const handleSaveNote = async (note: string) => {
+        if (!bookingToEdit || !user) return;
+        setNoteLoading(true);
+        try {
+            const token = await user.getIdToken();
+            const res = await fetch(`/api/bookings/${bookingToEdit.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ driver_note: note })
+            });
+
+            if (!res.ok) throw new Error(t('tripDetails.manage.notifications.updateSuccess.message')); // Re-using generic success message key? No, should be error. Using generic fetch error for now or generic update status failed from handleAction logic.
+            // Actually let's use a specific notification or just generic update success
+
+            notifications.show({
+                title: t('tripDetails.manage.notifications.success.title'),
+                message: t('tripDetails.manage.notifications.updateSuccess.message'),
+                color: 'green'
+            });
+
+            // Update local state
+            setBookings(prev => prev.map(b => b.id === bookingToEdit.id ? { ...b, driver_note: note } : b));
+            setEditNoteModalOpen(false);
+            setBookingToEdit(null);
+
+        } catch (err: any) {
+            notifications.show({
+                title: t('tripDetails.manage.notifications.error.title'),
+                message: err.message || t('tripDetails.manage.notifications.actionFailed'),
+                color: 'red'
+            });
+        } finally {
+            setNoteLoading(false);
+        }
+    };
+
     if (loading) return <Loader />;
     if (error) return <Alert color="red" title={t('tripDetails.manage.notifications.error.title')}>{error}</Alert>;
 
@@ -452,6 +511,72 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                             justifyContent: 'flex-end'
                         }}
                         onPointerDown={(e) => handleResizeStart(e, 'phone' as any)}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div style={{ width: '1px', height: '100%', backgroundColor: 'var(--mantine-color-gray-4)' }} />
+                    </div>
+                </Table.Th>
+                <Table.Th style={{ width: columnWidths.pickupLocation, position: 'relative', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                    {t('tripDetails.manage.table.pickupLocation')}
+                    <div
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            right: 0,
+                            width: '30px',
+                            height: '100%',
+                            cursor: 'col-resize',
+                            userSelect: 'none',
+                            touchAction: 'none',
+                            zIndex: 1,
+                            display: 'flex',
+                            justifyContent: 'flex-end'
+                        }}
+                        onPointerDown={(e) => handleResizeStart(e, 'pickupLocation' as any)}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div style={{ width: '1px', height: '100%', backgroundColor: 'var(--mantine-color-gray-4)' }} />
+                    </div>
+                </Table.Th>
+                <Table.Th style={{ width: columnWidths.riderNote, position: 'relative', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                    {t('tripDetails.manage.table.riderNote')}
+                    <div
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            right: 0,
+                            width: '30px',
+                            height: '100%',
+                            cursor: 'col-resize',
+                            userSelect: 'none',
+                            touchAction: 'none',
+                            zIndex: 1,
+                            display: 'flex',
+                            justifyContent: 'flex-end'
+                        }}
+                        onPointerDown={(e) => handleResizeStart(e, 'riderNote' as any)}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div style={{ width: '1px', height: '100%', backgroundColor: 'var(--mantine-color-gray-4)' }} />
+                    </div>
+                </Table.Th>
+                <Table.Th style={{ width: columnWidths.preferredTime, position: 'relative', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                    {t('tripDetails.manage.table.preferredTime')}
+                    <div
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            right: 0,
+                            width: '30px',
+                            height: '100%',
+                            cursor: 'col-resize',
+                            userSelect: 'none',
+                            touchAction: 'none',
+                            zIndex: 1,
+                            display: 'flex',
+                            justifyContent: 'flex-end'
+                        }}
+                        onPointerDown={(e) => handleResizeStart(e, 'preferredTime' as any)}
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div style={{ width: '1px', height: '100%', backgroundColor: 'var(--mantine-color-gray-4)' }} />
@@ -567,7 +692,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                         <div style={{ width: '1px', height: '100%', backgroundColor: 'var(--mantine-color-gray-4)' }} />
                     </div>
                 </Table.Th>
-                <Table.Th style={{ width: columnWidths.actions, position: 'relative', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                <Table.Th style={{ width: columnWidths.actions, position: 'sticky', right: 0, zIndex: 2, backgroundColor: 'var(--mantine-color-body)', whiteSpace: 'normal', overflowWrap: 'break-word', boxShadow: '-2px 0 4px rgba(0,0,0,0.1)' }}>
                     {t('tripDetails.manage.table.actions')}
                     <div
                         style={{
@@ -579,7 +704,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                             cursor: 'col-resize',
                             userSelect: 'none',
                             touchAction: 'none',
-                            zIndex: 1,
+                            zIndex: 3,
                             display: 'flex',
                             justifyContent: 'flex-end'
                         }}
@@ -606,16 +731,16 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                                 <Text size="sm" fw={500} style={{ overflowWrap: 'break-word', whiteSpace: 'normal' }}>
                                     {b.rider_name}
                                 </Text>
-                                <ActionIcon
-                                    component={LocalizedLink}
-                                    href={`/profile/${b.rider_id}`}
-                                    target="_blank"
-                                    size="xs"
-                                    variant="subtle"
-                                    color="gray"
-                                >
-                                    <IconExternalLink size={14} />
-                                </ActionIcon>
+                                <Tooltip label={t('tripDetails.manage.phone.editNote.label')}>
+                                    <ActionIcon
+                                        size="sm"
+                                        variant="subtle"
+                                        color="gray"
+                                        onClick={() => handleOpenEditNote(b)}
+                                    >
+                                        <IconPencil size={14} />
+                                    </ActionIcon>
+                                </Tooltip>
                             </Group>
                             <Text size="xs" c="dimmed" style={{ overflowWrap: 'break-word', whiteSpace: 'normal' }}>
                                 {b.rider_rating ? `★ ${b.rider_rating.toFixed(1)}` : t('common.new')} • {t('tripDetails.manage.rides', { count: b.rider_completed_rides })}
@@ -645,6 +770,47 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                     })()}
                 </Table.Td>
                 <Table.Td>
+                    {(() => {
+                        if (b.pickup_info_visible === 'REDACTED') {
+                            return (
+                                <Text size="sm" c="dimmed">
+                                    {t('tripDetails.manage.pickup.hidden')}
+                                    <br />
+                                    <Text span size="xs">({t('tripDetails.manage.pickup.hiddenReason')})</Text>
+                                </Text>
+                            );
+                        }
+                        if (!b.pickup_location_text) {
+                            return <Text size="sm" c="dimmed">{t('tripDetails.manage.pickup.notProvided')}</Text>;
+                        }
+                        return <Text size="sm" style={{ overflowWrap: 'break-word', whiteSpace: 'normal' }}>
+                            {b.pickup_location_text.split(',').slice(0, 2).join(',')}
+                        </Text>;
+                    })()}
+                </Table.Td>
+                <Table.Td>
+                    {(() => {
+                        if (b.pickup_info_visible === 'REDACTED') {
+                            return (
+                                <Text size="sm" c="dimmed">
+                                    {t('tripDetails.manage.pickup.hidden')}
+                                    <br />
+                                    <Text span size="xs">({t('tripDetails.manage.pickup.hiddenReason')})</Text>
+                                </Text>
+                            );
+                        }
+                        if (!b.rider_note) {
+                            return <Text size="sm" c="dimmed">{t('tripDetails.manage.note.notProvided')}</Text>;
+                        }
+                        return <Text size="sm" fs="italic" style={{ overflowWrap: 'break-word', whiteSpace: 'normal' }}>{b.rider_note}</Text>;
+                    })()}
+                </Table.Td>
+                <Table.Td>
+                    <Text size="sm">
+                        {b.preferred_pickup_time ? dayjs(b.preferred_pickup_time).format('h:mm A') : '-'}
+                    </Text>
+                </Table.Td>
+                <Table.Td>
                     <Text size="sm" style={{ overflowWrap: 'break-word', whiteSpace: 'normal' }}>
                         {t(getBookingStatusConfig(b.status).labelKey)}
                         {b.status === 'removed' && b.removal_reason && `, (${t('tripDetails.manage.reasons.reason')}: ${b.removal_reason})`}
@@ -666,13 +832,18 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                     </Text>
                 </Table.Td>
                 <Table.Td>
-                    <Text size="sm" c="dimmed" style={{ overflowWrap: 'break-word', whiteSpace: 'normal' }}>
-                        {dayjs(b.created_at).format('MMM D, h:mm A')}
-                    </Text>
+                    <Stack gap={0}>
+                        <Text size="sm">
+                            {dayjs(b.created_at).format('MMM D, h:mm A')}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                            {dayjs(b.created_at).fromNow()}
+                        </Text>
+                    </Stack>
                 </Table.Td>
-                <Table.Td>
+                <Table.Td style={{ position: 'sticky', right: 0, backgroundColor: 'var(--mantine-color-body)', zIndex: 1, boxShadow: '-2px 0 4px rgba(0,0,0,0.1)' }}>
                     {isActive ? (
-                        <Stack gap={4} align="flex-start">
+                        <Stack gap={4} align="flex-end">
                             {b.status === 'waiting_approval' && !isReadOnly && (
                                 <Group gap={4} wrap="nowrap">
                                     <Button
@@ -780,6 +951,16 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                 onClose={() => setRiderToRemove(null)}
                 onConfirm={handleConfirmRemoval}
                 loading={!!actionLoading}
+            />
+
+            <EditDriverNoteModal
+                opened={editNoteModalOpen}
+                onClose={() => setEditNoteModalOpen(false)}
+                riderName={bookingToEdit?.rider_name || ''}
+                riderId={bookingToEdit?.rider_id || ''}
+                initialNote={bookingToEdit?.driver_note || ''}
+                onSave={handleSaveNote}
+                loading={noteLoading}
             />
 
             {/* Active Bookings Section */}

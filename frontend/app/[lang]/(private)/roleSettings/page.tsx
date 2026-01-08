@@ -37,12 +37,12 @@ export default function RoleSettingsPage() {
     const PushEnableButton = () => {
         // iOS Browser: Must Install First
         if (isIOS && !isStandalone) {
-            return <Button size="xs" onClick={() => showPrompt()} leftSection={<IconDeviceMobile size={16} />}>{t('roleSettings.push.installApp')}</Button>;
+            return <Button size="xs" onClick={() => showPrompt({ force: true })} leftSection={<IconDeviceMobile size={16} />}>{t('roleSettings.push.installApp')}</Button>;
         }
 
         // Android: If Granted but not installed, suggest install
         if (isAndroid && !isStandalone && pushPermission === 'granted') {
-            return <Button size="xs" onClick={() => showPrompt()} leftSection={<IconDownload size={16} />}>{t('roleSettings.push.installApp')}</Button>;
+            return <Button size="xs" onClick={() => showPrompt({ force: true })} leftSection={<IconDownload size={16} />}>{t('roleSettings.push.installApp')}</Button>;
         }
 
         if (pushPermission === 'granted') return <ThemeIcon color="green" variant="light"><IconCheck size={20} /></ThemeIcon>;
@@ -51,7 +51,7 @@ export default function RoleSettingsPage() {
             return <Button size="xs" color="red" variant="subtle" onClick={() => alert(t('roleSettings.push.unblockBrowser'))}>{t('roleSettings.push.fixBrowser')}</Button>;
         }
 
-        return <Button size="xs" onClick={() => showPrompt()} leftSection={<IconBell size={16} />}>{t('roleSettings.push.enablePush')}</Button>;
+        return <Button size="xs" onClick={() => showPrompt({ force: true })} leftSection={<IconBell size={16} />}>{t('roleSettings.push.enablePush')}</Button>;
     };
 
     const getPushDescription = () => {

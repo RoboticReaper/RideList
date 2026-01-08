@@ -17,27 +17,40 @@ export async function GET(req: NextRequest) {
         const limit = parseInt(searchParams.get("limit") || "10", 10);
         const offset = parseInt(searchParams.get("offset") || "0", 10);
 
-        const result = await client.query(
-            `
-            SELECT 
-                id,
-                type,
-                title,
-                body,
-                entity_type,
-                entity_id,
-                open_link,
-                read,
-                created_at
-            FROM notifications
-            WHERE user_id = $1
-            ORDER BY created_at DESC
-            LIMIT $2 OFFSET $3
-            `,
-            [userId, limit, offset]
-        );
+        const [notificationsResult, countResult] = await Promise.all([
+            client.query(
+                `
+                SELECT 
+                    id,
+                    type,
+                    title,
+                    body,
+                    entity_type,
+                    entity_id,
+                    open_link,
+                    read,
+                    created_at
+                FROM notifications
+                WHERE user_id = $1
+                ORDER BY created_at DESC
+                LIMIT $2 OFFSET $3
+                `,
+                [userId, limit, offset]
+            ),
+            client.query(
+                `
+                SELECT count(*)::int as count 
+                FROM notifications 
+                WHERE user_id = $1 AND read = false
+                `,
+                [userId]
+            )
+        ]);
 
-        return NextResponse.json(result.rows);
+        return NextResponse.json({
+            items: notificationsResult.rows,
+            unreadCount: countResult.rows[0].count
+        });
 
     } catch (error: any) {
         if (error.message === 'Missing or invalid Authorization header' || error.code?.startsWith('auth/')) {

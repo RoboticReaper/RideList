@@ -101,7 +101,7 @@ export function DashboardHeaderMenu({ role, onRoleChange, drawerOpened, toggleDr
                         />
                     </Group>
 
-                    <Group>
+                    <Group gap="xs">
                         <Menu shadow="md" width={200}>
                             <Menu.Target>
                                 <ActionIcon variant="subtle" color="gray" visibleFrom="sm">
@@ -141,7 +141,7 @@ export function DashboardHeaderMenu({ role, onRoleChange, drawerOpened, toggleDr
 
                         <Notifications />
                         {!loading && user ? (
-                            <Menu shadow="md" width={200}>
+                            <Menu shadow="md" width={230}>
                                 <Menu.Target>
                                     <UnstyledButton>
                                         <Avatar src={user?.photoURL} radius="xl" />
@@ -211,7 +211,7 @@ export function DashboardHeaderMenu({ role, onRoleChange, drawerOpened, toggleDr
                 closeButtonProps={{ size: 'xl' }}
                 title={
                     <LocalizedLink href="/" onClick={closeDrawer}>
-                        <Image src="/logo.png" fit="contain" h={44} w="auto" />
+                        <Image src="/logo.png" fit="contain" h={40} w="auto" />
                     </LocalizedLink>
                 }
                 hiddenFrom="sm"

@@ -60,6 +60,10 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
     const [startPlaceId, setStartPlaceId] = useState<string | null>(null);
     const [endPlaceId, setEndPlaceId] = useState<string | null>(null);
 
+    // State for Map Coordinates (initialized from trip, updated by Autocomplete)
+    const [originCoords, setOriginCoords] = useState<{ lat: number, lng: number } | null>(trip.origin ? { lat: trip.origin.lat, lng: trip.origin.lng } : null);
+    const [destCoords, setDestCoords] = useState<{ lat: number, lng: number } | null>(trip.destination ? { lat: trip.destination.lat, lng: trip.destination.lng } : null);
+
     const startSessionToken = useRef<string>(typeof crypto !== 'undefined' ? crypto.randomUUID() : '');
     const endSessionToken = useRef<string>(typeof crypto !== 'undefined' ? crypto.randomUUID() : '');
     const predictionsMap = useRef<Map<string, string>>(new Map());
@@ -136,6 +140,9 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
             form.setValues(newValues);
             form.setInitialValues(newValues); // reset dirty state
             form.resetDirty();
+            // Reset coords
+            setOriginCoords(trip.origin ? { lat: trip.origin.lat, lng: trip.origin.lng } : null);
+            setDestCoords(trip.destination ? { lat: trip.destination.lat, lng: trip.destination.lng } : null);
             prevManualRefreshId.current = manualRefreshId;
         } else {
             // Auto-refresh: Only update if form is clean
@@ -144,6 +151,9 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                 form.setValues(newValues);
                 form.setInitialValues(newValues);
                 // No need to reset dirty, as it was already clean
+                // Also reset coords if they assume sync with trip
+                setOriginCoords(trip.origin ? { lat: trip.origin.lat, lng: trip.origin.lng } : null);
+                setDestCoords(trip.destination ? { lat: trip.destination.lat, lng: trip.destination.lng } : null);
             }
         }
     }, [trip, manualRefreshId]);
@@ -203,6 +213,20 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
         }
     };
 
+    const fetchPlaceGeometry = async (placeId: string, setCoords: (c: { lat: number, lng: number }) => void) => {
+        try {
+            const apiKey = process.env.NEXT_PUBLIC_PLACES_AUTOCOMPLETE!;
+            const response = await fetch(`https://places.googleapis.com/v1/places/${placeId}?fields=location&key=${apiKey}`);
+            if (!response.ok) return;
+            const data = await response.json();
+            if (data.location) {
+                setCoords({ lat: data.location.latitude, lng: data.location.longitude });
+            }
+        } catch (error) {
+            console.error("Failed to fetch place details", error);
+        }
+    };
+
     const debounceFetch = (query: string, setSuggestions: (data: string[]) => void, setLoading: (l: boolean) => void, sessionToken: string) => {
         if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
         debounceTimeout.current = setTimeout(() => {
@@ -217,6 +241,7 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
         const knownId = predictionsMap.current.get(val);
         if (knownId) {
             setStartPlaceId(knownId);
+            fetchPlaceGeometry(knownId, setOriginCoords);
         } else {
             setStartPlaceId(null);
             if (!startSessionToken.current) startSessionToken.current = crypto.randomUUID();
@@ -230,6 +255,7 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
         const knownId = predictionsMap.current.get(val);
         if (knownId) {
             setEndPlaceId(knownId);
+            fetchPlaceGeometry(knownId, setDestCoords);
         } else {
             setEndPlaceId(null);
             if (!endSessionToken.current) endSessionToken.current = crypto.randomUUID();
@@ -242,6 +268,7 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
         form.setFieldValue('from_input_text', '');
         setStartPlaceId(null);
         setStartSuggestions([]);
+        setOriginCoords(null);
         startSessionToken.current = crypto.randomUUID();
     };
 
@@ -249,6 +276,7 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
         form.setFieldValue('to_input_text', '');
         setEndPlaceId(null);
         setEndSuggestions([]);
+        setDestCoords(null);
         endSessionToken.current = crypto.randomUUID();
     };
 
@@ -281,14 +309,21 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
         // VALIDATION: Ensure From/To are valid Place IDs if changed
         if (form.isDirty('from_input_text')) {
             if (!startPlaceId) {
-                notifications.show({ title: t('tripDetails.edit.notifications.invalidStart.title'), message: t('tripDetails.edit.notifications.invalidStart.message'), color: 'red' });
-                return;
+                // Try to find in map one last time
+                const pid = predictionsMap.current.get(values.from_input_text);
+                if (!pid) {
+                    notifications.show({ title: t('tripDetails.edit.notifications.invalidStart.title'), message: t('tripDetails.edit.notifications.invalidStart.message'), color: 'red' });
+                    return;
+                }
             }
         }
         if (form.isDirty('to_input_text')) {
             if (!endPlaceId) {
-                notifications.show({ title: t('tripDetails.edit.notifications.invalidDest.title'), message: t('tripDetails.edit.notifications.invalidDest.message'), color: 'red' });
-                return;
+                const pid = predictionsMap.current.get(values.to_input_text);
+                if (!pid) {
+                    notifications.show({ title: t('tripDetails.edit.notifications.invalidDest.title'), message: t('tripDetails.edit.notifications.invalidDest.message'), color: 'red' });
+                    return;
+                }
             }
         }
 
@@ -387,10 +422,24 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
             if (startPlaceId) {
                 payload.from_place_id = startPlaceId;
                 payload.from_session_token = startSessionToken.current;
+            } else if (form.isDirty('from_input_text')) {
+                // Should have been caught by validation, but safeguard
+                const pid = predictionsMap.current.get(values.from_input_text);
+                if (pid) {
+                    payload.from_place_id = pid;
+                    payload.from_session_token = startSessionToken.current;
+                }
             }
+
             if (endPlaceId) {
                 payload.to_place_id = endPlaceId;
                 payload.to_session_token = endSessionToken.current;
+            } else if (form.isDirty('to_input_text')) {
+                const pid = predictionsMap.current.get(values.to_input_text);
+                if (pid) {
+                    payload.to_place_id = pid;
+                    payload.to_session_token = endSessionToken.current;
+                }
             }
 
             if (values.cutoffEnabled && (values.cutoffTime as any) !== '' && values.cutoffTime !== null) {
@@ -411,6 +460,12 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                 payload.startCheckInHrs = null;
             }
 
+            if ((values.paymentHandle as any) !== '' && values.paymentHandle !== null) {
+                payload.paymentHandle = values.paymentHandle;
+            } else {
+                payload.paymentHandle = null;
+            }
+
             if ((values.flexibility as any) !== '' && values.flexibility !== null) {
                 payload.flexibility = `${values.flexibility} hours`;
             } else {
@@ -422,6 +477,7 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
             }
 
             const token = await user.getIdToken();
+            console.log(payload);
             const res = await fetch(`/api/trips/${trip.id}`, {
                 method: 'PATCH',
                 headers: {
@@ -483,8 +539,10 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                                 onOptionSubmit={(val) => {
                                     form.setFieldValue('from_input_text', val);
                                     const pid = predictionsMap.current.get(val);
-                                    if (pid) setStartPlaceId(pid);
-                                    console.log(pid)
+                                    if (pid) {
+                                        setStartPlaceId(pid);
+                                        fetchPlaceGeometry(pid, setOriginCoords);
+                                    }
                                 }}
                                 rightSection={renderRightSection(loadingStart, form.values.from_input_text, clearStart)}
                             />
@@ -498,7 +556,10 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                                 onOptionSubmit={(val) => {
                                     form.setFieldValue('to_input_text', val);
                                     const pid = predictionsMap.current.get(val);
-                                    if (pid) setEndPlaceId(pid);
+                                    if (pid) {
+                                        setEndPlaceId(pid);
+                                        fetchPlaceGeometry(pid, setDestCoords);
+                                    }
                                 }}
                                 rightSection={renderRightSection(loadingEnd, form.values.to_input_text, clearEnd)}
                             />
@@ -513,10 +574,10 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                                     step={100}
                                     {...form.getInputProps('pickupRadius')}
                                 />
-                                {trip.origin && (
+                                {originCoords && (
                                     <RadiusMap
-                                        lat={trip.origin.lat}
-                                        lng={trip.origin.lng}
+                                        lat={originCoords.lat}
+                                        lng={originCoords.lng}
                                         radiusMeters={form.values.pickupRadius || 0}
                                         type="pickup"
                                     />
@@ -531,10 +592,10 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                                     step={100}
                                     {...form.getInputProps('dropoffRadius')}
                                 />
-                                {trip.destination && (
+                                {destCoords && (
                                     <RadiusMap
-                                        lat={trip.destination.lat}
-                                        lng={trip.destination.lng}
+                                        lat={destCoords.lat}
+                                        lng={destCoords.lng}
                                         radiusMeters={form.values.dropoffRadius || 0}
                                         type="dropoff"
                                     />
@@ -573,7 +634,7 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                             placeholder={t('tripDetails.edit.placeholders.selectCar')}
                             data={[
                                 { value: 'none', label: t('dashboard.common.noVehicle') },
-                                ...cars.map(c => ({ value: c.id, label: `${c.year} ${c.make} ${c.model}` }))
+                                ...cars.map(c => ({ value: c.id, label: `${c.year || ''} ${c.make || ''} ${c.model || ''}` }))
                             ]}
                             leftSection={<IconCar size={16} />}
                             {...form.getInputProps('car')}

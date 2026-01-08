@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { Container, Paper, Avatar, Text, Group, Stack, Badge, Loader, Center, Title, Button, TextInput, ActionIcon, Box, Tabs, NumberInput, Divider } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -31,10 +31,22 @@ export default function ProfilePage() {
     const { t, i18n } = useTranslation('common');
     const params = useParams();
     const uid = params.uid as string;
+    const searchParams = useSearchParams();
+
     const { user } = useAuth();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Tab state management
+    const roleParam = searchParams.get('role');
+    const [activeTab, setActiveTab] = useState<string | null>(
+        roleParam === 'driver' ? 'driver' : 'rider'
+    );
+
+    const handleTabChange = (value: string | null) => {
+        setActiveTab(value);
+    };
 
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState('');
@@ -261,7 +273,7 @@ export default function ProfilePage() {
             </Paper>
 
             <Paper radius="md" withBorder mt="md" bg="var(--mantine-color-body)">
-                <Tabs defaultValue="rider">
+                <Tabs value={activeTab} onChange={handleTabChange}>
                     <Tabs.List>
                         <Tabs.Tab value="rider" leftSection={<IconCar size={16} />}>{t('profile.riderProfile')}</Tabs.Tab>
                         <Tabs.Tab value="driver" leftSection={<IconSteeringWheel size={16} />}>{t('profile.driverProfile')}</Tabs.Tab>
@@ -280,7 +292,8 @@ export default function ProfilePage() {
                                 </Paper>
                             </Group>
 
-                            {(profile.rider_profile.default_small_luggage !== null || isEditing) && (
+                            {/* TODO: polish this feature */}
+                            {/* {(profile.rider_profile.default_small_luggage !== null || isEditing) && (
                                 <>
                                     <Divider label={t('profile.preferences')} labelPosition="center" />
 
@@ -312,7 +325,7 @@ export default function ProfilePage() {
                                         </Group>
                                     </Box>
                                 </>
-                            )}
+                            )} */}
                         </Stack>
                     </Tabs.Panel>
 

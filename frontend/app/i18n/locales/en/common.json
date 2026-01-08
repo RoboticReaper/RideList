@@ -50,7 +50,7 @@
             "notProvidedByDriver": "Not provided by driver",
             "notAssigned": "Not assigned",
             "at": "at",
-            "noVehicle": "No Vehicle / Walking"
+            "noVehicle": "No Vehicle"
         },
         "tripCard": {
             "seatsLeft": "seats left",
@@ -59,7 +59,7 @@
             "carRequired": "Please <1>assign a car</1> to this trip.",
             "manageTrip": "Manage Trip",
             "manageBooking": "Manage Booking",
-            "viewPosting": "View Public Posting",
+            "viewPosting": "View Full Post",
             "checkInStarted": "Check-in Started",
             "labels": {
                 "trip": "TRIP:",
@@ -78,7 +78,7 @@
         "navbar": {
             "dashboard": "Dashboard",
             "history": "History",
-            "roleSettings": "Role-based Settings",
+            "roleSettings": "Notification Settings",
             "tripTemplates": "Trip Templates",
             "ruleTemplates": "Rule Templates",
             "myVehicles": "My Vehicles"
@@ -92,12 +92,13 @@
         "list1": "Compare price, time, and pickup easily",
         "list2": "Live seat availability — no more guessing",
         "list3": "Clear driver info with ride history",
-        "actionTxt": "Browse rides →"
+        "actionTxt": "Browse rides →",
+        "dashboardBtn": "Go to Dashboard"
     },
     "settings": {
         "title": "Account Settings",
-        "roleLinkPre": "Want to configure role-specific settings?",
-        "roleLink": "Go to Role Settings",
+        "roleLinkPre": "Want to configure notification settings?",
+        "roleLink": "Go to Notification Settings",
         "general": "General Preferences",
         "generalDesc": "Manage your account-level preferences.",
         "language": "Language",
@@ -358,7 +359,25 @@
                 "exactTimeOnly": "Exact time only",
                 "flexibilityLabel": "Flexibility: +/- {{time}}",
                 "optional": "Optional",
+                "preferredPickupLocation": "Preferred Pickup Location",
+                "preferredPickupLocationDesc": "Optional – where would you like to be picked up?",
+                "pickupLocationPlaceholder": "e.g. Illini Union, Green St.",
+                "invalidPickupLocation": "Please select a valid location from the suggestions",
+                "riderNote": "Pickup Notes",
+                "riderNoteDesc": "Optional – any notes for the driver about your pickup",
+                "riderNotePlaceholder": "e.g. I'll be wearing a red jacket",
                 "confirmBooking": "Confirm Booking"
+            },
+            "bookingSuccess": {
+                "title": "Booking Submitted",
+                "payNow": "Payment Window",
+                "payWindowMessage": "Please pay driver within {{time}} to confirm your seat. You can manage your booking in the dashboard.",
+                "waitingApproval": "Request Sent",
+                "waitingMessage": "Waiting for driver to accept your request. Upon acceptance, you will be notified to send payment within the payment window.",
+                "enablePushTitle": "Get Notified?",
+                "enablePushMessage": "Don't miss updates on your ride request.",
+                "enablePushBtn": "Enable",
+                "closeBtn": "Close"
             },
             "notifications": {
                 "ownTripError": {
@@ -403,6 +422,7 @@
             "labels": {
                 "loadTemplate": "Load from Template",
                 "tripRoute": "Trip Route",
+                "locationPrivacyDesc": "Exact address is only visible to you. The posted ride will only show the neighborhood.",
                 "from": "From",
                 "to": "To",
                 "startingLoc": "Starting Location",
@@ -419,7 +439,7 @@
                 "vehicleDetails": "Vehicle Details",
                 "selectSavedVehicle": "Select a Saved Vehicle",
                 "addVehicleDesc": "Or choose to add a new one",
-                "noVehicle": "No Vehicle / Walking",
+                "noVehicle": "No Vehicle",
                 "addNewVehicle": "Add a New Vehicle",
                 "vehicleInfoOptional": "Vehicle Info (Optional)",
                 "make": "Make",
@@ -430,10 +450,12 @@
                 "templates": "Templates",
                 "totalBigLuggage": "Total Big Luggage Cap.",
                 "totalSmallLuggage": "Total Small Luggage Cap.",
-                "carCapacity": "Number of Seats (Car Capacity)",
-                "carCapacityDesc": "Total seats in the car (inc. driver)",
+                "carCapacity": "Number of Passengers",
+                "carCapacityDesc": "How many passengers can you take?",
                 "nextLogistics": "Next: Logistics",
+                "logistics": "Logistics",
                 "loadSavedTemplate": "Load Saved Template",
+                "paymentMethods": "Payment Methods",
                 "paymentMethodsPlaceholder": "Select or type accepted methods. Leaving empty = None accepted.",
                 "paymentHandle": "Payment Handle / ID",
                 "paymentHandleDesc": "Who should riders pay? (e.g. @username)",
@@ -446,9 +468,10 @@
                 "largeSuitcases": "Large suitcases",
                 "carryOns": "Carry-ons",
                 "nextSettings": "Next: Settings",
-                "advancedSettings": "Advanced Settings",
+                "settings": "Settings",
+                "advancedSettings": "Search-Related Settings",
                 "flexibility": "Departure Flexibility (Hours)",
-                "flexibilityDesc": "How long might you leave early or late? Riders will search and book within this time range.",
+                "flexibilityDesc": "How much might you leave early or late? Riders will search and book within this time range.",
                 "pickupRadius": "Pickup Radius (m)",
                 "dropoffRadius": "Dropoff Radius (m)",
                 "pickupRadiusDesc": "The area around your departure location where you are willing to pick up passengers",
@@ -473,6 +496,9 @@
                 "linkTemplateDesc": "Associate this rule set with the trip template for automatic loading.",
                 "ruleTemplateName": "Rule Template Name",
                 "tripTemplateName": "Trip Template Name",
+                "saveLogisticsTemplate": "Save logistics and rules (Rule Template)",
+                "saveTripTemplate": "Save entire trip details (Trip Template)",
+                "autoCheckIn": "Start Check-in (Hours before departure)",
                 "postTrip": "Post Trip"
             },
             "placeholders": {
@@ -481,9 +507,10 @@
                 "color": "Optional (e.g. White)",
                 "year": "Optional (e.g. 2022)",
                 "optional": "Optional",
-                "seats": "Required (e.g. 5)",
+                "seats": "Required (e.g. 4)",
                 "selectRuleTemplate": "Select a rule template to prefill",
                 "paymentHandle": "Venmo: @user, WeChat: user123",
+                "selectTemplate": "Select a trip template",
                 "ruleTemplateName": "e.g. Standard Rules",
                 "tripTemplateName": "e.g. Daily Commute"
             },
@@ -508,7 +535,10 @@
                 "subtitle": "Your trip is now live and bookable.",
                 "redirecting": "Redirecting to your post in {{countdown}}s...",
                 "startNewDraft": "Start New Draft",
-                "viewPost": "View Post"
+                "viewPost": "View Post",
+                "enableInBrowser": "Please enable push notifications in your browser settings to receive trip updates.",
+                "enablePushLink": "Enable Push Notifications",
+                "enablePushSuffix": "for trip updates."
             },
             "modals": {
                 "auth": {
@@ -578,6 +608,9 @@
             "unpaid": "Unpaid",
             "tripEnded": "Trip Ended"
         },
+        "driver": {
+            "title": "Your Driver"
+        },
         "success": {
             "title": "Success"
         },
@@ -640,12 +673,23 @@
             "table": {
                 "rider": "Rider",
                 "phone": "Phone",
+                "pickupLocation": "Pickup Location",
+                "preferredTime": "Preferred Time",
+                "riderNote": "Pickup Notes",
                 "status": "Status",
                 "seats": "Seats",
                 "luggage": "Luggage",
                 "paymentMethod": "Payment Method",
                 "bookedAt": "Booked At",
                 "actions": "Actions"
+            },
+            "pickup": {
+                "hidden": "Hidden",
+                "hiddenReason": "Trip ended or booking inactive",
+                "notProvided": "Not provided"
+            },
+            "note": {
+                "notProvided": "Not provided"
             },
             "activeBookingsCount": "Active Bookings ({{count}})",
             "activeBookings": "Active Booking",
@@ -700,14 +744,14 @@
                     "title": "Start Pickup?",
                     "description": "Are you sure you want to start pickup?",
                     "impactTitle": "What this means",
-                    "impactDescription": "This will notify riders that you have started picking people up.",
+                    "impactDescription": "This will notify riders that you have started picking people up. Trip rules and car information for this trip will be frozen. No more riders can be added to this trip. Riders cannot modify their bookings. You cannot remove riders from this trip. People who you didn't mark as picked up will be marked as no-show.",
                     "confirm": "Confirm Start Pickup"
                 },
                 "enableCheckIn": {
                     "title": "Enable Check-in?",
                     "description": "Are you sure you want to enable check-in?",
                     "impactTitle": "What this means",
-                    "impactDescription": "Riders will be able to mark themselves as \"Ready\" for pickup.",
+                    "impactDescription": "Riders will be notified that they can mark themselves as \"Ready\" for pickup. You will be notified when they are ready or they have changed their booking information (max 5 minutes per change per rider).",
                     "confirm": "Enable Check-in"
                 },
                 "lockTrip": {
@@ -716,14 +760,14 @@
                     "impactTitle": "What this means",
                     "impact1": "Active bookings will remain active.",
                     "impact2": "No new riders will be able to book this trip.",
-                    "impact3": "You can only lock a trip if it is currently 'Bookable' or 'Full'.",
+                    "impact3": "This trip will not show up in search results.",
                     "confirm": "Confirm Lock"
                 },
                 "unlockTrip": {
                     "title": "Unlock Trip",
                     "description": "Are you sure you want to unlock this trip?",
                     "impactTitle": "What this means",
-                    "impact1": "Riders will be able to book this trip again (if seats are available).",
+                    "impact1": "Riders will be able to search and book this trip again (if seats are available).",
                     "impact2": "If the trip has passed its booking cutoff time, it cannot be unlocked.",
                     "confirm": "Confirm Unlock"
                 },
@@ -755,6 +799,12 @@
                     "riderRemoved": "Rider has been removed",
                     "notConfirmed": "Waiting for confirmation",
                     "bookingInactive": "Booking is no longer active"
+                },
+                "editNote": {
+                    "label": "Edit Note",
+                    "privateReminder": "This note is private and only visible to you.",
+                    "viewProfile": "View Profile",
+                    "placeholder": "Add a private note for this booking..."
                 }
             },
             "status": {
@@ -786,7 +836,8 @@
                 "readOnly": {
                     "title": "Read Only",
                     "completed": "This trip has been completed and cannot be modified.",
-                    "cancelled": "This trip has been cancelled and cannot be modified."
+                    "cancelled": "This trip has been cancelled and cannot be modified.",
+                    "departed": "This trip has departed and cannot be modified."
                 },
                 "editingMode": {
                     "title": "Editing Mode",
@@ -931,7 +982,9 @@
                 "vehicle": "Vehicle",
                 "paymentMethods": "Payment Methods",
                 "paymentHandle": "Payment Handle",
-                "driverNotes": "Driver's Notes"
+                "driverNotes": "Driver's Notes",
+                "pickupLocation": "Preferred Pickup Location",
+                "riderNote": "Pickup Notes"
             },
             "values": {
                 "paid": "Paid",
@@ -956,7 +1009,8 @@
                 "cancelBooking": "Cancel Booking",
                 "markPayment": "Mark Payment Sent",
                 "checkInNow": "Check-in Now",
-                "viewSnapshot": "View Booking Snapshot"
+                "viewSnapshot": "View Booking Snapshot",
+                "viewProfile": "View Profile"
             },
             "modals": {
                 "leaveTrip": {
@@ -994,7 +1048,7 @@
                     "title": "Booking Removed",
                     "description": "Your booking has been removed by the driver. Please contact them at {{phone}} for more information."
                 },
-                "manageState": "You are viewing your booking for this trip. Manage your booking status here.",
+                "manageState": "Manage your booking information here. If paying with cash at pickup, you can mark payment as sent to avoid expiring pay window.",
                 "cancelledTrip": {
                     "title": "Trip Cancelled",
                     "description": "This trip was cancelled by the driver. Please contact them at <1>{{phone}}</1> for more information."
@@ -1014,7 +1068,19 @@
             },
             "ready": "Ready",
             "notReady": "Not marked ready",
-            "departureTime": "Departure Time"
+            "departureTime": "Departure Time",
+            "editBooking": {
+                "editButton": "Edit Booking",
+                "saveButton": "Save Changes",
+                "cancelButton": "Cancel",
+                "saving": "Saving...",
+                "pickupLocationPlaceholder": "Search for pickup location",
+                "invalidPickupLocation": "Please select a valid location from suggestions",
+                "success": "Booking updated successfully",
+                "error": "Failed to update booking",
+                "checkInWarningTitle": "Rate Limit & Notify Driver",
+                "checkInWarning": "Check-in has started. You can only update booking details once every 5 minutes. Driver will be notified of these changes. Editing will be disabled after pickup begins."
+            }
         },
         "validation": {
             "missingStart": "Missing Start Location",
@@ -1298,5 +1364,25 @@
             "notFound": "Profile not found",
             "fetchFailed": "Failed to fetch profile"
         }
+    },
+    "pwa": {
+        "blockedTitle": "Notifications Blocked",
+        "blockedMessage": "We can't send you updates because notifications are blocked for this site.",
+        "blockedGuide": "Please verify your browser settings to unblock notifications.",
+        "fixedBtn": "I Fixed It",
+        "installRequiredTitle": "Install to Enable Push",
+        "installRequiredMessage": "To receive push notifications on iOS, you must install this website to your home screen.",
+        "installGuideIOS1": "Tap the Share button",
+        "installGuideIOS2": "Select 'Add to Home Screen'",
+        "laterBtn": "Maybe Later",
+        "installTitle": "Install App",
+        "installMessage": "Install our app for the best experience and reliable notifications.",
+        "installGuideAndroid": "Add to home screen for easier access.",
+        "notNowBtn": "Not Now",
+        "closeBtn": "Close",
+        "installBtn": "Install",
+        "getUpdatesTitle": "Get Real-Time Updates",
+        "getUpdatesMessage": "Enable push notifications to get instant updates about rides and bookings.",
+        "enableBtn": "Enable Notifications"
     }
 }

@@ -3,16 +3,18 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-    Container, Title, Text, Card, Group, Badge, Stack, Grid, LoadingOverlay, Alert, Divider, Avatar, ThemeIcon, Progress, Tooltip, SimpleGrid, Paper, Button, Popover, Transition, NumberInput, Modal, Select, TextInput, ActionIcon
+    Container, Title, Text, Card, Group, Badge, Stack, Grid, LoadingOverlay, Alert, Divider, Avatar, ThemeIcon, Progress, Tooltip, SimpleGrid, Paper, Button, Popover, Transition, NumberInput, Modal, Select, TextInput, ActionIcon, Autocomplete, Textarea, Loader, Box
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { useMediaQuery, useIntersection, useInterval, useWindowEvent } from '@mantine/hooks';
 import {
-    IconMapPin, IconCalendar, IconArmchair, IconCoin, IconInfoCircle, IconLuggage, IconClock, IconCar, IconStar, IconCheck, IconUser, IconAlertCircle, IconDashboard, IconPhone, IconRefresh
+    IconMapPin, IconCalendar, IconArmchair, IconCoin, IconInfoCircle, IconLuggage, IconClock, IconCar, IconStar, IconCheck, IconUser, IconAlertCircle, IconDashboard, IconPhone, IconRefresh, IconX
 } from '@tabler/icons-react';
 import { LocalizedLink } from '@/components/LocalizedLink';
+import { BookingSuccessModal } from '@/components/BookingSuccessModal';
+import { FuzzyRadiusMap } from '@/components/Rides/FuzzyRadiusMap';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { getBookingStatusConfig, getTripStatusConfig } from '@/utils/statusUtils';
@@ -27,6 +29,13 @@ interface RideDetails {
     created_at: string;
     modified_at: string;
     from_text: string;
+    origin?: {
+        lat: number | null;
+        lng: number | null;
+        fuzzy_lat?: number | null;
+        fuzzy_lng?: number | null;
+        obfuscated_bounds?: { north: number, south: number, east: number, west: number } | null;
+    };
     to_text: string;
     departure_time: string;
     price: string;
@@ -78,6 +87,7 @@ interface RideDetails {
             hours?: number;
             minutes?: number;
         } | null;
+        pay_window: string | { hours?: number; minutes?: number; seconds?: number; days?: number } | null; // Can be interval object
     };
     user_booking_status: string | null;
 }
@@ -106,13 +116,29 @@ export default function RidePage() {
         smallLuggage: number;
         pickupTime: Date | null;
         intendedPaymentMethod: string;
+        riderNote: string;
     }>({
         seats: 1,
         bigLuggage: 0,
         smallLuggage: 0,
         pickupTime: null,
         intendedPaymentMethod: '',
+        riderNote: '',
     });
+
+    const [bookingSuccessModalOpen, setBookingSuccessModalOpen] = useState(false);
+    const [bookingSuccessStatus, setBookingSuccessStatus] = useState<string>('');
+
+    // Pickup Location Autocomplete State
+    const [pickupLocation, setPickupLocation] = useState('');
+    const [pickupCoords, setPickupCoords] = useState<{ lat: number; lng: number } | null>(null);
+    const [pickupSuggestions, setPickupSuggestions] = useState<string[]>([]);
+    const [loadingPickup, setLoadingPickup] = useState(false);
+    const [pickupError, setPickupError] = useState<string | null>(null);
+    const pickupSessionToken = useRef<string>(typeof crypto !== 'undefined' ? crypto.randomUUID() : '');
+    const pickupLastSelection = useRef<string>('');
+    const pickupPredictionsMap = useRef<Map<string, string>>(new Map());
+    const pickupDebounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
     const fetchRide = async () => {
         if (!rideId) return;
@@ -201,6 +227,109 @@ export default function RidePage() {
         }
     }, [user, ride, isDriver]);
 
+    // --- Pickup Location Autocomplete Logic ---
+    const fetchPickupPlaces = async (query: string) => {
+        if (!query || query.length < 3) {
+            setPickupSuggestions([]);
+            return;
+        }
+
+        setLoadingPickup(true);
+        try {
+            const apiKey = process.env.NEXT_PUBLIC_PLACES_AUTOCOMPLETE!;
+            const response = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': apiKey,
+                },
+                body: JSON.stringify({
+                    input: query,
+                    sessionToken: pickupSessionToken.current
+                }),
+            });
+
+            if (!response.ok) {
+                console.error("Places API error", await response.text());
+                setLoadingPickup(false);
+                return;
+            }
+
+            const data = await response.json();
+            const newSuggestions: string[] = [];
+            const seenTexts = new Set<string>();
+
+            (data.suggestions || []).forEach((item: any) => {
+                const text = item.placePrediction.text.text;
+                const id = item.placePrediction.placeId;
+
+                if (!seenTexts.has(text)) {
+                    seenTexts.add(text);
+                    newSuggestions.push(text);
+                    pickupPredictionsMap.current.set(text, id);
+                }
+            });
+
+            setPickupSuggestions(newSuggestions);
+        } catch (error) {
+            console.error("Failed to fetch places", error);
+        } finally {
+            setLoadingPickup(false);
+        }
+    };
+
+    const debounceFetchPickup = (query: string) => {
+        if (pickupDebounceTimeout.current) clearTimeout(pickupDebounceTimeout.current);
+        pickupDebounceTimeout.current = setTimeout(() => {
+            fetchPickupPlaces(query);
+        }, 300);
+    };
+
+    const fetchPickupPlaceDetails = async (placeId: string) => {
+        try {
+            const apiKey = process.env.NEXT_PUBLIC_PLACES_AUTOCOMPLETE!;
+            const response = await fetch(`https://places.googleapis.com/v1/places/${placeId}?fields=location,formattedAddress`, {
+                headers: {
+                    'X-Goog-Api-Key': apiKey,
+                },
+            });
+            if (!response.ok) {
+                console.error("Place details error", await response.text());
+                return;
+            }
+            const data = await response.json();
+            if (data.location) {
+                setPickupCoords({ lat: data.location.latitude, lng: data.location.longitude });
+            }
+            // Update the display text to the formatted address if available
+            if (data.formattedAddress) {
+                setPickupLocation(data.formattedAddress);
+                pickupLastSelection.current = data.formattedAddress;
+            }
+        } catch (error) {
+            console.error("Failed to fetch place details", error);
+        }
+    };
+
+    const handlePickupChange = (val: string) => {
+        setPickupLocation(val);
+        setPickupError(null);
+        if (val !== pickupLastSelection.current) {
+            pickupLastSelection.current = '';
+            setPickupCoords(null);
+        }
+        if (!pickupSessionToken.current) pickupSessionToken.current = crypto.randomUUID();
+        debounceFetchPickup(val);
+    };
+
+    const clearPickup = () => {
+        setPickupLocation('');
+        pickupLastSelection.current = '';
+        setPickupCoords(null);
+        setPickupSuggestions([]);
+        setPickupError(null);
+    };
+
     const handleBook = async () => {
         if (!user) {
             handleProtectedAction();
@@ -212,6 +341,12 @@ export default function RidePage() {
                 message: t('rides.detail.notifications.ownTripError.message'),
                 color: 'red'
             });
+            return;
+        }
+
+        // Validate pickup location: if text entered, must have selected from autocomplete
+        if (pickupLocation && !pickupCoords) {
+            setPickupError(t('rides.detail.booking.invalidPickupLocation'));
             return;
         }
 
@@ -235,7 +370,11 @@ export default function RidePage() {
                     big_luggage: bookingData.bigLuggage,
                     small_luggage: bookingData.smallLuggage,
                     preferred_pickup_time: preferredIso,
-                    intended_payment_method: bookingData.intendedPaymentMethod
+                    intended_payment_method: bookingData.intendedPaymentMethod,
+                    pickup_location_text: pickupLocation || null,
+                    pickup_lat: pickupCoords?.lat || null,
+                    pickup_lng: pickupCoords?.lng || null,
+                    rider_note: bookingData.riderNote || null
                 })
             });
 
@@ -261,30 +400,9 @@ export default function RidePage() {
             // If status is 'joined_with_pay_window', we might want to show a modal or redirect.
             // For now, just close popover and maybe refresh or update local state
             setBookingOpen(false);
-            // Ideally trigger a re-fetch or optimistically update
-            // For this task, we'll just alert success as per prompt "display error ... otherwise form". 
-            // The prompt didn't specify post-success navigation, but "pay window" implies something.
-            // I'll show a persistent notification or alert for pay window if that status comes back.
-            if (data.status === 'joined_with_pay_window') {
-                notifications.show({
-                    title: t('rides.detail.notifications.bookingAccepted.title'),
-                    message: t('rides.detail.notifications.bookingAccepted.message'),
-                    color: 'blue',
-                    autoClose: false
-                });
-            } else {
-                notifications.show({
-                    title: t('rides.detail.notifications.success.title'),
-                    message: data.status === 'ordered_with_pay_window' ? t('rides.detail.notifications.success.messagePayment') : t('rides.detail.notifications.success.messageWaiting'),
-                    color: 'green'
-                });
-            }
 
-
-
-
-            // Trigger push permission prompt (respects cooldowns/policy)
-            window.dispatchEvent(new Event('show-push-permission-modal'));
+            setBookingSuccessStatus(data.status);
+            setBookingSuccessModalOpen(true);
 
             // Update local state to reflect booking immediately
             setRide((prev) => {
@@ -320,6 +438,12 @@ export default function RidePage() {
 
     return (
         <Container size="md" py="xl" w="100%">
+            <BookingSuccessModal
+                opened={bookingSuccessModalOpen}
+                onClose={() => setBookingSuccessModalOpen(false)}
+                status={bookingSuccessStatus}
+                payWindow={ride?.rules.pay_window || null}
+            />
             <Stack gap="xl">
 
                 {/* Header Section */}
@@ -489,12 +613,16 @@ export default function RidePage() {
                             <Paper shadow="sm" radius="md" p="lg" withBorder>
                                 <Title order={4} mb="md">{t('rides.detail.driver.title')}</Title>
                                 <Group align="start">
-                                    <Avatar src={ride.driver.photo_url} size="xl" radius="xl" color="initials">
-                                        {ride.driver.name.substring(0, 2).toUpperCase()}
-                                    </Avatar>
+                                    <LocalizedLink href={`/profile/${ride.driver.id}?role=driver`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                        <Avatar src={ride.driver.photo_url} size="xl" radius="xl" color="initials">
+                                            {ride.driver.name.substring(0, 2).toUpperCase()}
+                                        </Avatar>
+                                    </LocalizedLink>
                                     <div style={{ flex: 1 }}>
                                         <Group gap="xs" align="center">
-                                            <Text fw={700} size="lg">{ride.driver.name}</Text>
+                                            <LocalizedLink href={`/profile/${ride.driver.id}?role=driver`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                                <Text fw={700} size="lg" style={{ cursor: 'pointer' }}>{ride.driver.name}</Text>
+                                            </LocalizedLink>
                                             {ride.driver.verified && (
                                                 <Badge color="green" leftSection={<IconCheck size={12} />}>{t('rides.detail.driver.verifiedStudent')}</Badge>
                                             )}
@@ -808,6 +936,52 @@ export default function RidePage() {
                             />
                         )}
 
+                        {/* Preferred Pickup Location */}
+                        <Autocomplete
+                            label={t('rides.detail.booking.preferredPickupLocation')}
+                            description={t('rides.detail.booking.preferredPickupLocationDesc')}
+                            placeholder={t('rides.detail.booking.pickupLocationPlaceholder')}
+                            data={pickupSuggestions}
+                            value={pickupLocation}
+                            onChange={handlePickupChange}
+                            onOptionSubmit={(val) => {
+                                pickupLastSelection.current = val;
+                                const pid = pickupPredictionsMap.current.get(val) || null;
+                                if (pid) fetchPickupPlaceDetails(pid);
+                            }}
+                            leftSection={<IconMapPin size={16} />}
+                            rightSection={
+                                loadingPickup ? (
+                                    <Loader size="xs" />
+                                ) : pickupLocation ? (
+                                    <ActionIcon variant="transparent" color="gray" onClick={clearPickup}>
+                                        <IconX size={16} />
+                                    </ActionIcon>
+                                ) : null
+                            }
+                            error={pickupError}
+                        />
+                        {ride.origin?.obfuscated_bounds && (
+                            <Box mt="xs">
+                                <FuzzyRadiusMap
+                                    bounds={ride.origin.obfuscated_bounds}
+                                    userLocation={pickupCoords || undefined}
+                                    type='pickup'
+                                />
+                            </Box>
+                        )}
+
+                        {/* Rider Note */}
+                        <Textarea
+                            label={t('rides.detail.booking.riderNote')}
+                            description={t('rides.detail.booking.riderNoteDesc')}
+                            placeholder={t('rides.detail.booking.riderNotePlaceholder')}
+                            value={bookingData.riderNote}
+                            onChange={(e) => setBookingData({ ...bookingData, riderNote: e.currentTarget.value })}
+                            minRows={2}
+                            maxRows={4}
+                            autosize
+                        />
 
                         <Group justify="space-between" mb={0} pb={0}>
                             <Text size="sm" fw={500}>{t('rides.detail.booking.preferredPickup')}</Text>

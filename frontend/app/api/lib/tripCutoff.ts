@@ -64,7 +64,7 @@ export async function checkAndProcessTripCutoff(client: PoolClient, tripId: stri
             await createNotification({
                 client,
                 type: 'trip_auto_locked',
-                title: 'Trip Locked',
+                title: 'Trip Locked (System)',
                 message: 'Your trip has been locked due to booking cutoff.',
                 userId: driver,
                 entityType: 'trips',

@@ -85,7 +85,7 @@ export function HeaderMenu() {
           </Group>
 
           <Group>
-            <Menu shadow="md" width={200}>
+            <Menu shadow="md" width={230}>
               <Menu.Target>
                 <ActionIcon variant="subtle" color="gray" visibleFrom="sm">
                   <IconWorld size={20} />

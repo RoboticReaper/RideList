@@ -92,7 +92,6 @@ export async function GET(
                         'joined_with_pay_window',
                         'pending_pay_confirmation_from_driver',
                         'confirmed',
-                        'waiting_approval'
                     ];
 
                     for (const row of records) {

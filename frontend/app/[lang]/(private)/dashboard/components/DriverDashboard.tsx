@@ -21,6 +21,7 @@ interface Trip {
     color?: string;
     start_check_in?: boolean;
     driver_phone?: string;
+    car_id?: string;
 }
 
 export function DriverDashboard() {

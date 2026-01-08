@@ -2,17 +2,19 @@
 
 import { useState, useRef, useEffect } from 'react';
 import {
-    ActionIcon, Autocomplete, Badge, Box, Button, Card, Checkbox, Collapse, Divider, Grid, Group, Loader as MantineLoader, Modal, NumberInput, Paper, Radio, Select, SimpleGrid, Stack, Stepper, Switch, TagsInput, Text, TextInput, Textarea, Title, Accordion
+    ActionIcon, Autocomplete, Badge, Box, Button, Card, Checkbox, Collapse, Divider, Grid, Group, Loader as MantineLoader, Modal, NumberInput, Paper, Radio, Select, SimpleGrid, Stack, Stepper, Switch, TagsInput, Text, TextInput, Textarea, Title, Accordion, Anchor
 } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'next/navigation';
 import { DateTimePicker } from '@mantine/dates';
 import { IconMapPin, IconCalendar, IconX, IconCar, IconCheck } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import { useNotifications } from '../Notifications/NotificationContext';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../firebase/AuthContext';
 import { getLocalizedHref } from '../LocalizedLink';
 import { parseFlexibility, parsePayWindow, parseCutoffTimeNullable, parseStartCheckInNullable } from '@/utils/intervalParsers';
+import { RadiusMap } from '../Rides/RadiusMap';
 
 // Type for Place Prediction from New API
 interface PlacePrediction {
@@ -43,6 +45,7 @@ interface Car {
 export function TripInputBar() {
     const { t } = useTranslation('common');
     const { user, handleProtectedAction } = useAuth();
+    const { showPrompt, pushPermission } = useNotifications();
     const router = useRouter();
     const params = useParams();
     // Stepper State
@@ -266,6 +269,8 @@ export function TripInputBar() {
         endPlaceId: string | null;
         startCheckInEnabled: boolean;
         startCheckInHrs: number | '';
+        startCoords: { lat: number; lng: number } | null;
+        endCoords: { lat: number; lng: number } | null;
     }
 
     // Load Draft on Mount
@@ -335,6 +340,8 @@ export function TripInputBar() {
 
                 if (draft.startPlaceId) setStartPlaceId(draft.startPlaceId);
                 if (draft.endPlaceId) setEndPlaceId(draft.endPlaceId);
+                if (draft.startCoords) setStartCoords(draft.startCoords);
+                if (draft.endCoords) setEndCoords(draft.endCoords);
 
                 // Check if draft has meaningful data (non-default)
                 const isMeaningful =
@@ -451,7 +458,6 @@ export function TripInputBar() {
                 setRedirectCountdown((prev) => {
                     if (prev <= 1) {
                         clearInterval(interval);
-                        router.push(postedLink);
                         return 0;
                     }
                     return prev - 1;
@@ -459,7 +465,14 @@ export function TripInputBar() {
             }, 1000);
         }
         return () => clearInterval(interval);
-    }, [active, postedLink, router]);
+    }, [active, postedLink]);
+
+    // Handle Redirect Trigger
+    useEffect(() => {
+        if (active === 5 && postedLink && redirectCountdown === 0) {
+            router.push(postedLink);
+        }
+    }, [active, postedLink, redirectCountdown, router]);
 
     // Save Draft Effect (Debounced)
     useEffect(() => {
@@ -509,7 +522,9 @@ export function TripInputBar() {
                 startPlaceId,
                 endPlaceId,
                 startCheckInEnabled,
-                startCheckInHrs
+                startCheckInHrs,
+                startCoords,
+                endCoords
             };
             localStorage.setItem('trip_draft', JSON.stringify(draft));
         }, 1000); // Save after 1 second of inactivity
@@ -521,7 +536,9 @@ export function TripInputBar() {
         carBigLuggage, carSmallLuggage, carSeats, paymentMethods, paymentHandle,
         bigLuggage, smallLuggage, autoAccept, flexibility, pickupRadius,
         dropoffRadius, pickupRules, cancellationPolicy, cutoffEnabled,
-        cutoffHours, payWindow, notes, startPlaceId, endPlaceId, startCheckInHrs
+        dropoffRadius, pickupRules, cancellationPolicy, cutoffEnabled,
+        cutoffHours, payWindow, notes, startPlaceId, endPlaceId, startCheckInHrs,
+        startCoords, endCoords
     ]);
 
     const fetchPlaces = async (query: string, setSuggestions: (data: string[]) => void, setLoading: (l: boolean) => void, sessionToken: string) => {
@@ -571,6 +588,19 @@ export function TripInputBar() {
             console.error("Failed to fetch places", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchPlaceDetails = async (placeId: string, setCoords: (c: { lat: number, lng: number } | null) => void, sessionToken: string) => {
+        try {
+            const apiKey = process.env.NEXT_PUBLIC_PLACES_AUTOCOMPLETE!;
+            const response = await fetch(`https://places.googleapis.com/v1/places/${placeId}?fields=location&key=${apiKey}&sessionToken=${sessionToken}`);
+            const data = await response.json();
+            if (data.location) {
+                setCoords({ lat: data.location.latitude, lng: data.location.longitude });
+            }
+        } catch (error) {
+            console.error("Failed to fetch place details", error);
         }
     };
 
@@ -913,7 +943,7 @@ export function TripInputBar() {
             setPostedLink(getLocalizedHref(params, `/rides/${data.tripId}`));
 
             // Trigger push permission prompt (might be nice to ask driver too)
-            window.dispatchEvent(new Event('show-push-permission-modal'));
+            showPrompt();
 
             nextStep();
 
@@ -1024,6 +1054,7 @@ export function TripInputBar() {
                         <Title order={4}>{t('rides.create.labels.tripRoute')}</Title>
                         <Autocomplete
                             label={<Group gap="xs">{t('rides.create.labels.from')} {renderSourceBadge('startLocation')}</Group>}
+                            description={t('rides.create.labels.locationPrivacyDesc')}
                             placeholder={t('rides.create.labels.startingLoc')}
                             leftSection={<IconMapPin size={16} />}
                             data={startSuggestions}
@@ -1038,13 +1069,18 @@ export function TripInputBar() {
                                 setIsStartSelected(true);
                                 startLastSelection.current = val;
                                 const pid = predictionsMap.current.get(val);
-                                if (pid) setStartPlaceId(pid);
+                                if (pid) {
+                                    setStartPlaceId(pid);
+                                    if (!startSessionToken.current) startSessionToken.current = crypto.randomUUID();
+                                    fetchPlaceDetails(pid, setStartCoords, startSessionToken.current);
+                                }
                             }}
                             rightSection={renderRightSection(loadingStart, startLocation, clearStart)}
                         />
 
                         <Autocomplete
                             label={<Group gap="xs">{t('rides.create.labels.to')} {renderSourceBadge('endLocation')}</Group>}
+                            description={t('rides.create.labels.locationPrivacyDesc')}
                             placeholder={t('rides.create.labels.dest')}
                             leftSection={<IconMapPin size={16} />}
                             data={endSuggestions}
@@ -1059,7 +1095,11 @@ export function TripInputBar() {
                                 setIsEndSelected(true);
                                 endLastSelection.current = val;
                                 const pid = predictionsMap.current.get(val);
-                                if (pid) setEndPlaceId(pid);
+                                if (pid) {
+                                    setEndPlaceId(pid);
+                                    if (!endSessionToken.current) endSessionToken.current = crypto.randomUUID();
+                                    fetchPlaceDetails(pid, setEndCoords, endSessionToken.current);
+                                }
                             }}
                             rightSection={renderRightSection(loadingEnd, endLocation, clearEnd)}
                         />
@@ -1208,8 +1248,6 @@ export function TripInputBar() {
                                     />
 
 
-
-                                    <Divider label={t('rides.create.labels.templates')} labelPosition="center" />
                                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                                         <NumberInput
                                             label={t('rides.create.labels.totalBigLuggage')}
@@ -1437,6 +1475,29 @@ export function TripInputBar() {
                                 step={100}
                             />
                         </SimpleGrid>
+
+                        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                            <Box>
+                                {startCoords && (
+                                    <RadiusMap
+                                        lat={startCoords.lat}
+                                        lng={startCoords.lng}
+                                        radiusMeters={Number(pickupRadius) || 5000}
+                                        type="pickup"
+                                    />
+                                )}
+                            </Box>
+                            <Box>
+                                {endCoords && (
+                                    <RadiusMap
+                                        lat={endCoords.lat}
+                                        lng={endCoords.lng}
+                                        radiusMeters={Number(dropoffRadius) || 5000}
+                                        type="dropoff"
+                                    />
+                                )}
+                            </Box>
+                        </SimpleGrid>
                         <Accordion variant="separated">
                             <Accordion.Item value="settings">
                                 <Accordion.Control>{t('rides.create.labels.advancedRules')}</Accordion.Control>
@@ -1581,6 +1642,19 @@ export function TripInputBar() {
                     <Stack align="center" mt="lg" gap="md">
                         <Title order={3}>{t('rides.create.completion.title')}</Title>
                         <Text>{t('rides.create.completion.subtitle')}</Text>
+
+                        {pushPermission === 'denied' && (
+                            <Text size="sm" c="red">{t('rides.create.completion.enableInBrowser')}</Text>
+                        )}
+                        {pushPermission === 'default' && (
+                            <Text size="sm">
+                                <Anchor component="button" onClick={() => showPrompt({ force: true })}>
+                                    {t('rides.create.completion.enablePushLink')}
+                                </Anchor>
+                                {' '}{t('rides.create.completion.enablePushSuffix')}
+                            </Text>
+                        )}
+
                         <Text size="sm" c="dimmed">{t('rides.create.completion.redirecting', { countdown: redirectCountdown })}</Text>
                         <Group>
                             <Button variant="outline" onClick={resetForm}>{t('rides.create.completion.startNewDraft')}</Button>

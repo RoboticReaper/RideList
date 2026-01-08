@@ -9,7 +9,7 @@ import { useNotifications } from '@/components/Notifications/NotificationContext
 
 export function PushPermissionModal() {
     const { t } = useTranslation('common');
-    const { isModalOpen, closePrompt, showPrompt, requestPermission, pushPermission } = useNotifications();
+    const { isModalOpen, closePrompt, dismissPrompt, showPrompt, requestPermission, pushPermission } = useNotifications();
     const { isIOS, isAndroid, isStandalone, activePrompt } = usePWAInstall();
 
     // State to track if we are in the "Post-Permission Install Upsell" phase for Android
@@ -30,7 +30,7 @@ export function PushPermissionModal() {
         // Android Flow: Request Permission first
         if (isAndroid && !showAndroidInstallUpsell) {
             // Close the "Ask Permission" modal to show browser prompt
-            closePrompt();
+            closePrompt(); // Just close, don't dismiss (allow re-prompt on outcome)
 
             await requestPermission();
 
@@ -81,6 +81,7 @@ export function PushPermissionModal() {
                 title={t('pwa.blockedTitle')}
                 centered
                 size="sm"
+                zIndex={300}
             >
                 <Stack align="center" gap="md" py="xs">
                     <ThemeIcon size={64} radius="xl" variant="light" color="red">
@@ -113,6 +114,7 @@ export function PushPermissionModal() {
                 title={t('pwa.installRequiredTitle')}
                 centered
                 size="sm"
+                zIndex={300}
             >
                 <Stack align="center" gap="md" py="xs">
                     <ThemeIcon size={64} radius="xl" variant="light" color="blue">
@@ -128,7 +130,7 @@ export function PushPermissionModal() {
                         <List.Item icon={<IconSquarePlus size={16} />}>{t('pwa.installGuideIOS2')}</List.Item>
                     </List>
 
-                    <Button variant="default" fullWidth onClick={closePrompt}>
+                    <Button variant="default" fullWidth onClick={dismissPrompt}>
                         {t('pwa.laterBtn')}
                     </Button>
                 </Stack>
@@ -146,6 +148,7 @@ export function PushPermissionModal() {
                 title={t('pwa.installTitle')}
                 centered
                 size="sm"
+                zIndex={300}
             >
                 <Stack align="center" gap="md" py="xs">
                     <ThemeIcon size={64} radius="xl" variant="light" color="green">
@@ -163,7 +166,7 @@ export function PushPermissionModal() {
                     )}
 
                     <Group w="100%" grow>
-                        <Button variant="default" onClick={closePrompt}>
+                        <Button variant="default" onClick={dismissPrompt}>
                             {activePrompt ? t('pwa.notNowBtn') : t('pwa.closeBtn')}
                         </Button>
                         {activePrompt && (
@@ -185,6 +188,7 @@ export function PushPermissionModal() {
             title={t('pwa.getUpdatesTitle')}
             centered
             size="sm"
+            zIndex={300}
         >
             <Stack align="center" gap="md" py="xs">
                 <ThemeIcon size={64} radius="xl" variant="light" color="blue">
@@ -196,7 +200,7 @@ export function PushPermissionModal() {
                 </Text>
 
                 <Group w="100%" grow>
-                    <Button variant="default" onClick={closePrompt}>
+                    <Button variant="default" onClick={dismissPrompt}>
                         {t('pwa.notNowBtn')}
                     </Button>
                     <Button onClick={handleEnable}>

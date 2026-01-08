@@ -5,6 +5,7 @@ import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
 import { checkAndProcessTripCutoff } from '@/app/api/lib/tripCutoff';
 import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
 import { createNotification } from '@/app/api/lib/createNotification';
+import { isPickupValid } from '@/app/api/lib/geoUtils';
 
 
 export async function GET(
@@ -71,6 +72,10 @@ export async function GET(
             b.ready_at,
             b.created_at,
             b.intended_payment_method,
+            b.pickup_location_text,
+            b.driver_note,
+            b.rider_note,
+            b.preferred_pickup_time,
 
             pg.name as rider_name,
             pg.photo_url as rider_photo_url,
@@ -85,7 +90,7 @@ export async function GET(
           LEFT JOIN profile_rider pr ON b.rider = pr.id
           LEFT JOIN booking_removal br ON b.id = br.bid
           WHERE b.trip = $1
-          ORDER BY b.created_at ASC
+          ORDER BY b.created_at DESC
         `;
 
         const res = await client.query(query, [rideId]);
@@ -155,11 +160,10 @@ export async function GET(
             let displayName: string;
             if (identityVisible) {
                 displayName = row.rider_name;
-            } else if (row.rider_name) {
-                // For 'waiting_approval' or weird states, partial redaction
-                displayName = row.rider_name.substring(0, 3) + '***';
             } else {
-                displayName = 'Anon';
+                displayName = row.rider_name
+                    ? row.rider_name.substring(0, 3) + '***'
+                    : 'Anon';
             }
 
             return {
@@ -189,7 +193,14 @@ export async function GET(
                     ? (row.rider_phone ? 'VISIBLE' : 'MISSING')
                     : 'REDACTED',
 
-                removal_reason: row.removal_reason || null
+                removal_reason: row.removal_reason || null,
+                // Pickup location and rider note use same redaction logic as phone
+                pickup_location_text: phoneVisible ? (row.pickup_location_text || null) : null,
+                driver_note: row.driver_note || null,
+                rider_note: phoneVisible ? (row.rider_note || null) : null,
+                preferred_pickup_time: row.preferred_pickup_time || null,
+                // Status to help frontend distinguish between redacted and not provided
+                pickup_info_visible: phoneVisible ? 'VISIBLE' : 'REDACTED'
             };
         });
 
@@ -224,7 +235,7 @@ export async function POST(
         }
 
         const body = await req.json();
-        const { seats_booked, big_luggage, small_luggage, preferred_pickup_time, intended_payment_method } = body;
+        const { seats_booked, big_luggage, small_luggage, preferred_pickup_time, intended_payment_method, pickup_location_text, pickup_lat, pickup_lng, rider_note } = body;
 
         // Check for Global Profile
         const profileCheck = await client.query(
@@ -273,6 +284,8 @@ export async function POST(
                 t.seats_taken,
                 t.departure_time,
                 t.status,
+                ST_X(t.origin_geog::geometry) as origin_lng,
+                ST_Y(t.origin_geog::geometry) as origin_lat,
                 tr.big_luggage_lim,
                 tr.small_luggage_lim,
                 tr.auto_accept,
@@ -357,7 +370,6 @@ export async function POST(
         const totalSmallAllowed = (trip.small_luggage_lim || 0) * seats_booked;
 
 
-
         if (big_luggage > totalBigAllowed) {
             await client.query('ROLLBACK');
             return NextResponse.json({ error: `Too many big bags. Max allowed for ${seats_booked} seats is ${totalBigAllowed}.` }, { status: 400 });
@@ -385,6 +397,23 @@ export async function POST(
             if (diff > rangeMs) {
                 await client.query('ROLLBACK');
                 return NextResponse.json({ error: 'Preferred pickup time is outside the driver\'s flexibility range.' }, { status: 400 });
+            }
+        }
+
+        // 4.5 Check Pickup Location (Geo-fence)
+        if (pickup_lat && pickup_lng) {
+            const originLat = trip.origin_lat;
+            const originLng = trip.origin_lng;
+            const radius = trip.pickup_radius_meters || 5000; // Default 5km
+
+            if (originLat && originLng) {
+                const validation = isPickupValid(originLat, originLng, pickup_lat, pickup_lng, radius);
+                if (!validation.isValid) {
+                    await client.query('ROLLBACK');
+                    return NextResponse.json({
+                        error: `Pickup location is too far. Max radius is ${(radius / 1000).toFixed(1)}km.`
+                    }, { status: 400 });
+                }
             }
         }
 
@@ -454,8 +483,12 @@ export async function POST(
 
         // 7. Insert Booking
         const insertQuery = `
-            INSERT INTO bookings (trip, rider, seats_booked, big_luggage, small_luggage, preferred_pickup_time, intended_payment_method, status)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            INSERT INTO bookings (trip, rider, seats_booked, big_luggage, small_luggage, preferred_pickup_time, intended_payment_method, status, pickup_geog, pickup_location_text, rider_note)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 
+                CASE WHEN $9::float IS NOT NULL AND $10::float IS NOT NULL 
+                     THEN ST_SetSRID(ST_MakePoint($10, $9), 4326)::geography 
+                     ELSE NULL END,
+                $11, $12)
             RETURNING id
         `;
 
@@ -467,7 +500,11 @@ export async function POST(
             small_luggage || 0,
             preferred_pickup_time || null,
             intended_payment_method,
-            status
+            status,
+            pickup_lat || null,
+            pickup_lng || null,
+            pickup_location_text || null,
+            rider_note || null
         ]);
 
         let bookingId = insertRes.rows[0].id;

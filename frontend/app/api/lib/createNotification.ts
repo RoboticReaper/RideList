@@ -22,6 +22,7 @@ export const NOTIFICATION_TYPES = {
             'rider_left',                      // rider left
             'rider_ready',                     // rider checked in as ready
             'trip_auto_locked',                // system locked trip (cutoff)
+            'booking_updated',                 // rider updated booking details after check-in
         ],
 
         // Informational / reminders

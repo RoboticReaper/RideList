@@ -79,7 +79,7 @@ export async function checkAndProcessCheckInStart(client: PoolClient, tripId: st
             createNotification({
                 client,
                 type: 'check_in_started',
-                title: 'Check-in Started',
+                title: 'Check-in Started (System)',
                 message: 'Check-in has been started for your trip.',
                 userId: driver,
                 entityType: 'trips',
