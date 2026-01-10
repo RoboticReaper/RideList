@@ -13,7 +13,9 @@ import { LocalizedLink } from '@/components/LocalizedLink';
 import { useDashboard } from '../../DashboardContext';
 import { getTripStatusConfig } from '@/utils/statusUtils';
 
-export default function TripManagementPage({ params }: { params: Promise<{ tripId: string }> }) {
+import { Suspense } from 'react';
+
+function TripManagementContent({ params }: { params: Promise<{ tripId: string }> }) {
     const { t } = useTranslation('common');
     const { tripId } = use(params);
     const { user } = useAuth();
@@ -79,14 +81,7 @@ export default function TripManagementPage({ params }: { params: Promise<{ tripI
                 setRole('rider');
             }
         }
-    }, [trip, setRole]); // Intentionally omitting role to avoid loop, though logic handles it. Better to just run on trip load? 
-    // Actually, if we include 'role' in dependency array, the effect runs when role changes.
-    // Use case: User flips toggle -> role changes -> effect runs.
-    // If we want to FORCE it back, we can. But the requirement says: "show a message... offering to switch".
-    // So we should NOT auto-switch back immediately upon manual toggle. We should only auto-switch on initial load (trip change).
-    // So let's rely on the rendering logic to block the view, and only auto-switch when trip is first loaded/identified.
-    // To do this cleanly, we can check if `trip` just changed? Or just run it once when `trip` becomes available?
-    // Let's settle for running when `trip` changes. If user manually changes role, `trip` doesn't change, so it won't auto-revert. Perfect. Note: relying on `trip` reference change. `setTrip` creates new reference.
+    }, [trip, setRole]);
 
     const refreshTrip = () => {
         setManualRefreshId(prev => prev + 1);
@@ -226,4 +221,12 @@ export default function TripManagementPage({ params }: { params: Promise<{ tripI
     };
 
     return renderContent();
+}
+
+export default function TripManagementPage(props: { params: Promise<{ tripId: string }> }) {
+    return (
+        <Suspense fallback={<Container py="xl"><Loader /></Container>}>
+            <TripManagementContent {...props} />
+        </Suspense>
+    );
 }

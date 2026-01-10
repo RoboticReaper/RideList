@@ -8,8 +8,7 @@ export type TripEventType =
     | 'trip_departed'
     | 'trip_completed'
     | 'trip_aborted'
-    | 'paid_booking_cancelled_by_rider'
-    | 'unpaid_booking_cancelled_by_rider'
+    | 'trip_late_warning'
     | 'system_cancelled';
 
 interface LogTripEventArgs {

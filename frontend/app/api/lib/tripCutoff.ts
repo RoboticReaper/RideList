@@ -42,7 +42,6 @@ export async function checkAndProcessTripCutoff(client: PoolClient, tripId: stri
         }
 
         if (is_past_cutoff) {
-            console.log(`Trip ${tripId} passed booking cutoff. Locking.`);
 
             await client.query(
                 "UPDATE trips SET status = 'locked', modified_at = NOW() WHERE id = $1",
@@ -64,8 +63,8 @@ export async function checkAndProcessTripCutoff(client: PoolClient, tripId: stri
             await createNotification({
                 client,
                 type: 'trip_auto_locked',
-                title: 'Trip Locked (System)',
-                message: 'Your trip has been locked due to booking cutoff.',
+                titleKey: 'notifications.types.trip_auto_locked.title',
+                messageKey: 'notifications.types.trip_auto_locked.message',
                 userId: driver,
                 entityType: 'trips',
                 entityId: tripId,

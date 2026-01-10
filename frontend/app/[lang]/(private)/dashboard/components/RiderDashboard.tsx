@@ -109,7 +109,7 @@ export function RiderDashboard() {
                     </Button>
                     <Button
                         component={LocalizedLink}
-                        href="/rides"
+                        href="/search"
                         leftSection={<IconPlus size={16} />}
                         size="xs"
                         variant="subtle"

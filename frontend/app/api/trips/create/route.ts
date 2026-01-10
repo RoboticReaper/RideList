@@ -372,13 +372,13 @@ export async function POST(req: Request) {
                 paymentMethods || [],
                 paymentHandle || null, // Optional now
                 autoAccept,
-                flexibility || '15 minutes',
+                flexibility !== undefined && flexibility !== null ? flexibility : '15 minutes',
                 pickupRadius,
                 dropoffRadius,
                 pickupRules || null,
                 cancellationPolicy || null,
-                cutoffTime || '3 hours',
-                payWindow || '60 minutes',
+                cutoffTime !== undefined && cutoffTime !== null ? cutoffTime : '3 hours',
+                payWindow !== undefined && payWindow !== null ? payWindow : '60 minutes',
                 startCheckInHrs || null
             ]
         );
@@ -428,13 +428,13 @@ export async function POST(req: Request) {
                         paymentMethods || [],
                         paymentHandle || null,
                         autoAccept,
-                        flexibility || '15 minutes',
+                        flexibility !== undefined && flexibility !== null ? flexibility : '15 minutes',
                         pickupRadius,
                         dropoffRadius,
                         pickupRules || null,
                         cancellationPolicy || null,
-                        cutoffTime || '3 hours',
-                        payWindow || '60 minutes',
+                        cutoffTime !== undefined && cutoffTime !== null ? cutoffTime : '3 hours',
+                        payWindow !== undefined && payWindow !== null ? payWindow : '60 minutes',
                         startCheckInHrs || null
                     ]
                 );

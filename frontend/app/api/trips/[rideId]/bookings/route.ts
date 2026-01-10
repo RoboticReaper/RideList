@@ -6,6 +6,8 @@ import { checkAndProcessTripCutoff } from '@/app/api/lib/tripCutoff';
 import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
 import { createNotification } from '@/app/api/lib/createNotification';
 import { isPickupValid } from '@/app/api/lib/geoUtils';
+import { parsePostgresIntervalToMs } from '@/app/api/lib/intervalUtils';
+import { getTranslationForUser } from '@/app/api/lib/i18n';
 
 
 export async function GET(
@@ -17,13 +19,20 @@ export async function GET(
 
     try {
         // 1️⃣ Authenticate
-        const user = await verifyUserFromRequest(
-            req.headers.get('authorization') ?? undefined
-        );
+        let user = null;
+        let userId = null;
+        try {
+            user = await verifyUserFromRequest(req.headers.get('authorization') ?? undefined);
+            userId = user?.uid || null;
+        } catch (e) {
+            // guest allowed?
+        }
 
-        if (!user?.uid) {
+        if (!userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        const t = await getTranslationForUser(userId, client);
 
         // 2️⃣ Fetch Trip Context (Status & End Time)
         // We need to know WHEN the trip ended to calculate the 24h phone window.
@@ -46,14 +55,14 @@ export async function GET(
         );
 
         if (tripRes.rowCount === 0) {
-            return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
+            return NextResponse.json({ error: t('api.errors.tripNotFound') }, { status: 404 });
         }
 
         const trip = tripRes.rows[0];
 
         // 3️⃣ Verify Ownership
-        if (trip.driver !== user.uid) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        if (trip.driver !== userId) {
+            return NextResponse.json({ error: t('api.errors.forbidden') }, { status: 403 });
         }
 
         // 4️⃣ Fetch Bookings
@@ -234,6 +243,8 @@ export async function POST(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const t = await getTranslationForUser(user.uid, client);
+
         const body = await req.json();
         const { seats_booked, big_luggage, small_luggage, preferred_pickup_time, intended_payment_method, pickup_location_text, pickup_lat, pickup_lng, rider_note } = body;
 
@@ -245,17 +256,17 @@ export async function POST(
 
         if (profileCheck.rowCount === 0) {
             return NextResponse.json({
-                error: 'Profile required',
+                error: t('api.errors.profileRequired'),
                 code: 'PROFILE_REQUIRED'
             }, { status: 403 });
         }
 
         // Basic Validation
         if (!seats_booked || seats_booked < 1) {
-            return NextResponse.json({ error: 'Must book at least 1 seat' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.mustBookAtLeastOne') }, { status: 400 });
         }
         if (!intended_payment_method) {
-            return NextResponse.json({ error: 'Intended payment method is required' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.paymentMethodRequired') }, { status: 400 });
         }
 
         await client.query('BEGIN');
@@ -308,7 +319,7 @@ export async function POST(
 
         if (tripRes.rowCount === 0) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
+            return NextResponse.json({ error: t('api.errors.tripNotFound') }, { status: 404 });
         }
 
         const trip = tripRes.rows[0];
@@ -316,13 +327,13 @@ export async function POST(
         // 0. Check if trip is bookable
         if (trip.status !== 'bookable') {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Trip is not bookable' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.tripNotBookable') }, { status: 400 });
         }
 
         // 1. Check if user is driver
         if (trip.driver === user.uid) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'You cannot book your own trip' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.ownTrip') }, { status: 400 });
         }
 
         // 1.5 Check Cutoff Time
@@ -330,30 +341,17 @@ export async function POST(
             const now = new Date().getTime();
             const departure = new Date(trip.departure_time).getTime();
 
-            // cutoff_time is an Interval object from Postgres (e.g. { hours: 1, minutes: 30 })
-            const c = trip.cutoff_time;
-            const days = c.days || 0;
-            const hours = c.hours || 0;
-            const minutes = c.minutes || 0;
-
-            const cutoffMs = (days * 24 * 60 * 60 * 1000) +
-                (hours * 60 * 60 * 1000) +
-                (minutes * 60 * 1000);
+            // cutoff_time is an Interval object from Postgres
+            const cutoffMs = parsePostgresIntervalToMs(trip.cutoff_time);
 
             // Add flexibility to departure time
-            let flexMs = 0;
-            if (trip.departure_time_flexibility) {
-                const f = trip.departure_time_flexibility;
-                const fh = f.hours || 0;
-                const fm = f.minutes || 0;
-                flexMs = (fh * 60 * 60 * 1000) + (fm * 60 * 1000);
-            }
+            const flexMs = parsePostgresIntervalToMs(trip.departure_time_flexibility);
 
             const cutoffPoint = departure + flexMs - cutoffMs;
 
             if (now > cutoffPoint) {
                 await client.query('ROLLBACK');
-                return NextResponse.json({ error: 'Booking for this trip has closed.' }, { status: 400 });
+                return NextResponse.json({ error: t('api.errors.bookingClosed') }, { status: 400 });
             }
         }
 
@@ -361,7 +359,7 @@ export async function POST(
         const seatsAvailable = trip.total_seats - trip.seats_taken;
         if (seats_booked > seatsAvailable) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: `Not enough seats. Only ${seatsAvailable} left.` }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.notEnoughSeats', { count: seatsAvailable }) }, { status: 400 });
         }
 
         // 3. Check luggage limits
@@ -372,11 +370,11 @@ export async function POST(
 
         if (big_luggage > totalBigAllowed) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: `Too many big bags. Max allowed for ${seats_booked} seats is ${totalBigAllowed}.` }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.tooManyBigBags', { seats: seats_booked, limit: totalBigAllowed }) }, { status: 400 });
         }
         if (small_luggage > totalSmallAllowed) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: `Too many small bags. Max allowed for ${seats_booked} seats is ${totalSmallAllowed}.` }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.tooManySmallBags', { seats: seats_booked, limit: totalSmallAllowed }) }, { status: 400 });
         }
 
         // 4. Check pickup time flexibility
@@ -384,19 +382,15 @@ export async function POST(
             const originalTime = new Date(trip.departure_time).getTime();
             const preferredTime = new Date(preferred_pickup_time).getTime();
 
-            // Parse flexibility (stored as JSON: { hours: number, minutes: number })
             let rangeMs = 15 * 60 * 1000; // Default 15 mins
-            if (trip.departure_time_flexibility) {
-                const f = trip.departure_time_flexibility;
-                const h = f.hours || 0;
-                const m = f.minutes || 0;
-                rangeMs = (h * 60 * 60 * 1000) + (m * 60 * 1000);
+            if (trip.departure_time_flexibility !== undefined && trip.departure_time_flexibility !== null) {
+                rangeMs = parsePostgresIntervalToMs(trip.departure_time_flexibility);
             }
 
             const diff = Math.abs(preferredTime - originalTime);
             if (diff > rangeMs) {
                 await client.query('ROLLBACK');
-                return NextResponse.json({ error: 'Preferred pickup time is outside the driver\'s flexibility range.' }, { status: 400 });
+                return NextResponse.json({ error: t('api.errors.flexibilityExceeded') }, { status: 400 });
             }
         }
 
@@ -411,7 +405,7 @@ export async function POST(
                 if (!validation.isValid) {
                     await client.query('ROLLBACK');
                     return NextResponse.json({
-                        error: `Pickup location is too far. Max radius is ${(radius / 1000).toFixed(1)}km.`
+                        error: t('api.errors.locationTooFar', { km: (radius / 1000).toFixed(1) })
                     }, { status: 400 });
                 }
             }
@@ -422,12 +416,12 @@ export async function POST(
         if (paymentMethods.length > 0) {
             if (!paymentMethods.includes(intended_payment_method)) {
                 await client.query('ROLLBACK');
-                return NextResponse.json({ error: `Invalid payment method. Must be one of: ${paymentMethods.join(', ')}` }, { status: 400 });
+                return NextResponse.json({ error: t('api.errors.invalidPaymentMethod', { methods: paymentMethods.join(', ') }) }, { status: 400 });
             }
         } else {
             if (intended_payment_method !== 'None') {
                 await client.query('ROLLBACK');
-                return NextResponse.json({ error: "Payment method must be 'None' when no methods are specified by driver." }, { status: 400 });
+                return NextResponse.json({ error: t('api.errors.nonePaymentMethodRequired') }, { status: 400 });
             }
         }
 
@@ -456,12 +450,12 @@ export async function POST(
         if (existingStatus) {
             if (existingStatus === 'cancelled') {
                 await client.query('ROLLBACK');
-                return NextResponse.json({ error: 'You cannot rejoin this trip.' }, { status: 400 });
+                return NextResponse.json({ error: t('api.errors.cannotRejoin') }, { status: 400 });
             }
 
             if (!inactiveStatuses.includes(existingStatus)) {
                 await client.query('ROLLBACK');
-                return NextResponse.json({ error: 'You already have an active booking on this trip.' }, { status: 400 });
+                return NextResponse.json({ error: t('api.errors.alreadyActive') }, { status: 400 });
             }
         }
 
@@ -501,8 +495,8 @@ export async function POST(
             preferred_pickup_time || null,
             intended_payment_method,
             status,
-            pickup_lat || null,
-            pickup_lng || null,
+            pickup_lat !== undefined ? pickup_lat : null,
+            pickup_lng !== undefined ? pickup_lng : null,
             pickup_location_text || null,
             rider_note || null
         ]);
@@ -535,8 +529,8 @@ export async function POST(
                 await createNotification({
                     client,
                     type: 'trip_full',
-                    title: 'Trip Full',
-                    message: 'Your trip is now full.',
+                    titleKey: 'notifications.types.trip_full.title',
+                    messageKey: 'notifications.types.trip_full.message',
                     userId: trip.driver,
                     entityType: 'trips',
                     entityId: rideId,
@@ -551,8 +545,8 @@ export async function POST(
             await createNotification({
                 client,
                 type: 'new_booking',
-                title: 'New Rider Joined',
-                message: 'A rider has joined your trip.',
+                titleKey: 'notifications.types.new_booking.title',
+                messageKey: 'notifications.types.new_booking.message',
                 userId: trip.driver,
                 entityType: 'bookings',
                 entityId: bookingId,
@@ -563,8 +557,8 @@ export async function POST(
             await createNotification({
                 client,
                 type: 'new_booking',
-                title: 'New Booking Request',
-                message: 'A rider has requested to join your trip.',
+                titleKey: 'notifications.types.new_booking_request.title',
+                messageKey: 'notifications.types.new_booking_request.message',
                 userId: trip.driver,
                 entityType: 'bookings',
                 entityId: bookingId,

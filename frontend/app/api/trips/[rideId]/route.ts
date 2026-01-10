@@ -5,8 +5,14 @@ import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
 import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
 import { checkAndProcessTripCutoff } from '@/app/api/lib/tripCutoff';
 import { createNotification } from '@/app/api/lib/createNotification';
+import { getTranslationForUser, getTranslation } from '@/app/api/lib/i18n';
 import { extractPublicArea } from '@/app/api/lib/extractPublicArea';
 import { createObfuscatedBounds } from '@/app/api/lib/geoUtils';
+import { parsePostgresIntervalToMs } from '@/app/api/lib/intervalUtils';
+import { markTripAsDone } from '@/app/api/lib/tripActions';
+import { areIntervalsEqual } from '@/app/api/lib/intervalUtils';
+import { checkDriverRequirementsForDeparture } from '@/app/api/lib/tripValidation';
+import { logTripEvent } from '@/app/api/lib/tripEvents';
 
 export async function GET(
     req: Request,
@@ -24,6 +30,8 @@ export async function GET(
         } catch (e) {
             // Continue as guest
         }
+
+        const t = await getTranslationForUser(userId, client);
 
         // Lazy Cleanup/Processes
         const timeouts = await client.query(
@@ -127,7 +135,7 @@ export async function GET(
         const result = await client.query(query, [rideId, userId]);
 
         if (result.rowCount === 0) {
-            return NextResponse.json({ error: 'Ride not found' }, { status: 404 });
+            return NextResponse.json({ error: t('api.errors.rideNotFound') }, { status: 404 });
         }
 
         const row = result.rows[0];
@@ -318,7 +326,8 @@ export async function GET(
 
     } catch (error: any) {
         console.error('Error fetching ride details:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        const t = await getTranslation('en'); // Default to English for generic errors
+        return NextResponse.json({ error: t('api.errors.internalError') }, { status: 500 });
     } finally {
         client.release();
     }
@@ -380,8 +389,11 @@ export async function PATCH(
         );
 
         if (!user || !user.uid) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            const t = await getTranslation('en');
+            return NextResponse.json({ error: t('api.errors.unauthorized') }, { status: 401 });
         }
+
+        const t = await getTranslationForUser(user.uid, client);
 
         const body = await req.json();
 
@@ -407,18 +419,18 @@ export async function PATCH(
         const tripCheck = await client.query('SELECT driver, status FROM trips WHERE id = $1 FOR UPDATE', [rideId]);
         if (tripCheck.rowCount === 0) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
+            return NextResponse.json({ error: t('api.errors.tripNotFound') }, { status: 404 });
         }
         if (tripCheck.rows[0].driver !== user.uid) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+            return NextResponse.json({ error: t('api.errors.forbidden') }, { status: 403 });
         }
 
         const currentTripStatus = tripCheck.rows[0].status;
         const readOnlyTripStatuses = ['done', 'cancelled', 'aborted'];
         if (readOnlyTripStatuses.includes(currentTripStatus)) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: `Trip is ${currentTripStatus} and cannot be modified.` }, { status: 403 });
+            return NextResponse.json({ error: t('api.errors.tripReadOnly') }, { status: 403 });
         }
 
         // --- FETCH OLD STATE FOR LOGGING ---
@@ -441,7 +453,7 @@ export async function PATCH(
 
             if (newTotalSeats < seatsTaken) {
                 await client.query('ROLLBACK');
-                return NextResponse.json({ error: `Cannot reduce total seats below seats taken (${seatsTaken}).` }, { status: 400 });
+                return NextResponse.json({ error: t('api.errors.cannotReduceSeats', { seatsTaken }) }, { status: 400 });
             }
 
             const currentStatus = oldTripState.status;
@@ -495,16 +507,23 @@ export async function PATCH(
                 const carCheck = await client.query('SELECT id FROM cars WHERE id = $1 AND owner = $2', [body.car, user.uid]);
                 if (carCheck.rowCount === 0) {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: 'Car not found or unauthorized' }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.carNotFound') }, { status: 400 });
                 }
 
                 updates.push(`car = $${idx++}`);
                 values.push(body.car);
             }
             if (body.departure_time !== undefined) {
-                if (new Date(body.departure_time) < new Date()) {
-                    await client.query('ROLLBACK');
-                    return NextResponse.json({ error: 'Departure time cannot be in the past' }, { status: 400 });
+                const newDepartureTime = new Date(body.departure_time);
+                // oldTripState is fetched above at line 438
+                const oldDepartureTime = new Date(oldTripState.departure_time);
+
+                if (newDepartureTime < new Date()) {
+                    // Only error if the time is actually changing
+                    if (newDepartureTime.getTime() !== oldDepartureTime.getTime()) {
+                        await client.query('ROLLBACK');
+                        return NextResponse.json({ error: t('api.errors.departureTimePast') }, { status: 400 });
+                    }
                 }
                 updates.push(`departure_time = $${idx++}`);
                 values.push(body.departure_time);
@@ -517,7 +536,7 @@ export async function PATCH(
                 const allowedStatuses = ['bookable', 'full', 'departed', 'done', 'cancelled', 'aborted', 'locked'];
                 if (!allowedStatuses.includes(body.status)) {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.invalidStatus') }, { status: 400 });
                 }
 
                 if (body.status === 'locked') {
@@ -526,7 +545,7 @@ export async function PATCH(
                     const currentStatus = currentStatusRes.rows[0].status;
                     if (currentStatus !== 'bookable' && currentStatus !== 'full') {
                         await client.query('ROLLBACK');
-                        return NextResponse.json({ error: 'Trip can only be locked if it is bookable or full' }, { status: 400 });
+                        return NextResponse.json({ error: t('api.errors.tripLockedStatus') }, { status: 400 });
                     }
                 }
 
@@ -536,22 +555,61 @@ export async function PATCH(
                     const currentStatus = currentStatusRes.rows[0].status;
                     if (currentStatus !== 'departed' || readOnlyTripStatuses.includes(currentStatus)) {
                         await client.query('ROLLBACK');
-                        return NextResponse.json({ error: 'Trip can only be marked as completed if it is currently departed or in a read-only state' }, { status: 400 });
+                        return NextResponse.json({ error: t('api.errors.tripCompleteStatus') }, { status: 400 });
                     }
                 }
 
                 if (body.status === 'cancelled') {
                     if (currentTripStatus === 'departed' || readOnlyTripStatuses.includes(currentTripStatus)) {
                         await client.query('ROLLBACK');
-                        return NextResponse.json({ error: 'Cannot cancel a trip that has already departed or is in a read-only state' }, { status: 400 });
+                        return NextResponse.json({ error: t('api.errors.tripCancelStatus') }, { status: 400 });
                     }
                 }
 
                 if (body.status === 'aborted') {
                     if (currentTripStatus !== 'departed' && !readOnlyTripStatuses.includes(currentTripStatus)) {
                         await client.query('ROLLBACK');
-                        return NextResponse.json({ error: 'Cannot abort a trip that has not departed or is in a read-only state' }, { status: 400 });
+                        return NextResponse.json({ error: t('api.errors.tripAbortStatus') }, { status: 400 });
                     }
+                }
+
+                if (body.status === 'departed') {
+                    // Pre-Departure Check: Early Departure Validation
+                    // If trying to depart BEFORE (Departure Time - Flexibility), require all active passengers to be checked in.
+
+                    const now = new Date();
+                    // Use new departure time if provided, else old
+                    const departureTime = body.departure_time ? new Date(body.departure_time) : new Date(oldTripState.departure_time);
+
+                    // Use new flexibility if provided (mapped from body.flexibility), else old
+                    // note: body.flexibility maps to departure_time_flexibility in DB, see mapping below. But we access before mapping loop.
+                    const flexibilityVal = body.flexibility !== undefined ? body.flexibility : oldTripState.departure_time_flexibility;
+                    const flexMs = (flexibilityVal === null || flexibilityVal === undefined)
+                        ? 15 * 60 * 1000
+                        : parsePostgresIntervalToMs(flexibilityVal);
+
+                    const earliestDeparture = new Date(departureTime.getTime() - flexMs);
+
+                    if (now < earliestDeparture) {
+                        // Check if all active riders are ready
+                        // Excludes 'joined_with_pay_window' per user request, only confirmed/pending-pay need to be ready.
+                        const notReadyRiders = await client.query(`
+                            SELECT id FROM bookings 
+                            WHERE trip = $1 
+                            AND status IN ('pending_pay_confirmation_from_driver', 'confirmed')
+                            AND ready = false
+                        `, [rideId]);
+
+                        if ((notReadyRiders.rowCount || 0) > 0) {
+                            await client.query('ROLLBACK');
+                            return NextResponse.json({
+                                error: t('api.errors.departEarly')
+                            }, { status: 400 });
+                        }
+                    }
+
+                    updates.push(`actual_departure_time = $${idx++}`);
+                    values.push("NOW()");
                 }
 
                 if (body.status === 'bookable') {
@@ -573,14 +631,14 @@ export async function PATCH(
 
                     if (cutoffCheck.rows.length === 0) {
                         await client.query('ROLLBACK');
-                        return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
+                        return NextResponse.json({ error: t('api.errors.tripNotFound') }, { status: 404 });
                     }
 
                     const { is_past_cutoff, seats_taken, total_seats } = cutoffCheck.rows[0];
 
                     if (is_past_cutoff) {
                         await client.query('ROLLBACK');
-                        return NextResponse.json({ error: 'Cannot unlock trip: booking cutoff time has passed' }, { status: 400 });
+                        return NextResponse.json({ error: t('api.errors.cannotUnlock') }, { status: 400 });
                     }
 
                     // Check seats - if full, set to 'full' instead of 'bookable'
@@ -589,8 +647,10 @@ export async function PATCH(
                     }
                 }
 
-                updates.push(`status = $${idx++}`);
-                values.push(body.status);
+                if (body.status !== 'done') {
+                    updates.push(`status = $${idx++}`);
+                    values.push(body.status);
+                }
             }
 
             // Handle Start Location (Place ID -> Geog AND Text)
@@ -618,7 +678,7 @@ export async function PATCH(
             } else if (body.from_text !== undefined) {
                 if (body.from_text.trim() === '') {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: 'Start location text cannot be empty' }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.startLocationEmpty') }, { status: 400 });
                 }
                 newFromText = body.from_input_text;
                 updates.push(`from_input_text = $${idx++}`);
@@ -648,7 +708,7 @@ export async function PATCH(
             } else if (body.to_text !== undefined) {
                 if (body.to_text.trim() === '') {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: 'Destination text cannot be empty' }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.destinationEmpty') }, { status: 400 });
                 }
                 newToText = body.to_input_text;
                 updates.push(`to_input_text = $${idx++}`);
@@ -707,7 +767,6 @@ export async function PATCH(
         // --- CAR SNAPSHOT ON DEPARTURE ---
         if (body.status === 'departed' && oldTripState.status !== 'departed') {
             // Validate Driver Requirements
-            const { checkDriverRequirementsForDeparture } = await import('@/app/api/lib/tripValidation');
             try {
                 await checkDriverRequirementsForDeparture(client, user.uid, rideId);
             } catch (validationError: any) {
@@ -744,8 +803,8 @@ export async function PATCH(
                         seats, 
                         big_luggage, 
                         small_luggage, 
-                        plate,
-                        color,
+                        plate, 
+                        color, 
                         year
                     FROM cars 
                     WHERE id = $2
@@ -754,7 +813,6 @@ export async function PATCH(
         }
 
         // --- LOG TRIP EVENTS ---
-        const { logTripEvent } = await import('@/app/api/lib/tripEvents');
         const changes: Record<string, any> = {};
 
         // Check for Status Changes (Primary Events)
@@ -779,8 +837,8 @@ export async function PATCH(
                     await createNotification({
                         client,
                         type: 'trip_departed',
-                        title: 'Trip Departed',
-                        message: 'The driver has started the trip.',
+                        titleKey: 'notifications.types.trip_departed.title',
+                        messageKey: 'notifications.types.trip_departed.message',
                         userId: r.rider,
                         openLink: `/dashboard/${rideId}`,
                         entityType: 'trips',
@@ -790,14 +848,17 @@ export async function PATCH(
                 }
             }
 
-            const eventId = await logTripEvent({
-                client,
-                tripId: rideId,
-                actorId: user.uid,
-                eventType,
-                affectedEntities: ['trips'],
-                changes: { trip: { status: { old: oldTripState.status, new: newStatus } } }
-            });
+            let eventId: string | undefined;
+            if (newStatus !== 'done') {
+                eventId = await logTripEvent({
+                    client,
+                    tripId: rideId,
+                    actorId: user.uid,
+                    eventType,
+                    affectedEntities: ['trips'],
+                    changes: { trip: { status: { old: oldTripState.status, new: newStatus } } }
+                });
+            }
 
             // Cascade Cancellation to Bookings
             if (newStatus === 'cancelled') {
@@ -830,8 +891,8 @@ export async function PATCH(
                         await createNotification({
                             client,
                             type: 'trip_cancelled',
-                            title: 'Trip Cancelled',
-                            message: 'The driver has cancelled this trip.',
+                            titleKey: 'notifications.types.trip_cancelled.title',
+                            messageKey: 'notifications.types.trip_cancelled.message',
                             userId: booking.rider,
                             openLink: `/dashboard/${rideId}`,
                             entityType: 'trips',
@@ -841,71 +902,7 @@ export async function PATCH(
                     }
                 }
             } else if (newStatus === 'done') {
-                // Cascade Done to Bookings
-                const bookingsToProcessRes = await client.query(`
-                    SELECT id, status, picked_up, rider 
-                    FROM bookings 
-                    WHERE trip = $1 
-                      AND status NOT IN ('pay_timeout', 'removed', 'left_paid', 'left_unpaid', 'cancelled', 'completed', 'no_show')
-                `, [rideId]);
-
-                const bookingsToProcess = bookingsToProcessRes.rows;
-
-                for (const booking of bookingsToProcess) {
-                    let newBookingStatus = '';
-                    if (booking.picked_up) {
-                        newBookingStatus = 'completed';
-                    } else {
-                        newBookingStatus = 'no_show';
-                    }
-
-                    if (newBookingStatus && newBookingStatus !== booking.status) {
-                        await client.query('UPDATE bookings SET status = $1 WHERE id = $2', [newBookingStatus, booking.id]);
-                        await client.query(`
-                            INSERT INTO booking_status_history (booking_id, actor_id, old_status, new_status, trigger_event_id)
-                            VALUES ($1, $2, $3, $4, $5)
-                        `, [booking.id, user.uid, booking.status, newBookingStatus, eventId]);
-
-                        // Increment Rider Completed Trips
-                        if (newBookingStatus === 'completed') {
-                            await client.query(`
-                                UPDATE profile_rider 
-                                SET completed_trips = COALESCE(completed_trips, 0) + 1 
-                                WHERE id = $1
-                            `, [booking.rider]);
-                        }
-
-                        // Notify No Show Riders
-                        if (newBookingStatus === 'no_show') {
-                            await createNotification({
-                                client,
-                                type: 'marked_no_show',
-                                title: 'Trip No Show',
-                                message: 'You have been marked as no show.',
-                                userId: booking.rider,
-                                openLink: `/dashboard/${rideId}`,
-                                entityType: 'trips',
-                                entityId: rideId,
-                                role: 'rider'
-                            });
-                        }
-                    }
-                }
-
-                // Check for at least 1 completed booking to prevent abuse
-                const completedBookings = await client.query(
-                    "SELECT 1 FROM bookings WHERE trip = $1 AND status = 'completed' LIMIT 1",
-                    [rideId]
-                );
-
-                if ((completedBookings.rowCount ?? 0) > 0) {
-                    await client.query(`
-                        UPDATE profile_driver 
-                        SET completed_trips = COALESCE(completed_trips, 0) + 1 
-                        WHERE id = $1
-                    `, [user.uid]);
-                }
-
+                await markTripAsDone(client, rideId, user.uid);
             } else if (newStatus === 'aborted') {
                 // Cascade Aborted to Bookings
                 const bookingsToProcessRes = await client.query(`
@@ -936,8 +933,8 @@ export async function PATCH(
                         await createNotification({
                             client,
                             type: 'trip_aborted',
-                            title: 'Trip Aborted',
-                            message: 'The trip was aborted by the driver.',
+                            titleKey: 'notifications.types.trip_aborted.title',
+                            messageKey: 'notifications.types.trip_aborted.message',
                             userId: booking.rider,
                             openLink: `/dashboard/${rideId}`,
                             entityType: 'trips',
@@ -962,8 +959,8 @@ export async function PATCH(
                 await createNotification({
                     client,
                     type: 'check_in_started',
-                    title: 'Check-in Started',
-                    message: 'Check-in has started for your trip. Please check in now.',
+                    titleKey: 'notifications.types.check_in_started.title',
+                    messageKey: 'notifications.types.check_in_started.message',
                     userId: r.rider,
                     openLink: `/dashboard/${rideId}`,
                     entityType: 'trips',
@@ -975,7 +972,7 @@ export async function PATCH(
 
         // Check for Content Updates (trip_updated)
         // Helper to check equality loosely
-        const isDiff = (a: any, b: any) => {
+        const isDiff = (a: any, b: any, toleranceMs: number = 0) => {
             // Normalize strings/nulls/undefined to empty string for comparison
             const norm = (v: any) => (v === null || v === undefined) ? '' : (typeof v === 'string' ? v.trim() : v);
             const nA = norm(a);
@@ -983,8 +980,12 @@ export async function PATCH(
 
             if (nA === nB) return false;
 
-            if (a instanceof Date && b instanceof Date) return a.getTime() !== b.getTime();
-            if (a instanceof Date && typeof b === 'string') return a.getTime() !== new Date(b).getTime();
+            if (a instanceof Date && b instanceof Date) {
+                return Math.abs(a.getTime() - b.getTime()) >= toleranceMs;
+            }
+            if (a instanceof Date && typeof b === 'string') {
+                return Math.abs(a.getTime() - new Date(b).getTime()) >= toleranceMs;
+            }
             if (Array.isArray(a) && Array.isArray(b)) return JSON.stringify(a.sort()) !== JSON.stringify(b.sort());
             if (typeof a === 'object' && a !== null && typeof b === 'object' && b !== null) return JSON.stringify(a) !== JSON.stringify(b); // basic strict equality for objects
 
@@ -1000,18 +1001,25 @@ export async function PATCH(
         const tripFieldsToCheck = {
             departure_time: 'departure_time',
             car: 'car',
+            notes: 'notes',
         };
 
         const tripNotificationFields = Object.keys(tripFieldsToCheck);
 
         for (const [bodyKey, dbCol] of Object.entries(tripFieldsToCheck)) {
             // @ts-ignore - dynamic access
-            if (body[bodyKey] !== undefined && isDiff(oldTripState[dbCol], body[bodyKey])) {
+            const hasChanged = isDiff(oldTripState[dbCol], body[bodyKey]);
+            if (body[bodyKey] !== undefined && hasChanged) {
                 // @ts-ignore
                 const change = { old: oldTripState[dbCol], new: body[bodyKey] };
                 tripLogChanges[dbCol] = change;
                 if (tripNotificationFields.includes(bodyKey)) {
-                    tripNotificationChanges[dbCol] = change;
+                    // Check tolerance for notifications on Date fields
+                    const isDate = bodyKey === 'departure_time'; // departure_time is the only date field here
+                    const tolerance = isDate ? 60000 : 0;
+                    if (isDiff(oldTripState[dbCol], body[bodyKey], tolerance)) {
+                        tripNotificationChanges[dbCol] = change;
+                    }
                 }
             }
         }
@@ -1045,7 +1053,6 @@ export async function PATCH(
         }
 
         // Rules Fields
-        const { areIntervalsEqual } = await import('@/app/api/lib/intervalUtils');
         const ruleFieldsMap = {
             bigLuggage: 'big_luggage_lim',
             smallLuggage: 'small_luggage_lim',
@@ -1087,7 +1094,7 @@ export async function PATCH(
 
                 let changed = false;
                 if (intervalFields.includes(dbCol)) {
-                    if (!areIntervalsEqual(oldValue, newValue)) {
+                    if (!areIntervalsEqual(oldValue, newValue, 0)) { // Strict for logs (0 tolerance)
                         changed = true;
                     }
                 } else {
@@ -1100,7 +1107,18 @@ export async function PATCH(
                     const change = { old: oldValue, new: newValue };
                     ruleLogChanges[dbCol] = change;
                     if (ruleNotificationFields.includes(bodyKey)) {
-                        ruleNotificationChanges[dbCol] = change;
+                        let validForNotify = true;
+                        // Check tolerance for notifications on Interval fields
+                        if (intervalFields.includes(dbCol)) {
+                            // Use 60 seconds tolerance for notifications
+                            if (areIntervalsEqual(oldValue, newValue, 60000)) {
+                                validForNotify = false; // "Equal" within tolerance -> Don't notify
+                            }
+                        }
+
+                        if (validForNotify) {
+                            ruleNotificationChanges[dbCol] = change;
+                        }
                     }
                 }
             }
@@ -1132,26 +1150,6 @@ export async function PATCH(
             }
         }
 
-
-        const FIELD_LABELS: Record<string, string> = {
-            departure_time: 'Departure time',
-            car: 'Car',
-            from_text: 'Pickup location',
-            to_text: 'Dropoff location',
-            price: 'Price',
-
-            pickup_rules: 'Pickup rules',
-            pickup_radius_meters: 'Pickup radius',
-            drop_off_radius_meters: 'Dropoff radius',
-            // payment_methods: 'Payment methods', // Excluded from notification text
-            // payment_handle: 'Payment handle',   // Excluded from notification text
-            cancellation_policy: 'Cancellation policy',
-            cutoff_time: 'Booking cutoff time',
-            pay_window: 'Payment window',
-            start_check_in_hrs_before_departure: 'Check-in time',
-            departure_time_flexibility: 'Departure flexibility',
-        };
-
         // --- SEND NOTIFICATIONS ---
         if (Object.keys(tripNotificationChanges).length > 0 || Object.keys(ruleNotificationChanges).length > 0) {
             const allChangedKeys = [
@@ -1164,21 +1162,6 @@ export async function PATCH(
 
             // Check if ONLY payment fields were changed
             const isOnlyPaymentUpdate = allChangedKeys.every(k => paymentFields.includes(k));
-
-            // Generate message (excluding payment info from the text)
-            const changedFieldLabels = allChangedKeys
-                .filter(k => !paymentFields.includes(k)) // Exclude payment fields from text
-                .map(f => FIELD_LABELS[f])
-                .filter(Boolean);
-
-            let message = 'Trip details updated';
-            if (changedFieldLabels.length === 1) {
-                message = `${changedFieldLabels[0]} was updated`;
-            } else if (changedFieldLabels.length > 1 && changedFieldLabels.length <= 3) {
-                message = `${changedFieldLabels.join(', ')} were updated`;
-            } else if (changedFieldLabels.length > 3) {
-                message = `${changedFieldLabels.slice(0, 2).join(', ')} and others were updated`;
-            }
 
             // Notify Riders: Trip Info/Rules Updated
             const activeRidersForUpdate = await client.query(`
@@ -1193,11 +1176,56 @@ export async function PATCH(
                     continue;
                 }
 
+                const tRider = await getTranslationForUser(r.rider, client);
+
+                // Filter out payment fields from text
+                const changedFieldKeys = allChangedKeys.filter(k => !paymentFields.includes(k));
+
+                // Helper for type-safe label lookup
+                const getFieldLabel = (key: string) => {
+                    switch (key) {
+                        case 'departure_time': return tRider('tripFields.departure_time');
+                        case 'car': return tRider('tripFields.car');
+                        case 'from_text': return tRider('tripFields.from_text');
+                        case 'to_text': return tRider('tripFields.to_text');
+                        case 'price': return tRider('tripFields.price');
+                        // keys in allChangedKeys are DB columns (e.g. pickup_rules)
+                        case 'pickup_rules': return tRider('tripFields.pickup_rules');
+                        case 'pickup_radius_meters': return tRider('tripFields.pickup_radius_meters');
+                        case 'drop_off_radius_meters': return tRider('tripFields.drop_off_radius_meters');
+                        case 'cancellation_policy': return tRider('tripFields.cancellation_policy');
+                        case 'cutoff_time': return tRider('tripFields.cutoff_time');
+                        case 'pay_window': return tRider('tripFields.pay_window');
+                        case 'start_check_in_hrs_before_departure': return tRider('tripFields.start_check_in_hrs_before_departure');
+                        case 'departure_time_flexibility': return tRider('tripFields.departure_time_flexibility');
+                        case 'notes': return tRider('tripFields.notes');
+                        default: return key;
+                    }
+                };
+
+                // Translate field labels
+                const changedFieldLabels = changedFieldKeys.map(k => getFieldLabel(k)).filter(Boolean);
+
+                let messageKey = 'notifications_dynamic.trip_updated.default';
+                let variables = {};
+
+                if (changedFieldLabels.length === 1) {
+                    messageKey = 'notifications_dynamic.trip_updated.one';
+                    variables = { field: changedFieldLabels[0] };
+                } else if (changedFieldLabels.length > 1 && changedFieldLabels.length <= 3) {
+                    messageKey = 'notifications_dynamic.trip_updated.many';
+                    variables = { fields: changedFieldLabels.join(', ') };
+                } else if (changedFieldLabels.length > 3) {
+                    messageKey = 'notifications_dynamic.trip_updated.others';
+                    variables = { fields: changedFieldLabels.slice(0, 2).join(', ') };
+                }
+
                 await createNotification({
                     client,
                     type: 'trip_updated',
-                    title: 'Trip Updated',
-                    message,
+                    titleKey: 'notifications.types.trip_updated.title',
+                    messageKey,
+                    variables,
                     userId: r.rider,
                     openLink: `/dashboard/${rideId}`,
                     entityType: 'trips',
@@ -1218,7 +1246,8 @@ export async function PATCH(
     } catch (error: any) {
         await client.query('ROLLBACK');
         console.error("Update Trip Error:", error);
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+        const t = await getTranslation('en');
+        return NextResponse.json({ error: error.message || t('api.errors.internalError') }, { status: 500 });
     } finally {
         client.release();
     }

@@ -453,7 +453,7 @@ export default function RidePage() {
                             <Badge size="lg" color="red">{t('rides.detail.header.bookingClosed')}</Badge>
                         ) : (
                             <Badge size="lg" color={getTripStatusConfig(ride.status).color}>
-                                {t(getTripStatusConfig(ride.status).labelKey).toUpperCase()}
+                                {t(getTripStatusConfig(ride.status).labelKey as any).toUpperCase()}
                             </Badge>
                         )}
                         <Group gap="xs">
@@ -534,7 +534,7 @@ export default function RidePage() {
                                         <Text size="sm" c="dimmed">{t('rides.detail.summary.perSeat')}</Text>
                                         {ride.user_booking_status && (
                                             <Text size="sm" fw={700} c="blue" mt={4}>
-                                                {t('rides.detail.summary.status')}: {t(getBookingStatusConfig(ride.user_booking_status).labelKey).toUpperCase()}
+                                                {t('rides.detail.summary.status')}: {t(getBookingStatusConfig(ride.user_booking_status).labelKey as any).toUpperCase()}
                                             </Text>
                                         )}
                                         <Button
@@ -834,7 +834,7 @@ export default function RidePage() {
                                         <Text size="xs" c="dimmed">{t('rides.detail.summary.perSeat')}</Text>
                                         {ride.user_booking_status && (
                                             <Text size="xs" fw={700} c="blue" mt={2}>
-                                                {t('rides.detail.summary.status')}: {t(getBookingStatusConfig(ride.user_booking_status).labelKey).toUpperCase()}
+                                                {t('rides.detail.summary.status')}: {t(getBookingStatusConfig(ride.user_booking_status).labelKey as any).toUpperCase()}
                                             </Text>
                                         )}
                                     </div>

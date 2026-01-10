@@ -6,6 +6,7 @@ import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
 import { createNotification } from '../../lib/createNotification';
 import { logTripEvent } from '@/app/api/lib/tripEvents';
 import { isPickupValid } from '@/app/api/lib/geoUtils';
+import { getTranslationForUser } from '@/app/api/lib/i18n';
 
 export async function PATCH(
     req: Request,
@@ -22,6 +23,8 @@ export async function PATCH(
         if (!user || !user.uid) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        const t = await getTranslationForUser(user?.uid ?? null, client);
 
         const body = await req.json();
 
@@ -67,7 +70,7 @@ export async function PATCH(
 
         if (res.rowCount === 0) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+            return NextResponse.json({ error: t('api.errors.bookingNotFound') }, { status: 404 });
         }
 
         const booking = res.rows[0];
@@ -79,7 +82,7 @@ export async function PATCH(
         const readOnlyTripStatuses = ['done', 'cancelled', 'aborted'];
         if (readOnlyTripStatuses.includes(booking.trip_status)) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Trip is read-only because it is done, cancelled, or aborted.' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.tripReadOnly') }, { status: 400 });
         }
 
         // ============================================
@@ -91,7 +94,7 @@ export async function PATCH(
 
         if (!isDriver && !isRider) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+            return NextResponse.json({ error: t('api.errors.forbidden') }, { status: 403 });
         }
 
         // ============================================
@@ -104,13 +107,13 @@ export async function PATCH(
             const editableStatuses = ['waiting_approval', 'joined_with_pay_window', 'pending_pay_confirmation_from_driver', 'confirmed'];
             if (!editableStatuses.includes(booking.status)) {
                 await client.query('ROLLBACK');
-                return NextResponse.json({ error: 'Booking cannot be edited in current status' }, { status: 400 });
+                return NextResponse.json({ error: t('api.errors.bookingNotEditable') }, { status: 400 });
             }
 
             // Check if trip is departed (Rider cannot edit after departure)
             if (booking.trip_status === 'departed') {
                 await client.query('ROLLBACK');
-                return NextResponse.json({ error: 'Cannot edit booking details because the trip has already departed.' }, { status: 400 });
+                return NextResponse.json({ error: t('api.errors.bookingTripDeparted') }, { status: 400 });
             }
 
             // Validate intended payment method if provided
@@ -118,7 +121,7 @@ export async function PATCH(
                 const paymentMethods: string[] = booking.payment_methods || [];
                 if (paymentMethods.length > 0 && !paymentMethods.includes(intended_payment_method)) {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: 'Invalid payment method' }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.invalidPaymentMethod', { methods: 'any' }) }, { status: 400 });
                 }
             }
 
@@ -130,7 +133,7 @@ export async function PATCH(
             if (isEditingSeating) {
                 if (!seatingEditableStatuses.includes(booking.status)) {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: 'Seats and luggage can only be edited before driver confirmation.' }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.seatsLocked') }, { status: 400 });
                 }
 
                 // Effective new values (or default to current)
@@ -141,7 +144,7 @@ export async function PATCH(
                 // Validate Seats
                 if (newSeats < 1) {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: 'Must book at least one seat.' }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.minSeats') }, { status: 400 });
                 }
 
                 // Check Capacity
@@ -158,7 +161,7 @@ export async function PATCH(
 
                 if (newSeats > available) {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: `Not enough seats available. Max available: ${available}` }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.notEnoughSeats', { count: available }) }, { status: 400 });
                 }
 
                 // Validate Luggage Limits
@@ -169,22 +172,22 @@ export async function PATCH(
 
                 if (newBig > maxBig) {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: `Exceeds big luggage limit (${maxBig} allowed for ${newSeats} seats).` }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.luggageLimit', { type: 'big', limit: maxBig, seats: newSeats }) }, { status: 400 });
                 }
                 if (newSmall > maxSmall) {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: `Exceeds small luggage limit (${maxSmall} allowed for ${newSeats} seats).` }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.luggageLimit', { type: 'small', limit: maxSmall, seats: newSeats }) }, { status: 400 });
                 }
             }
 
             // Validate pickup location - if text provided, coords should also be provided
-            if (pickup_location_text && (!pickup_lat || !pickup_lng)) {
+            if (pickup_location_text && (pickup_lat === undefined || pickup_lat === null || pickup_lng === undefined || pickup_lng === null)) {
                 await client.query('ROLLBACK');
-                return NextResponse.json({ error: 'Please select a valid pickup location from suggestions' }, { status: 400 });
+                return NextResponse.json({ error: t('api.errors.invalidPickupLocation') }, { status: 400 });
             }
 
             // VALIDATE PICKUP RADIUS (If Location Changed)
-            if (pickup_lat && pickup_lng) {
+            if (pickup_lat !== undefined && pickup_lat !== null && pickup_lng !== undefined && pickup_lng !== null) {
                 const originLat = booking.origin_lat;
                 const originLng = booking.origin_lng;
                 const radius = booking.pickup_radius_meters || 5000;
@@ -194,7 +197,7 @@ export async function PATCH(
                     if (!validation.isValid) {
                         await client.query('ROLLBACK');
                         return NextResponse.json({
-                            error: `Pickup location is too far. Pick somewhere close to the center.`
+                            error: t('api.errors.pickupTooFar')
                         }, { status: 400 });
                     }
                 }
@@ -247,7 +250,7 @@ export async function PATCH(
             }
 
             if (pickup_lat !== undefined && pickup_lng !== undefined) {
-                if (pickup_lat && pickup_lng) {
+                if (pickup_lat !== null && pickup_lng !== null) {
                     updates.push(`pickup_geog = ST_SetSRID(ST_MakePoint($${idx++}, $${idx++}), 4326)`);
                     values.push(pickup_lng); // Note: MakePoint takes (lng, lat)
                     values.push(pickup_lat);
@@ -302,7 +305,7 @@ export async function PATCH(
                     // Check range: departure - flex <= chosen <= departure + flex
                     if (Math.abs(chosenTime - departureTime) > flexMs) {
                         await client.query('ROLLBACK');
-                        return NextResponse.json({ error: 'Preferred pickup time is outside the allowed flexibility range.' }, { status: 400 });
+                        return NextResponse.json({ error: t('api.errors.flexibilityExceeded') }, { status: 400 });
                     }
                     newTimeVal = preferred_pickup_time;
                 }
@@ -345,7 +348,7 @@ export async function PATCH(
 
             if (updates.length === 0) {
                 await client.query('ROLLBACK');
-                return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+                return NextResponse.json({ error: t('api.errors.noUpdateFields') }, { status: 400 });
             }
 
             // RATE LIMIT CHECK
@@ -368,7 +371,7 @@ export async function PATCH(
                         await client.query('ROLLBACK');
                         const remaining = Math.ceil(5 - diffMins);
                         return NextResponse.json(
-                            { error: `You can only update booking details once every 5 minutes. Please try again in ${remaining} minute(s).` },
+                            { error: t('api.errors.rateLimit') },
                             { status: 429 }
                         );
                     }
@@ -422,8 +425,8 @@ export async function PATCH(
                 await createNotification({
                     client,
                     type: 'booking_updated',
-                    title: 'Booking Details Updated',
-                    message: `A rider has updated their booking details: ${changes.join(', ')}.`,
+                    titleKey: 'notifications.types.booking_updated.title',
+                    messageKey: 'notifications.types.booking_updated.message',
                     userId: booking.driver,
                     entityType: 'bookings',
                     entityId: bookingId,
@@ -457,7 +460,7 @@ export async function PATCH(
 
         if (!['accept', 'reject', 'remove', 'confirm_payment', 'mark_picked_up'].includes(action)) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.invalidAction') }, { status: 400 });
         }
 
         let newStatus = '';
@@ -468,13 +471,13 @@ export async function PATCH(
             case 'accept':
                 if (booking.status !== 'waiting_approval') {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: 'Booking is not waiting for approval' }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.bookingNotWaiting') }, { status: 400 });
                 }
 
                 // STRICT LIMIT CHECK
                 if (booking.seats_taken + booking.seats_booked > booking.total_seats) {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: 'Not enough seats available to accept this booking' }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.notEnoughSeatsAccept') }, { status: 400 });
                 }
 
                 newStatus = 'joined_with_pay_window';
@@ -483,8 +486,8 @@ export async function PATCH(
                 await createNotification({
                     client,
                     type: 'pay_window_started',
-                    title: 'Booking Accepted',
-                    message: 'Your booking has been accepted by the driver. Please complete payment within the pay window.',
+                    titleKey: 'notifications.types.pay_window_started.title',
+                    messageKey: 'notifications.types.pay_window_started.message',
                     userId: booking.rider,
                     entityType: 'bookings',
                     entityId: bookingId,
@@ -496,7 +499,7 @@ export async function PATCH(
             case 'reject':
                 if (booking.status !== 'waiting_approval') {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: 'Booking is not waiting for approval' }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.bookingNotWaiting') }, { status: 400 });
                 }
                 newStatus = 'removed';
                 seatsChange = 0; // Seats were never taken
@@ -504,8 +507,8 @@ export async function PATCH(
                 await createNotification({
                     client,
                     type: 'booking_rejected',
-                    title: 'Booking Rejected',
-                    message: 'Your booking has been rejected by the driver.',
+                    titleKey: 'notifications.types.booking_rejected.title',
+                    messageKey: 'notifications.types.booking_rejected.message',
                     userId: booking.rider,
                     entityType: 'bookings',
                     entityId: bookingId,
@@ -517,7 +520,7 @@ export async function PATCH(
             case 'remove':
                 if (booking.status === 'confirmed' && (booking.trip_status === 'departed' || readOnlyTripStatuses.includes(booking.trip_status))) {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: 'Cannot remove a confirmed rider after the trip has departed, cancelled, aborted, or completed.' }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.cannotRemoveConfirmed') }, { status: 400 });
                 }
 
                 if (booking.status === 'joined_with_pay_window' || booking.status === 'pending_pay_confirmation_from_driver' || booking.status === 'confirmed') {
@@ -527,8 +530,8 @@ export async function PATCH(
                     await createNotification({
                         client,
                         type: 'booking_removed',
-                        title: 'Booking Removed',
-                        message: 'Your booking has been removed by the driver.',
+                        titleKey: 'notifications.types.booking_removed.title',
+                        messageKey: 'notifications.types.booking_removed.message',
                         userId: booking.rider,
                         entityType: 'bookings',
                         entityId: bookingId,
@@ -543,8 +546,8 @@ export async function PATCH(
                     await createNotification({
                         client,
                         type: 'booking_removed',
-                        title: 'Booking Removed',
-                        message: 'Your booking has been removed by the driver.',
+                        titleKey: 'notifications.types.booking_removed.title',
+                        messageKey: 'notifications.types.booking_removed.message',
                         userId: booking.rider,
                         entityType: 'bookings',
                         entityId: bookingId,
@@ -553,14 +556,14 @@ export async function PATCH(
                     })
                 } else {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: 'Cannot remove booking in current status' }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.cannotRemoveStatus') }, { status: 400 });
                 }
                 break;
 
             case 'confirm_payment':
                 if (booking.status !== 'pending_pay_confirmation_from_driver') {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: 'Booking is not pending payment confirmation' }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.notPendingPayment') }, { status: 400 });
                 }
                 newStatus = 'confirmed';
                 seatsChange = 0; // Seats already taken
@@ -568,8 +571,8 @@ export async function PATCH(
                 await createNotification({
                     client,
                     type: 'booking_confirmed',
-                    title: 'Booking Confirmed',
-                    message: 'Your payment and the booking has been confirmed by the driver.',
+                    titleKey: 'notifications.types.booking_confirmed.title',
+                    messageKey: 'notifications.types.booking_confirmed.message',
                     userId: booking.rider,
                     entityType: 'bookings',
                     entityId: bookingId,
@@ -581,13 +584,13 @@ export async function PATCH(
             case 'mark_picked_up':
                 if (booking.status !== 'confirmed') {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: 'Booking must be confirmed to mark as picked up' }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.mustBeConfirmed') }, { status: 400 });
                 }
                 // Check trip status, it must be 'departed'
                 // We fetched t.status as trip_status
                 if (booking.trip_status !== 'departed') {
                     await client.query('ROLLBACK');
-                    return NextResponse.json({ error: 'Trip must be departed to mark riders as picked up' }, { status: 400 });
+                    return NextResponse.json({ error: t('api.errors.tripMustBeDeparted') }, { status: 400 });
                 }
 
                 newStatus = booking.status;
@@ -602,8 +605,8 @@ export async function PATCH(
                 await createNotification({
                     client,
                     type: 'picked_up',
-                    title: 'Booking Picked Up',
-                    message: 'You have been picked up by the driver.',
+                    titleKey: 'notifications.types.picked_up.title',
+                    messageKey: 'notifications.types.picked_up.message',
                     userId: booking.rider,
                     entityType: 'bookings',
                     entityId: bookingId,

@@ -402,8 +402,9 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                 body: JSON.stringify({ driver_note: note })
             });
 
-            if (!res.ok) throw new Error(t('tripDetails.manage.notifications.updateSuccess.message')); // Re-using generic success message key? No, should be error. Using generic fetch error for now or generic update status failed from handleAction logic.
-            // Actually let's use a specific notification or just generic update success
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.error || t('tripDetails.manage.notifications.actionFailed'));
 
             notifications.show({
                 title: t('tripDetails.manage.notifications.success.title'),

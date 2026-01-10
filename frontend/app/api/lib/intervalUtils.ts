@@ -75,7 +75,7 @@ export function parseStringIntervalToMs(interval: string | null | undefined): nu
  * Compares two interval values (Postgres object, number, or string) for equality.
  * Returns true if they represent the same duration in milliseconds.
  */
-export function areIntervalsEqual(a: any, b: any): boolean {
+export function areIntervalsEqual(a: any, b: any, toleranceMs: number = 100): boolean {
     // 1. Normalize A
     let msA = 0;
     if (typeof a === 'string') msA = parseStringIntervalToMs(a);
@@ -86,8 +86,6 @@ export function areIntervalsEqual(a: any, b: any): boolean {
     if (typeof b === 'string') msB = parseStringIntervalToMs(b);
     else msB = parsePostgresIntervalToMs(b);
 
-    // 3. Compare with a small tolerance for floating point math if needed, but integers should be fine for ms.
-    // However, if we support fractional hours in strings (0.25 hours), we might get floats.
-    // Let's use written logic:
-    return Math.abs(msA - msB) < 100; // 100ms tolerance
+    // 3. Compare with tolerance
+    return Math.abs(msA - msB) < toleranceMs;
 }

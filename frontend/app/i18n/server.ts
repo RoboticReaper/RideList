@@ -17,7 +17,7 @@ const initI18next = async (lng: string, ns: string) => {
 export async function useServerTranslation(lng: string, ns: string = 'common') {
   const i18nextInstance = await initI18next(lng, ns);
   return {
-    t: i18nextInstance.getFixedT(lng, ns),
+    t: i18nextInstance.getFixedT(lng, ns as any),
     i18n: i18nextInstance,
   };
 }

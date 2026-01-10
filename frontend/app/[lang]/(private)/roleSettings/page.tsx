@@ -168,7 +168,7 @@ export default function RoleSettingsPage() {
     return (
         <Container size="sm" py="xl">
             <Stack gap="lg">
-                <Title order={2} style={{ textTransform: 'capitalize' }}>{t('roleSettings.title', { role: t(`headerMenu.roles.${role}`) })}</Title>
+                <Title order={2} style={{ textTransform: 'capitalize' }}>{t('roleSettings.title', { role: t(`headerMenu.roles.${role}` as 'headerMenu.roles.driver' | 'headerMenu.roles.rider') })}</Title>
 
                 <Text size="sm" c="dimmed">
                     <Trans

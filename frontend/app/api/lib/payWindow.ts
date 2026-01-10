@@ -134,8 +134,8 @@ export async function checkAndProcessPayWindowTimeout(client: PoolClient, bookin
             await createNotification({
                 client,
                 type: 'pay_timeout',
-                title: 'Booking Pay Timeout',
-                message: 'Your booking is expired due to not paying on time.',
+                titleKey: 'notifications.types.pay_timeout.title',
+                messageKey: 'notifications.types.pay_timeout.message',
                 userId: rider,
                 entityType: 'bookings',
                 entityId: bookingId,
@@ -147,8 +147,8 @@ export async function checkAndProcessPayWindowTimeout(client: PoolClient, bookin
             await createNotification({
                 client,
                 type: 'pay_timeout',
-                title: 'Rider Pay Timeout',
-                message: 'Your rider has not paid on time and their booking has been expired.',
+                titleKey: 'notifications.types.pay_timeout.title',
+                messageKey: 'notifications.types.pay_timeout.message',
                 userId: driver,
                 entityType: 'bookings',
                 entityId: bookingId,

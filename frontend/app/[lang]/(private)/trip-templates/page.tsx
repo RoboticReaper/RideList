@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 export default function TripTemplatesPage() {
     const { t } = useTranslation('common');
+    console.log(t)
     const { user } = useAuth();
     const [templates, setTemplates] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -42,16 +43,16 @@ export default function TripTemplatesPage() {
                 <Text c="dimmed">{t('templates.trips.noTemplates')}</Text>
             ) : (
                 <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
-                    {templates.map(t => (
-                        <Card key={t.id} shadow="sm" padding="lg" radius="md" withBorder>
+                    {templates.map(template => (
+                        <Card key={template.id} shadow="sm" padding="lg" radius="md" withBorder>
                             <Group justify="space-between" mb="xs">
-                                <Text fw={500} truncate>{t.name}</Text>
+                                <Text fw={500} truncate>{template.name}</Text>
                                 <Menu shadow="md" width={200}>
                                     <Menu.Target>
                                         <ActionIcon variant="subtle" color="gray"><IconDotsVertical size={16} /></ActionIcon>
                                     </Menu.Target>
                                     <Menu.Dropdown>
-                                        <Menu.Item component={LocalizedLink} href={`/trip-templates/${t.id}`}>
+                                        <Menu.Item component={LocalizedLink} href={`/trip-templates/${template.id}`}>
                                             {t('common.edit')}
                                         </Menu.Item>
                                     </Menu.Dropdown>
@@ -59,18 +60,18 @@ export default function TripTemplatesPage() {
                             </Group>
 
                             <Group gap="xs" mb="sm">
-                                <Badge color="blue" variant="light">${t.price}</Badge>
-                                <Badge color="gray" variant="light">{t.total_seats} seats</Badge>
+                                <Badge color="blue" variant="light">${template.price}</Badge>
+                                <Badge color="gray" variant="light">{template.total_seats} seats</Badge>
                             </Group>
 
                             <Text size="sm" c="dimmed" lineClamp={2} style={{ minHeight: '40px' }}>
-                                {t.from_text} → {t.to_text}
+                                {template.from_text} → {template.to_text}
                             </Text>
 
-                            {t.car_details && (
+                            {template.car_details && (
                                 <Group gap="xs" mt="md">
                                     <IconCar size={16} style={{ opacity: 0.5 }} />
-                                    <Text size="xs" c="dimmed">{t.car_details.make} {t.car_details.model}</Text>
+                                    <Text size="xs" c="dimmed">{template.car_details.make} {template.car_details.model}</Text>
                                 </Group>
                             )}
                         </Card>

@@ -2,16 +2,63 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { languages, fallbackLng, cookieName } from './app/i18n/settings';
 import acceptLanguage from 'accept-language';
+import { ipAddress } from '@vercel/functions'
 
 acceptLanguage.languages(languages);
+
+// Simple in-memory rate limit (Edge-safe)
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX = 60;           // 60 requests / minute
+
+const rateLimitMap = new Map<
+  string,
+  { count: number; windowStart: number }
+>();
+
+function isRateLimited(ip: string) {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+
+  if (!entry) {
+    rateLimitMap.set(ip, { count: 1, windowStart: now });
+    return false;
+  }
+
+  if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+    // Reset window
+    rateLimitMap.set(ip, { count: 1, windowStart: now });
+    return false;
+  }
+
+  entry.count += 1;
+
+  return entry.count > RATE_LIMIT_MAX;
+}
+
 
 export default function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // 1. Redirect root to /rides if needed (optional, depends on app structure)
-  // If you have a landing page at /, keep it.
-  // If / redirects to /rides, handle it here or in page.tsx
+  if (
+    pathname.includes('/search')
+  ) {
+    const ip =
+      ipAddress(request) ||
+      request.headers.get('x-forwarded-for')?.split(',')[0] ||
+      'unknown';
 
+    if (isRateLimited(ip)) {
+      return new NextResponse(
+        JSON.stringify({ error: 'Too many requests' }),
+        {
+          status: 429,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+  }
+
+  // 1. i18n
   // 2. Check if pathname already has a locale
   const pathnameHasLocale = languages.some(
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`

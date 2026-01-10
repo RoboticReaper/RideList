@@ -4,6 +4,7 @@ import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
 import { checkAndProcessTripCutoff } from '@/app/api/lib/tripCutoff';
 import { createNotification } from '@/app/api/lib/createNotification';
+import { logTripEvent } from '@/app/api/lib/tripEvents';
 
 export async function POST(
     req: Request,
@@ -98,7 +99,6 @@ export async function POST(
                         await client.query("UPDATE trips SET status = 'bookable' WHERE id = $1", [booking.trip]);
 
                         // Log Status Change (Full -> Bookable)
-                        const { logTripEvent } = await import('@/app/api/lib/tripEvents');
                         await logTripEvent({
                             client,
                             tripId: booking.trip,
@@ -176,7 +176,6 @@ export async function POST(
                     if (releaseRes.rows[0].status === 'full') {
                         await client.query("UPDATE trips SET status = 'bookable' WHERE id = $1", [booking.trip]);
                         // Log Status Change (Full -> Bookable)
-                        const { logTripEvent } = await import('@/app/api/lib/tripEvents');
                         await logTripEvent({
                             client,
                             tripId: booking.trip,

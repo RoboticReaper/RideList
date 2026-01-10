@@ -1,5 +1,6 @@
 import { useServerTranslation } from '@/app/i18n/server';
 import { TranslationProvider } from '@/app/i18n/provider';
+import { PushPermissionModal } from '@/components/PushPermissionModal';
 import { Metadata } from 'next';
 import type { Viewport } from 'next';
 
@@ -13,8 +14,8 @@ export const viewport: Viewport = {
   themeColor: '#ffffff',
 };
 
-export async function generateMetadata({params}:Props) : Promise<Metadata> {
-  const {lang} = await params;
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { lang } = await params;
   const { t } = await useServerTranslation(lang, 'common');
   const baseUrl = process.env.NODE_ENV === 'development'
     ? 'http://localhost:3000'
@@ -54,6 +55,7 @@ export default async function LangLayout({
       resources={i18n.services.resourceStore.data}
     >
       {children}
+      <PushPermissionModal />
     </TranslationProvider>
   );
 }

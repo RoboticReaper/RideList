@@ -1,6 +1,7 @@
 import '@mantine/core/styles.css';
 
 import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from '@mantine/core';
+import { Suspense } from 'react';
 import { AuthProvider } from '@/components/firebase/AuthContext';
 import { LanguageSyncer } from '@/components/LanguageSyncer';
 import { NotificationProvider } from '@/components/Notifications/NotificationContext';
@@ -8,7 +9,7 @@ import { Notifications } from '@mantine/notifications';
 import '@mantine/dates/styles.css';
 import '@mantine/notifications/styles.css';
 
-import { PushPermissionModal } from '@/components/PushPermissionModal';
+
 
 export default function RootLayout({
   children,
@@ -22,14 +23,15 @@ export default function RootLayout({
       </head>
       <body>
         <MantineProvider>
-          <AuthProvider>
-            <LanguageSyncer />
-            <NotificationProvider>
-              <Notifications />
-              <PushPermissionModal />
-              {children}
-            </NotificationProvider>
-          </AuthProvider>
+          <Suspense fallback={<div>Loading application...</div>}>
+            <AuthProvider>
+              <LanguageSyncer />
+              <NotificationProvider>
+                <Notifications />
+                {children}
+              </NotificationProvider>
+            </AuthProvider>
+          </Suspense>
         </MantineProvider>
       </body>
     </html>

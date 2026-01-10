@@ -8,7 +8,7 @@ import sharp from 'sharp';
 
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     const waitedParams = await params;
     const targetUserId = waitedParams.id;
@@ -179,7 +179,7 @@ export async function GET(
 
 export async function PATCH(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     const waitedParams = await params;
     const targetUserId = waitedParams.id;

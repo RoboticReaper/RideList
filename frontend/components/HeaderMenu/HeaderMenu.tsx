@@ -70,7 +70,7 @@ export function HeaderMenu() {
           </Group>
 
           <Group h="100%" gap={0} visibleFrom="sm">
-            <LocalizedLink href="/rides" className={classes.link}>
+            <LocalizedLink href="/search" className={classes.link}>
               {t('headerMenu.findRide')}
             </LocalizedLink>
             <LocalizedLink href="/newRide" className={classes.link}>
@@ -209,7 +209,7 @@ export function HeaderMenu() {
         <ScrollArea h="calc(100vh - 80px)" mx="-md">
           <Divider mb="sm" />
 
-          <LocalizedLink href="/rides" className={classes.mobileLink} onClick={closeDrawer}>
+          <LocalizedLink href="/search" className={classes.mobileLink} onClick={closeDrawer}>
             {t('headerMenu.findRide')}
           </LocalizedLink>
           <LocalizedLink href="/newRide" className={classes.mobileLink} onClick={closeDrawer}>

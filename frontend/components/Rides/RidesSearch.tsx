@@ -195,7 +195,7 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
                             query.append('end_lat', parsed.endCoords.lat.toString());
                             query.append('end_lng', parsed.endCoords.lng.toString());
                         }
-                        router.replace(`/rides?${query.toString()}`);
+                        router.replace(`/search?${query.toString()}`);
                     }
                 }
             } catch (e) {
@@ -410,7 +410,7 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
             console.error("Failed to save search state", e);
         }
 
-        router.push(`/rides?${query.toString()}`);
+        router.push(`/search?${query.toString()}`);
         onSearch?.(); // Call the onSearch prop if provided
     };
 

@@ -334,8 +334,13 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
         }
 
         if (values.departure_time < new Date()) {
-            notifications.show({ title: t('tripDetails.edit.notifications.invalidDeparture.title'), message: t('tripDetails.edit.notifications.invalidDeparture.message'), color: 'red' });
-            return;
+            const originalTime = trip.departure_time ? new Date(trip.departure_time).getTime() : 0;
+            const newTime = values.departure_time.getTime();
+
+            if (newTime !== originalTime) {
+                notifications.show({ title: t('tripDetails.edit.notifications.invalidDeparture.title'), message: t('tripDetails.edit.notifications.invalidDeparture.message'), color: 'red' });
+                return;
+            }
         }
 
         // total_seats > 0

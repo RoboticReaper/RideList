@@ -1182,6 +1182,8 @@
             "form": {
                 "editTitle": "Edit Rule Template",
                 "addTitle": "New Rule Template",
+                "delete": "Delete Template",
+                "cancel": "Cancel",
                 "name": "Template Name",
                 "namePlaceholder": "e.g. Standard Rules",
                 "sectionRules": "Rules & Logistics",
@@ -1230,6 +1232,8 @@
             "form": {
                 "editTitle": "Edit Trip Template",
                 "addTitle": "New Trip Template",
+                "delete": "Delete Template",
+                "cancel": "Cancel",
                 "name": "Template Name",
                 "namePlaceholder": "e.g. Work Commute",
                 "driverNotes": "Driver Notes",
@@ -1384,5 +1388,191 @@
         "getUpdatesTitle": "Get Real-Time Updates",
         "getUpdatesMessage": "Enable push notifications to get instant updates about rides and bookings.",
         "enableBtn": "Enable Notifications"
+    },
+    "notifications": {
+        "types": {
+            "new_booking": {
+                "title": "New Rider Joined",
+                "message": "A rider has joined your trip."
+            },
+            "new_booking_request": {
+                "title": "New Booking Request",
+                "message": "A rider has requested to join your trip."
+            },
+            "trip_full": {
+                "title": "Trip Full",
+                "message": "Your trip is now full."
+            },
+            "payment_marked": {
+                "title": "Payment Marked",
+                "message": "Rider marked payment as sent. Please confirm."
+            },
+            "rider_left": {
+                "title": "Rider Left",
+                "message": "A rider has left your trip."
+            },
+            "rider_ready": {
+                "title": "Rider Ready",
+                "message": "A rider is ready for pickup."
+            },
+            "trip_auto_locked": {
+                "title": "Trip Locked",
+                "message": "Your trip has been automatically locked due to cutoff time."
+            },
+            "booking_updated": {
+                "title": "Booking Updated",
+                "message": "A rider has updated their booking details."
+            },
+            "trip_late_warning": {
+                "title": "Trip Late",
+                "message": "Your trip is late. Auto-departure scheduled for {{time}}."
+            },
+            "pay_timeout": {
+                "title": "Payment Timeout",
+                "message": "A booking was cancelled due to payment timeout."
+            },
+            "booking_rejected": {
+                "title": "Booking Rejected",
+                "message": "Your booking request was rejected."
+            },
+            "pay_window_started": {
+                "title": "Booking Accepted",
+                "message": "Your booking was accepted. Please pay within the window."
+            },
+            "booking_confirmed": {
+                "title": "Booking Confirmed",
+                "message": "Driver confirmed your payment. You are all set!"
+            },
+            "booking_removed": {
+                "title": "Booking Removed",
+                "message": "Your booking has been removed by the driver."
+            },
+            "trip_cancelled": {
+                "title": "Trip Cancelled",
+                "message": "The driver cancelled the trip."
+            },
+            "trip_aborted": {
+                "title": "Trip Aborted",
+                "message": "The trip was aborted."
+            },
+            "check_in_started": {
+                "title": "Check-in Started",
+                "message": "Driver has enabled check-in. Please mark yourself ready."
+            },
+            "trip_departed": {
+                "title": "Trip Departed",
+                "message": "Driver has started the trip."
+            },
+            "marked_no_show": {
+                "title": "No Show",
+                "message": "You were marked as a no-show."
+            },
+            "picked_up": {
+                "title": "Picked Up",
+                "message": "You have been picked up."
+            },
+            "driver_contact_changed": {
+                "title": "Driver Update",
+                "message": "Driver updated their contact info."
+            },
+            "vehicle_updated": {
+                "title": "Vehicle Update",
+                "message": "Driver updated vehicle information."
+            },
+            "trip_updated": {
+                "title": "Trip Update",
+                "message": "Trip details have changed."
+            },
+            "trip_completed": {
+                "title": "Trip Completed",
+                "message": "Trip marked as completed."
+            }
+        }
+    },
+    "api": {
+        "errors": {
+            "unauthorized": "Unauthorized",
+            "forbidden": "Forbidden",
+            "tripNotFound": "Trip not found",
+            "profileRequired": "Profile required",
+            "internalError": "Internal Server Error",
+            "tripNotBookable": "Trip is not bookable",
+            "ownTrip": "You cannot book your own trip",
+            "bookingClosed": "Booking for this trip has closed.",
+            "notEnoughSeats": "Not enough seats. Only {{count}} left.",
+            "tooManyBigBags": "Too many big bags. Max allowed for {{seats}} seats is {{limit}}.",
+            "tooManySmallBags": "Too many small bags. Max allowed for {{seats}} seats is {{limit}}.",
+            "flexibilityExceeded": "Preferred pickup time is outside the driver's flexibility range.",
+            "locationTooFar": "Pickup location is too far. Max radius is {{km}}km.",
+            "invalidPaymentMethod": "Invalid payment method. Must be one of: {{methods}}",
+            "nonePaymentMethodRequired": "Payment method must be 'None' when no methods are specified by driver.",
+            "cannotRejoin": "You cannot rejoin this trip.",
+            "paymentMethodRequired": "Payment method is required.",
+            "alreadyActive": "You already have an active booking on this trip.",
+            "mustBookAtLeastOne": "Must book at least 1 seat",
+            "bookingNotFound": "Booking not found",
+            "tripReadOnly": "Trip is read-only because it is done, cancelled, or aborted.",
+            "bookingNotEditable": "Booking cannot be edited in current status",
+            "bookingTripDeparted": "Cannot edit booking details because the trip has already departed.",
+            "seatsLocked": "Seats and luggage can only be edited before driver confirmation.",
+            "minSeats": "Must book at least one seat.",
+            "notEnoughSeatsAccept": "Not enough seats available to accept this booking",
+            "luggageLimit": "Exceeds {{type}} luggage limit ({{limit}} allowed for {{seats}} seats).",
+            "invalidPickupLocation": "Please select a valid pickup location from suggestions",
+            "pickupTooFar": "Pickup location is too far. Pick somewhere close to the center.",
+            "noUpdateFields": "No fields to update",
+            "rateLimit": "You can only update details once every 5 minutes.",
+            "invalidAction": "Invalid action",
+            "bookingNotWaiting": "Booking is not waiting for approval",
+            "cannotRemoveConfirmed": "Cannot remove a confirmed rider after the trip has departed, cancelled, aborted, or completed.",
+            "cannotRemoveStatus": "Cannot remove booking in current status",
+            "notPendingPayment": "Booking is not pending payment confirmation",
+            "mustBeConfirmed": "Booking must be confirmed to mark as picked up",
+            "tripMustBeDeparted": "Trip must be departed to mark riders as picked up",
+            "carNotFound": "Car not found or unauthorized",
+            "departureTimePast": "Departure time cannot be in the past",
+            "invalidStatus": "Invalid status",
+            "tripLockedStatus": "Trip can only be locked if it is bookable or full",
+            "tripCompleteStatus": "Trip can only be marked as completed if it is currently departed or in a read-only state",
+            "tripCancelStatus": "Cannot cancel a trip that has already departed or is in a read-only state",
+            "tripAbortStatus": "Cannot abort a trip that has not departed or is in a read-only state",
+            "departEarly": "Cannot depart early unless all passengers have checked in.",
+            "cannotUnlock": "Cannot unlock trip: booking cutoff time has passed",
+            "startLocationEmpty": "Start location text cannot be empty",
+            "destinationEmpty": "Destination text cannot be empty",
+            "rideNotFound": "Ride not found",
+            "cannotReduceSeats": "Cannot reduce total seats below seats taken ({{seatsTaken}})."
+        }
+    },
+    "tripFields": {
+        "departure_time": "Departure time",
+        "car": "Car",
+        "from_text": "Pickup location",
+        "to_text": "Dropoff location",
+        "price": "Price",
+        "pickup_rules": "Pickup rules",
+        "pickup_radius_meters": "Pickup radius",
+        "drop_off_radius_meters": "Dropoff radius",
+        "cancellation_policy": "Cancellation policy",
+        "cutoff_time": "Booking cutoff time",
+        "pay_window": "Payment window",
+        "start_check_in_hrs_before_departure": "Check-in time",
+        "departure_time_flexibility": "Departure flexibility",
+        "notes": "Notes",
+        "payment_methods": "Payment methods",
+        "payment_handle": "Payment handle"
+    },
+    "notifications_dynamic": {
+        "trip_updated": {
+            "one": "{{field}} was updated",
+            "many": "{{fields}} were updated",
+            "others": "{{fields}} and others were updated"
+        }
+    },
+    "map": {
+        "you": "You",
+        "pickup": "Pickup",
+        "dropoff": "Dropoff",
+        "unavailable": "Map preview unavailable"
     }
 }

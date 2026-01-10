@@ -39,6 +39,7 @@ create type trip_event_type as enum (
   'trip_departed',
   'trip_completed',
   'trip_aborted',
+  'trip_late_warning',
   'system_cancelled'
 );
 
@@ -144,6 +145,7 @@ create table trips (
   departure_time timestamptz not null,
   total_seats int not null check (total_seats > 0),
   seats_taken int not null default 0 check (seats_taken >= 0 and seats_taken <= total_seats),
+  actual_departure_time timestamptz,
 
   status trip_status not null default 'bookable',
   created_at timestamptz not null default now(),

@@ -1,10 +1,15 @@
 import { PoolClient } from 'pg';
+import { adminMessaging } from './firebase-admin';
+import { getTranslationForUser } from './i18n';
 
 interface CreateNotificationArgs {
     client: PoolClient;
     type: string;
-    title: string;
-    message: string;
+    titleKey?: string;
+    messageKey?: string;
+    variables?: Record<string, any>;
+    title?: string; // fallback
+    message?: string; // fallback
     userId: string | null; // who should receive the notification
     openLink: string; // link to open when notification is clicked
     entityType: "trips" | "bookings";
@@ -23,6 +28,7 @@ export const NOTIFICATION_TYPES = {
             'rider_ready',                     // rider checked in as ready
             'trip_auto_locked',                // system locked trip (cutoff)
             'booking_updated',                 // rider updated booking details after check-in
+            'trip_late_warning',               // trip is late
         ],
 
         // Informational / reminders
@@ -68,6 +74,9 @@ export async function createNotification({
     type,
     title,
     message,
+    titleKey,
+    messageKey,
+    variables,
     userId,
     entityType,
     entityId,
@@ -126,6 +135,30 @@ export async function createNotification({
         }
     }
 
+    // Resolve translations
+    let finalTitle = title || '';
+    let finalMessage = message || '';
+
+    if (titleKey && messageKey) {
+        try {
+            const t = await getTranslationForUser(userId, client);
+            finalTitle = t(titleKey as any, variables);
+            finalMessage = t(messageKey as any, variables);
+        } catch (err) {
+            console.error('Failed to translate notification:', err);
+            // Fallback to keys or original strings if translation fails
+            finalTitle = title || titleKey;
+            finalMessage = message || messageKey;
+        }
+    }
+
+    // Fallback if empty (should not happen if usage is correct)
+    if (!finalTitle && !finalMessage) {
+        console.warn("No content for notification", { type, userId });
+        return false;
+    }
+
+
     const query = `
         INSERT INTO notifications (
             user_id, 
@@ -142,8 +175,8 @@ export async function createNotification({
     const res = await client.query(query, [
         userId,
         type,
-        title,
-        message,
+        finalTitle,
+        finalMessage,
         entityType,
         entityId,
         openLink
@@ -178,8 +211,6 @@ export async function createNotification({
         // Map token back to device ID for error handling
         const tokenToDeviceId = new Map(devices.rows.map(row => [row.fcm_token, row.id]));
 
-        // Import statically to avoid circular deps if any (though best practice is top-level)
-        const { adminMessaging } = await import('@/app/api/lib/firebase-admin');
 
         // We use sendEachForMulticast for batch sending
         // Note: tokens list can be up to 500. If > 500, need chunking. 
@@ -187,8 +218,8 @@ export async function createNotification({
         const pushResponse = await adminMessaging.sendEachForMulticast({
             tokens: tokens,
             notification: {
-                title: title,
-                body: message,
+                title: finalTitle,
+                body: finalMessage,
             },
             webpush: {
                 fcmOptions: {

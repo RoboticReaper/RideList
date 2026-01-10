@@ -42,16 +42,16 @@ export default function RuleTemplatesPage() {
                 <Text c="dimmed">{t('templates.rules.noTemplates')}</Text>
             ) : (
                 <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
-                    {templates.map(t => (
-                        <Card key={t.id} shadow="sm" padding="lg" radius="md" withBorder>
+                    {templates.map(template => (
+                        <Card key={template.id} shadow="sm" padding="lg" radius="md" withBorder>
                             <Group justify="space-between" mb="xs">
-                                <Text fw={500} truncate>{t.name}</Text>
+                                <Text fw={500} truncate>{template.name}</Text>
                                 <Menu shadow="md" width={200}>
                                     <Menu.Target>
                                         <ActionIcon variant="subtle" color="gray"><IconDotsVertical size={16} /></ActionIcon>
                                     </Menu.Target>
                                     <Menu.Dropdown>
-                                        <Menu.Item component={LocalizedLink} href={`/rule-templates/${t.id}`}>
+                                        <Menu.Item component={LocalizedLink} href={`/rule-templates/${template.id}`}>
                                             {t('common.edit')}
                                         </Menu.Item>
                                     </Menu.Dropdown>
@@ -59,12 +59,12 @@ export default function RuleTemplatesPage() {
                             </Group>
 
                             <Group gap="xs" mb="sm">
-                                {t.auto_accept && <Badge color="green" variant="light">{t('templates.rules.form.autoAccept')}</Badge>}
-                                <Badge color="gray" variant="light">Luggage: {t.big_luggage_lim ?? '∞'}L {t.small_luggage_lim ?? '∞'}S</Badge>
+                                {template.auto_accept && <Badge color="green" variant="light">{t('templates.rules.form.autoAccept')}</Badge>}
+                                <Badge color="gray" variant="light">Luggage: {template.big_luggage_lim ?? '∞'}L {template.small_luggage_lim ?? '∞'}S</Badge>
                             </Group>
 
                             <Text size="sm" c="dimmed" lineClamp={2}>
-                                {t.pickup_rules || t('templates.rules.noPickupRules')}
+                                {template.pickup_rules || t('templates.rules.noPickupRules')}
                             </Text>
                         </Card>
                     ))}
