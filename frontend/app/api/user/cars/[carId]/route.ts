@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { createNotification } from '@/app/api/lib/createNotification';
+import { getTranslationForUser } from '@/app/api/lib/i18n';
 
 export async function GET(req: Request, { params }: { params: Promise<{ carId: string }> }) {
     const { carId } = await params;
@@ -11,7 +12,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ carId: s
             req.headers.get('authorization') ?? undefined
         );
 
-        if (!user || !user.uid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!user || !user.uid) {
+            const t = await getTranslationForUser(null, client);
+            return NextResponse.json({ error: t('api.errors.unauthorized') }, { status: 401 });
+        }
+
+        const t = await getTranslationForUser(user.uid, client);
 
         const res = await client.query(
             `SELECT * FROM cars WHERE id = $1 AND owner = $2 AND deleted = false`,
@@ -19,13 +25,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ carId: s
         );
 
         if (res.rowCount === 0) {
-            return NextResponse.json({ error: 'Car not found' }, { status: 404 });
+            return NextResponse.json({ error: t('api.errors.carNotFoundExact') }, { status: 404 });
         }
 
         return NextResponse.json({ car: res.rows[0] });
     } catch (error: any) {
         console.error(error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        const t = await getTranslationForUser(null, client); // Check usage
+        return NextResponse.json({ error: t('api.errors.internalError') }, { status: 500 });
     } finally {
         client.release();
     }
@@ -39,7 +46,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ carId: s
             req.headers.get('authorization') ?? undefined
         );
 
-        if (!user || !user.uid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!user || !user.uid) {
+            const t = await getTranslationForUser(null, client);
+            return NextResponse.json({ error: t('api.errors.unauthorized') }, { status: 401 });
+        }
+
+        const t = await getTranslationForUser(user.uid, client);
 
         const body = await req.json();
         const { make, model, color, year, plate, seats, big_luggage, small_luggage } = body;
@@ -52,7 +64,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ carId: s
         const currentCar = currentCarRes.rows[0];
 
         if (!currentCar) {
-            return NextResponse.json({ error: 'Car not found' }, { status: 404 });
+            return NextResponse.json({ error: t('api.errors.carNotFoundExact') }, { status: 404 });
         }
 
         const res = await client.query(
@@ -64,7 +76,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ carId: s
         );
 
         if (res.rowCount === 0) {
-            return NextResponse.json({ error: 'Car not found' }, { status: 404 });
+            return NextResponse.json({ error: t('api.errors.carNotFoundExact') }, { status: 404 });
         }
 
         // Check for relevant changes and notify riders
@@ -89,8 +101,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ carId: s
                 await createNotification({
                     client,
                     type: 'vehicle_updated',
-                    title: 'Vehicle Information Updated',
-                    message: 'The driver has updated the vehicle details for your trip.',
+                    titleKey: 'notifications.types.vehicle_updated_definite.title',
+                    messageKey: 'notifications.types.vehicle_updated_definite.message',
                     userId: row.rider,
                     openLink: `/rides/${row.trip}`,
                     entityType: 'trips',
@@ -103,7 +115,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ carId: s
         return NextResponse.json({ car: res.rows[0] });
     } catch (error: any) {
         console.error("Update Car API Error:", error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        const t = await getTranslationForUser(null, client);
+        return NextResponse.json({ error: t('api.errors.internalError') }, { status: 500 });
     } finally {
         client.release();
     }
@@ -117,7 +130,12 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ carId
             req.headers.get('authorization') ?? undefined
         );
 
-        if (!user || !user.uid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!user || !user.uid) {
+            const t = await getTranslationForUser(null, client);
+            return NextResponse.json({ error: t('api.errors.unauthorized') }, { status: 401 });
+        }
+
+        const t = await getTranslationForUser(user.uid, client);
 
         // Soft delete
         const res = await client.query(
@@ -134,13 +152,14 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ carId
         }
 
         if ((res.rowCount || 0) === 0) {
-            return NextResponse.json({ error: 'Car not found' }, { status: 404 });
+            return NextResponse.json({ error: t('api.errors.carNotFoundExact') }, { status: 404 });
         }
 
         return NextResponse.json({ success: true });
     } catch (error: any) {
         console.error(error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        const t = await getTranslationForUser(null, client);
+        return NextResponse.json({ error: t('api.errors.internalError') }, { status: 500 });
     } finally {
         client.release();
     }

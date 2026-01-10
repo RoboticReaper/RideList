@@ -5,6 +5,7 @@ import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
 import { checkAndProcessTripCutoff } from '@/app/api/lib/tripCutoff';
 import { createNotification } from '@/app/api/lib/createNotification';
 import { logTripEvent } from '@/app/api/lib/tripEvents';
+import { getTranslationForUser } from '@/app/api/lib/i18n';
 
 export async function POST(
     req: Request,
@@ -18,8 +19,10 @@ export async function POST(
             req.headers.get('authorization') ?? undefined
         );
 
+        const t = await getTranslationForUser(user?.uid ?? null, client);
+
         if (!user || !user.uid) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            return NextResponse.json({ error: t('api.errors.unauthorized') }, { status: 401 });
         }
 
         await client.query('BEGIN');
@@ -39,20 +42,20 @@ export async function POST(
 
         if (bookingRes.rowCount === 0) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+            return NextResponse.json({ error: t('api.errors.bookingNotFound') }, { status: 404 });
         }
 
         const booking = bookingRes.rows[0];
 
         if (booking.rider !== user.uid) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+            return NextResponse.json({ error: t('api.errors.forbidden') }, { status: 403 });
         }
 
         // Global Read-Only Check
         if (booking.trip_status === 'done' || booking.trip_status === 'cancelled') {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Trip is read-only because it is done or cancelled.' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.tripReadOnly') }, { status: 400 });
         }
 
         // Check if booking is already inactive
@@ -60,13 +63,13 @@ export async function POST(
         const inactiveStatuses = ['pay_timeout', 'removed', 'left_paid', 'left_unpaid', 'cancelled', 'rejected'];
         if (inactiveStatuses.includes(booking.status)) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Booking is already inactive.' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.bookingAlreadyInactive') }, { status: 400 });
         }
 
         // Prevent leaving if confirmed and departed
         if (booking.status === 'confirmed' && booking.trip_status === 'departed') {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Cannot leave trip after it has departed.' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.cannotLeaveDeparted') }, { status: 400 });
         }
 
 
@@ -113,8 +116,8 @@ export async function POST(
                         await createNotification({
                             client,
                             type: 'rider_left',
-                            title: 'Rider Left',
-                            message: 'Your paid rider has left the trip and the trip is now bookable again.',
+                            titleKey: 'notifications.types.rider_left_paid_bookable.title',
+                            messageKey: 'notifications.types.rider_left_paid_bookable.message',
                             userId: booking.driver,
                             entityType: 'bookings',
                             entityId: bookingId,
@@ -129,8 +132,8 @@ export async function POST(
                         await createNotification({
                             client,
                             type: 'rider_left',
-                            title: 'Rider Left',
-                            message: 'Your paid rider has left the trip.',
+                            titleKey: 'notifications.types.rider_left_paid.title',
+                            messageKey: 'notifications.types.rider_left_paid.message',
                             userId: booking.driver,
                             entityType: 'bookings',
                             entityId: bookingId,
@@ -169,9 +172,7 @@ export async function POST(
                 const releaseRes = await client.query(releaseSeatsQuery, [booking.seats_booked, booking.trip]);
 
                 if (releaseRes.rows.length > 0) {
-                    let message = booking.status === 'pending_pay_confirmation_from_driver'
-                        ? 'A rider pending your pay confirmation has left the trip'
-                        : 'Your unpaid rider has left the trip';
+                    const isPending = booking.status === 'pending_pay_confirmation_from_driver';
 
                     if (releaseRes.rows[0].status === 'full') {
                         await client.query("UPDATE trips SET status = 'bookable' WHERE id = $1", [booking.trip]);
@@ -190,8 +191,12 @@ export async function POST(
                         await createNotification({
                             client,
                             type: 'rider_left',
-                            title: 'Rider Left',
-                            message: message + ' and the trip is now bookable again.',
+                            titleKey: isPending
+                                ? 'notifications.types.rider_left_pending_bookable.title'
+                                : 'notifications.types.rider_left_unpaid_bookable.title',
+                            messageKey: isPending
+                                ? 'notifications.types.rider_left_pending_bookable.message'
+                                : 'notifications.types.rider_left_unpaid_bookable.message',
                             userId: booking.driver,
                             entityType: 'bookings',
                             entityId: bookingId,
@@ -206,8 +211,12 @@ export async function POST(
                         await createNotification({
                             client,
                             type: 'rider_left',
-                            title: 'Rider Left',
-                            message: message + '.',
+                            titleKey: isPending
+                                ? 'notifications.types.rider_left_pending.title'
+                                : 'notifications.types.rider_left_unpaid.title',
+                            messageKey: isPending
+                                ? 'notifications.types.rider_left_pending.message'
+                                : 'notifications.types.rider_left_unpaid.message',
                             userId: booking.driver,
                             entityType: 'bookings',
                             entityId: bookingId,

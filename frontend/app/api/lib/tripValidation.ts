@@ -1,4 +1,5 @@
 import { PoolClient } from 'pg';
+import { getTranslationForUser } from './i18n';
 
 export async function checkDriverRequirementsForDeparture(
     client: PoolClient,
@@ -11,13 +12,15 @@ export async function checkDriverRequirementsForDeparture(
         [driverId]
     );
 
+    const t = await getTranslationForUser(driverId, client);
+
     if (profileRes.rowCount === 0) {
-        throw new Error('Driver profile not found.');
+        throw new Error(t('api.errors.driverProfileNotFound'));
     }
 
     const { phone } = profileRes.rows[0];
     if (!phone || phone.trim() === '') {
-        throw new Error('Driver must have a phone number set in their profile to start a trip.');
+        throw new Error(t('api.errors.driverPhoneRequired'));
     }
 
     // 2. Check if the trip has a car assigned
@@ -27,10 +30,10 @@ export async function checkDriverRequirementsForDeparture(
     );
 
     if (tripRes.rowCount === 0) {
-        throw new Error('Trip not found.');
+        throw new Error(t('api.errors.tripNotFound'));
     }
 
     if (!tripRes.rows[0].car) {
-        throw new Error('A car must be assigned to the trip to start departure.');
+        throw new Error(t('api.errors.carRequiredForDeparture'));
     }
 }

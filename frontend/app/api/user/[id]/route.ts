@@ -4,6 +4,7 @@ import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { createNotification } from '@/app/api/lib/createNotification';
 import { bucket, adminAuth } from '@/app/api/lib/firebase-admin'; // Add import
 import sharp from 'sharp';
+import { getTranslationForUser } from '@/app/api/lib/i18n';
 
 
 export async function GET(
@@ -38,7 +39,8 @@ export async function GET(
         );
 
         if (profileRes.rowCount === 0) {
-            return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+            const t = await getTranslationForUser(targetUserId, pool as any);
+            return NextResponse.json({ error: t('api.errors.profileNotFound') }, { status: 404 });
         }
 
         let profile = profileRes.rows[0];
@@ -173,7 +175,8 @@ export async function GET(
 
     } catch (error) {
         console.error("Get Global Profile Error:", error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        const t = await getTranslationForUser(targetUserId, pool as any);
+        return NextResponse.json({ error: t('api.errors.internalError') }, { status: 500 });
     }
 }
 
@@ -191,15 +194,18 @@ export async function PATCH(
         );
 
         if (user.uid !== targetUserId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+            const t = await getTranslationForUser(user.uid, client);
+            return NextResponse.json({ error: t('api.errors.unauthorized') }, { status: 403 });
         }
+
+        const t = await getTranslationForUser(user.uid, client);
 
         const body = await req.json();
         const { name, phone, rider_config, profile_image_base64 } = body;
 
         // Basic validation
         if (!name || name.trim() === "") {
-            return NextResponse.json({ error: 'Name cannot be empty' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.nameRequired') }, { status: 400 });
         }
 
         let newPhotoUrl = null;
@@ -277,7 +283,7 @@ export async function PATCH(
             } catch (uploadError) {
                 console.error("Image upload failed:", uploadError);
                 // Non-blocking? Or fail? Let's fail for now to alert user
-                return NextResponse.json({ error: 'Image upload failed' }, { status: 500 });
+                return NextResponse.json({ error: t('api.errors.imageUploadFailed') }, { status: 500 });
             }
         }
 
@@ -298,7 +304,7 @@ export async function PATCH(
         );
 
         if (updateGlobalRes.rowCount === 0) {
-            return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+            return NextResponse.json({ error: t('api.errors.profileNotFound') }, { status: 404 });
         }
 
         // Update Rider Profile (Upsert)
@@ -341,8 +347,8 @@ export async function PATCH(
                 await createNotification({
                     client,
                     type: 'driver_contact_changed',
-                    title: 'Driver Contact Updated',
-                    message: 'Your driver has updated their phone number.',
+                    titleKey: 'notifications.types.driver_contact_changed_definite.title',
+                    messageKey: 'notifications.types.driver_contact_changed_definite.message',
                     userId: row.rider,
                     openLink: `/rides/${row.trip}`,
                     entityType: 'trips',
@@ -389,7 +395,8 @@ export async function PATCH(
 
     } catch (error) {
         console.error("Update Global Profile Error:", error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        const t = await getTranslationForUser(targetUserId, client);
+        return NextResponse.json({ error: t('api.errors.internalError') }, { status: 500 });
     } finally {
         client.release();
     }

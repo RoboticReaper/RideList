@@ -4,6 +4,7 @@ import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
 import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
 import { createNotification } from '@/app/api/lib/createNotification';
+import { getTranslationForUser } from '@/app/api/lib/i18n';
 
 export async function POST(
     req: Request,
@@ -17,8 +18,10 @@ export async function POST(
             req.headers.get('authorization') ?? undefined
         );
 
+        const t = await getTranslationForUser(user?.uid ?? null, client);
+
         if (!user || !user.uid) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            return NextResponse.json({ error: t('api.errors.unauthorized') }, { status: 401 });
         }
 
         await client.query('BEGIN');
@@ -39,7 +42,7 @@ export async function POST(
 
         if (bookingRes.rowCount === 0) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+            return NextResponse.json({ error: t('api.errors.bookingNotFound') }, { status: 404 });
         }
 
         const booking = bookingRes.rows[0];
@@ -49,12 +52,12 @@ export async function POST(
 
         if (booking.rider !== user.uid) {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+            return NextResponse.json({ error: t('api.errors.forbidden') }, { status: 403 });
         }
 
         if (booking.status !== 'joined_with_pay_window') {
             await client.query('ROLLBACK');
-            return NextResponse.json({ error: 'Booking is not awaiting payment' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.bookingNotPaymentReady') }, { status: 400 });
         }
 
         // Update status
@@ -74,8 +77,8 @@ export async function POST(
         await createNotification({
             client,
             type: 'payment_marked',
-            title: 'Rider Paid',
-            message: 'Your rider has paid for the trip. Please confirm the payment.',
+            titleKey: 'notifications.types.payment_marked.title',
+            messageKey: 'notifications.types.payment_marked.message',
             userId: booking.driver,
             entityType: 'bookings',
             entityId: bookingId,

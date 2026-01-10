@@ -3,6 +3,7 @@ import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
 import { extractPublicArea } from '@/app/api/lib/extractPublicArea';
+import { getTranslationForUser } from '@/app/api/lib/i18n';
 
 // Helper to fetch Place Details from Google (New API)
 async function fetchPlaceDetails(placeId: string, sessionToken: string) {
@@ -55,8 +56,11 @@ export async function POST(req: Request) {
         );
 
         if (!user || !user.uid) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            const t = await getTranslationForUser(null, client);
+            return NextResponse.json({ error: t('api.errors.unauthorized') }, { status: 401 });
         }
+
+        const t = await getTranslationForUser(user.uid, client);
 
         // Check for Global Profile
         const profileCheck = await client.query(
@@ -66,7 +70,7 @@ export async function POST(req: Request) {
 
         if (profileCheck.rowCount === 0) {
             return NextResponse.json({
-                error: 'Profile incomplete',
+                error: t('api.errors.profileIncomplete'),
                 code: 'PROFILE_INCOMPLETE'
             }, { status: 403 });
         }
@@ -107,26 +111,26 @@ export async function POST(req: Request) {
         const endValid = (end?.placeId) || (end?.lat && end?.lng);
 
         if (!startValid || !endValid || price === undefined || price === null || !seats) {
-            return NextResponse.json({ error: 'Missing required fields (Location or PlaceID required)' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.missingRequiredFieldsLocation') }, { status: 400 });
         }
 
         // Validate Departure Time
         if (new Date(departureTime) < new Date()) {
-            return NextResponse.json({ error: 'Departure time cannot be in the past' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.departureTimePast') }, { status: 400 });
         }
 
         // Expanded Validation: Confirm place string and ID validity IF provided
         if (start.placeId && (typeof start.placeId !== 'string' || start.placeId.trim() === '')) {
-            return NextResponse.json({ error: 'Invalid Start Location ID' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.invalidStartLocationId') }, { status: 400 });
         }
         if (typeof start.text !== 'string' || start.text.trim() === '') {
-            return NextResponse.json({ error: 'Invalid Start Location Name' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.invalidStartLocationName') }, { status: 400 });
         }
         if (end.placeId && (typeof end.placeId !== 'string' || end.placeId.trim() === '')) {
-            return NextResponse.json({ error: 'Invalid Destination ID' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.invalidDestinationId') }, { status: 400 });
         }
         if (typeof end.text !== 'string' || end.text.trim() === '') {
-            return NextResponse.json({ error: 'Invalid Destination Name' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.invalidDestinationName') }, { status: 400 });
         }
 
         // Car Validation: Check that if a new car is being added, it has basic info? 
@@ -195,7 +199,7 @@ export async function POST(req: Request) {
             );
             if (checkCar.rowCount === 0) {
                 await client.query('ROLLBACK');
-                return NextResponse.json({ error: 'Invalid Car ID' }, { status: 400 });
+                return NextResponse.json({ error: t('api.errors.invalidCarId') }, { status: 400 });
             }
             const carDetails = checkCar.rows[0];
             resolvedCarId = carId;
@@ -204,7 +208,7 @@ export async function POST(req: Request) {
             if (seats > carDetails.seats) {
                 await client.query('ROLLBACK');
                 return NextResponse.json({
-                    error: `Trip seats (${seats}) cannot exceed car capacity (${carDetails.seats}).`
+                    error: t('api.errors.seatsExceedCarCapacity', { seats, capacity: carDetails.seats })
                 }, { status: 400 });
             }
 
@@ -227,14 +231,14 @@ export async function POST(req: Request) {
             // Validation: New Car MUST have seats
             if (!car.seats || car.seats <= 0) {
                 await client.query('ROLLBACK');
-                return NextResponse.json({ error: 'Car Information must include number of seats.' }, { status: 400 });
+                return NextResponse.json({ error: t('api.errors.carSeatsRequired') }, { status: 400 });
             }
 
             // Validate Trip Seats against New Car Seats
             if (seats > car.seats) {
                 await client.query('ROLLBACK');
                 return NextResponse.json({
-                    error: `Trip seats (${seats}) cannot exceed car capacity (${car.seats}).`
+                    error: t('api.errors.seatsExceedCarCapacity', { seats, capacity: car.seats })
                 }, { status: 400 });
             }
             // Validate Luggage against New Car
@@ -388,11 +392,11 @@ export async function POST(req: Request) {
             // Validation
             if (saveTemplate && (!ruleTemplateName || ruleTemplateName.trim() === '')) {
                 await client.query('ROLLBACK');
-                return NextResponse.json({ error: 'Rule Template name is required.' }, { status: 400 });
+                return NextResponse.json({ error: t('api.errors.ruleTemplateNameRequired') }, { status: 400 });
             }
             if (saveTripTemplate && (!tripTemplateName || tripTemplateName.trim() === '')) {
                 await client.query('ROLLBACK');
-                return NextResponse.json({ error: 'Trip Template name is required.' }, { status: 400 });
+                return NextResponse.json({ error: t('api.errors.tripTemplateNameRequired') }, { status: 400 });
             }
 
             let ruleTemplateId: number | null = null;
@@ -523,7 +527,8 @@ export async function POST(req: Request) {
         await client.query('ROLLBACK');
         console.error("Create Trip API Error:", error);
 
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+        const t = await getTranslationForUser(null, client);
+        return NextResponse.json({ error: error.message || t('api.errors.internalError') }, { status: 500 });
     } finally {
         client.release();
     }

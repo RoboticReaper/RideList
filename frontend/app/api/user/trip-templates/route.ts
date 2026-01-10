@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
+import { getTranslationForUser } from '@/app/api/lib/i18n';
 
 export async function GET(req: Request) {
     const client = await pool.connect();
@@ -12,7 +13,8 @@ export async function GET(req: Request) {
         );
 
         if (!user || !user.uid) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            const t = await getTranslationForUser(null, client);
+            return NextResponse.json({ error: t('api.errors.unauthorized') }, { status: 401 });
         }
 
         const templatesRes = await client.query(
@@ -37,7 +39,8 @@ export async function GET(req: Request) {
 
     } catch (error: any) {
         console.error("Fetch Trip Templates API Error:", error);
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+        const t = await getTranslationForUser(null, client);
+        return NextResponse.json({ error: error.message || t('api.errors.internalError') }, { status: 500 });
     } finally {
         client.release();
     }
@@ -52,8 +55,11 @@ export async function POST(req: Request) {
         );
 
         if (!user || !user.uid) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            const t = await getTranslationForUser(null, client);
+            return NextResponse.json({ error: t('api.errors.unauthorized') }, { status: 401 });
         }
+
+        const t = await getTranslationForUser(user.uid, client);
 
         const body = await req.json();
         const {
@@ -74,7 +80,7 @@ export async function POST(req: Request) {
         } = body;
 
         if (!name) {
-            return NextResponse.json({ error: 'Template name is required' }, { status: 400 });
+            return NextResponse.json({ error: t('api.errors.templateNameRequired') }, { status: 400 });
         }
 
         // Extended Validation: Check Capacity
@@ -90,7 +96,7 @@ export async function POST(req: Request) {
                 // 1. Check Seats
                 if (total_seats && total_seats > car.seats) {
                     return NextResponse.json({
-                        error: `Template seats (${total_seats}) cannot exceed car capacity (${car.seats}).`
+                        error: t('api.errors.templateSeatsExceedCarCapacity', { seats: total_seats, capacity: car.seats })
                     }, { status: 400 });
                 }
 
@@ -104,12 +110,12 @@ export async function POST(req: Request) {
                         const rule = ruleRes.rows[0];
                         if (car.big_luggage !== null && (rule.big_luggage_lim || 0) > car.big_luggage) {
                             return NextResponse.json({
-                                error: `Rule big luggage limit (${rule.big_luggage_lim}) exceeds car capacity (${car.big_luggage}).`
+                                error: t('api.errors.ruleBigLuggageExceedsCar', { limit: rule.big_luggage_lim, capacity: car.big_luggage })
                             }, { status: 400 });
                         }
                         if (car.small_luggage !== null && (rule.small_luggage_lim || 0) > car.small_luggage) {
                             return NextResponse.json({
-                                error: `Rule small luggage limit (${rule.small_luggage_lim}) exceeds car capacity (${car.small_luggage}).`
+                                error: t('api.errors.ruleSmallLuggageExceedsCar', { limit: rule.small_luggage_lim, capacity: car.small_luggage })
                             }, { status: 400 });
                         }
                     }
@@ -142,7 +148,8 @@ export async function POST(req: Request) {
 
     } catch (error: any) {
         console.error("Create Trip Template API Error:", error);
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+        const t = await getTranslationForUser(null, client);
+        return NextResponse.json({ error: error.message || t('api.errors.internalError') }, { status: 500 });
     } finally {
         client.release();
     }

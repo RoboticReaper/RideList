@@ -1,6 +1,7 @@
 import { PoolClient } from 'pg';
 import { logTripEvent } from './tripEvents';
 import { createNotification } from './createNotification';
+import { getTranslationForUser } from './i18n';
 
 /**
  * Marks a trip as 'done' (completed).
@@ -17,7 +18,10 @@ import { createNotification } from './createNotification';
 export async function markTripAsDone(client: PoolClient, rideId: string, actorId: string | null) {
     // 1. Fetch current status for logging OLD state
     const oldRes = await client.query('SELECT status, driver FROM trips WHERE id = $1 FOR UPDATE', [rideId]);
-    if (oldRes.rowCount === 0) throw new Error('Trip not found');
+    if (oldRes.rowCount === 0) {
+        const t = await getTranslationForUser(actorId, client);
+        throw new Error(t('api.errors.tripNotFound'));
+    }
     const { status: oldStatus, driver: driverId } = oldRes.rows[0];
 
     // Refuse if already done
@@ -75,8 +79,8 @@ export async function markTripAsDone(client: PoolClient, rideId: string, actorId
                 await createNotification({
                     client,
                     type: 'marked_no_show',
-                    title: 'Trip No Show',
-                    message: 'You have been marked as no show.',
+                    titleKey: 'notifications.types.trip_marked_no_show.title',
+                    messageKey: 'notifications.types.trip_marked_no_show.message',
                     userId: booking.rider,
                     openLink: `/dashboard/${rideId}`,
                     entityType: 'trips',
@@ -120,7 +124,10 @@ export async function markTripAsDeparted(client: PoolClient, rideId: string, act
         FOR UPDATE
     `, [rideId]);
 
-    if (oldRes.rowCount === 0) throw new Error('Trip not found');
+    if (oldRes.rowCount === 0) {
+        const t = await getTranslationForUser(actorId, client);
+        throw new Error(t('api.errors.tripNotFound'));
+    }
     const oldTripState = oldRes.rows[0];
 
     if (oldTripState.status === 'departed') return;
@@ -168,8 +175,8 @@ export async function markTripAsDeparted(client: PoolClient, rideId: string, act
         await createNotification({
             client,
             type: 'trip_departed',
-            title: 'Trip Departed',
-            message: 'The driver has started the trip.',
+            titleKey: 'notifications.types.trip_departed_definite.title',
+            messageKey: 'notifications.types.trip_departed_definite.message',
             userId: r.rider,
             openLink: `/dashboard/${rideId}`,
             entityType: 'trips',
@@ -183,8 +190,8 @@ export async function markTripAsDeparted(client: PoolClient, rideId: string, act
         await createNotification({
             client,
             type: 'trip_departed',
-            title: 'Trip Auto-Departed',
-            message: 'System auto-departed the trip due to driver inactivity.',
+            titleKey: 'notifications.types.trip_auto_departed.title',
+            messageKey: 'notifications.types.trip_auto_departed.message',
             userId: oldTripState.driver,
             openLink: `/dashboard/${rideId}`,
             entityType: 'trips',

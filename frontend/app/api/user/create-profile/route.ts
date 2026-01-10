@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db'
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
+import { getTranslationForUser } from '@/app/api/lib/i18n';
 
 export async function POST(req: Request) {
     try {
@@ -8,11 +9,13 @@ export async function POST(req: Request) {
             req.headers.get('authorization') ?? undefined
         );
 
+        const t = await getTranslationForUser(user.uid, pool as any);
+
         const body = await req.json();
         const { name, phone } = body;
 
         if (!name) {
-            return NextResponse.json({ success: false, error: 'Name is required' }, { status: 400 });
+            return NextResponse.json({ success: false, error: t('api.errors.nameRequiredSimple') }, { status: 400 });
         }
 
         const isIllinoisUser = user.email?.endsWith('@illinois.edu') || false;
@@ -40,6 +43,8 @@ export async function POST(req: Request) {
 
     } catch (error) {
         console.error("Create profile error:", error);
-        return NextResponse.json({ success: false, error: 'Failed to create profile' }, { status: 500 });
+        // We might not have user ID here if verifyUser failed
+        const t = await getTranslationForUser(null, pool as any);
+        return NextResponse.json({ success: false, error: t('api.errors.profileCreateFailed') }, { status: 500 });
     }
 }

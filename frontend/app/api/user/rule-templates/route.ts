@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
+import { getTranslationForUser } from '@/app/api/lib/i18n';
 
 export async function GET(req: Request) {
     const client = await pool.connect();
@@ -12,7 +13,8 @@ export async function GET(req: Request) {
         );
 
         if (!user || !user.uid) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            const t = await getTranslationForUser(null, client);
+            return NextResponse.json({ error: t('api.errors.unauthorized') }, { status: 401 });
         }
 
         const templatesRes = await client.query(
@@ -23,7 +25,8 @@ export async function GET(req: Request) {
 
     } catch (error: any) {
         console.error("Fetch Rule Templates API Error:", error);
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+        const t = await getTranslationForUser(null, client);
+        return NextResponse.json({ error: error.message || t('api.errors.internalError') }, { status: 500 });
     } finally {
         client.release();
     }
@@ -38,8 +41,11 @@ export async function POST(req: Request) {
         );
 
         if (!user || !user.uid) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            const t = await getTranslationForUser(null, client);
+            return NextResponse.json({ error: t('api.errors.unauthorized') }, { status: 401 });
         }
+
+        const t = await getTranslationForUser(user.uid, client);
 
         const body = await req.json();
         const {
@@ -60,7 +66,9 @@ export async function POST(req: Request) {
         } = body;
 
         if (!name) {
-            return NextResponse.json({ error: 'Template name is required' }, { status: 400 });
+            if (!name) {
+                return NextResponse.json({ error: t('api.errors.templateNameRequired') }, { status: 400 });
+            }
         }
 
         const insertRes = await client.query(
@@ -86,7 +94,8 @@ export async function POST(req: Request) {
 
     } catch (error: any) {
         console.error("Create Rule Template API Error:", error);
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+        const t = await getTranslationForUser(null, client);
+        return NextResponse.json({ error: error.message || t('api.errors.internalError') }, { status: 500 });
     } finally {
         client.release();
     }

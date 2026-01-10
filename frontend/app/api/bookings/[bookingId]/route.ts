@@ -20,11 +20,11 @@ export async function PATCH(
             req.headers.get('authorization') ?? undefined
         );
 
-        if (!user || !user.uid) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
         const t = await getTranslationForUser(user?.uid ?? null, client);
+
+        if (!user || !user.uid) {
+            return NextResponse.json({ error: t('api.errors.unauthorized') }, { status: 401 });
+        }
 
         const body = await req.json();
 
@@ -299,7 +299,7 @@ export async function PATCH(
                     const chosenTime = new Date(preferred_pickup_time).getTime();
                     if (isNaN(chosenTime)) {
                         await client.query('ROLLBACK');
-                        return NextResponse.json({ error: 'Invalid preferred pickup time format' }, { status: 400 });
+                        return NextResponse.json({ error: t('api.errors.invalidPickupTimeFormat') }, { status: 400 });
                     }
 
                     // Check range: departure - flex <= chosen <= departure + flex

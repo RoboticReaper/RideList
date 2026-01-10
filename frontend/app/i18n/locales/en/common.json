@@ -1404,16 +1404,44 @@
                 "message": "Your trip is now full."
             },
             "payment_marked": {
-                "title": "Payment Marked",
-                "message": "Rider marked payment as sent. Please confirm."
+                "title": "Rider Paid",
+                "message": "Your rider has paid for the trip. Please confirm the payment."
             },
             "rider_left": {
                 "title": "Rider Left",
                 "message": "A rider has left your trip."
             },
+            "rider_left_paid_bookable": {
+                "title": "Rider Left",
+                "message": "Your paid rider has left the trip and the trip is now bookable again."
+            },
+            "rider_left_paid": {
+                "title": "Rider Left",
+                "message": "Your paid rider has left the trip."
+            },
+            "rider_left_pending_bookable": {
+                "title": "Rider Left",
+                "message": "A rider pending your pay confirmation has left the trip and the trip is now bookable again."
+            },
+            "rider_left_pending": {
+                "title": "Rider Left",
+                "message": "A rider pending your pay confirmation has left the trip."
+            },
+            "rider_left_unpaid_bookable": {
+                "title": "Rider Left",
+                "message": "Your unpaid rider has left the trip and the trip is now bookable again."
+            },
+            "rider_left_unpaid": {
+                "title": "Rider Left",
+                "message": "Your unpaid rider has left the trip."
+            },
             "rider_ready": {
                 "title": "Rider Ready",
-                "message": "A rider is ready for pickup."
+                "message": "Your rider has checked in as ready."
+            },
+            "trip_auto_departed": {
+                "title": "Trip Auto-Departed",
+                "message": "System auto-departed the trip due to driver inactivity."
             },
             "trip_auto_locked": {
                 "title": "Trip Locked",
@@ -1463,9 +1491,17 @@
                 "title": "Trip Departed",
                 "message": "Driver has started the trip."
             },
+            "trip_departed_definite": {
+                "title": "Trip Departed",
+                "message": "The driver has started the trip."
+            },
             "marked_no_show": {
                 "title": "No Show",
                 "message": "You were marked as a no-show."
+            },
+            "trip_marked_no_show": {
+                "title": "Trip No Show",
+                "message": "You have been marked as no show."
             },
             "picked_up": {
                 "title": "Picked Up",
@@ -1475,9 +1511,17 @@
                 "title": "Driver Update",
                 "message": "Driver updated their contact info."
             },
+            "driver_contact_changed_definite": {
+                "title": "Driver Contact Updated",
+                "message": "Your driver has updated their phone number."
+            },
             "vehicle_updated": {
                 "title": "Vehicle Update",
                 "message": "Driver updated vehicle information."
+            },
+            "vehicle_updated_definite": {
+                "title": "Vehicle Information Updated",
+                "message": "The driver has updated the vehicle details for your trip."
             },
             "trip_updated": {
                 "title": "Trip Update",
@@ -1541,7 +1585,42 @@
             "startLocationEmpty": "Start location text cannot be empty",
             "destinationEmpty": "Destination text cannot be empty",
             "rideNotFound": "Ride not found",
-            "cannotReduceSeats": "Cannot reduce total seats below seats taken ({{seatsTaken}})."
+            "cannotReduceSeats": "Cannot reduce total seats below seats taken ({{seatsTaken}}).",
+            "bookingAlreadyInactive": "Booking is already inactive.",
+            "cannotLeaveDeparted": "Cannot leave trip after it has departed.",
+            "bookingNotPaymentReady": "Booking is not awaiting payment.",
+            "notConfirmedOrPending": "Booking is not confirmed or pending payment confirmation.",
+            "checkInNotStarted": "Check-in has not started for this trip.",
+            "alreadyReady": "You are already marked as ready.",
+            "tripCompletedOrCancelled": "Trip is already completed or cancelled.",
+            "invalidPickupTimeFormat": "Invalid preferred pickup time format.",
+            "driverProfileNotFound": "Driver profile not found.",
+            "driverPhoneRequired": "Driver must have a phone number set in their profile to start a trip.",
+            "carRequiredForDeparture": "A car must be assigned to the trip to start departure.",
+            "profileIncomplete": "Profile incomplete",
+            "missingRequiredFieldsLocation": "Missing required fields (Location or PlaceID required)",
+            "invalidStartLocationId": "Invalid Start Location ID",
+            "invalidStartLocationName": "Invalid Start Location Name",
+            "invalidDestinationId": "Invalid Destination ID",
+            "invalidDestinationName": "Invalid Destination Name",
+            "invalidCarId": "Invalid Car ID",
+            "seatsExceedCarCapacity": "Trip seats ({{seats}}) cannot exceed car capacity ({{capacity}}).",
+            "carSeatsRequired": "Car Information must include number of seats.",
+            "ruleTemplateNameRequired": "Rule Template name is required.",
+            "tripTemplateNameRequired": "Trip Template name is required.",
+            "profileNotFound": "Profile not found",
+            "nameRequired": "Name cannot be empty",
+            "nameRequiredSimple": "Name is required",
+            "imageUploadFailed": "Image upload failed",
+            "carNotFoundExact": "Car not found",
+            "profileCreateFailed": "Failed to create profile",
+            "templateNameRequired": "Template name is required",
+            "notFound": "Not found",
+            "notFoundOrUnauthorized": "Not found or unauthorized",
+            "ruleTemplateLinkedToTrip": "Cannot delete this rule template because it is currently linked to a trip template.",
+            "templateSeatsExceedCarCapacity": "Template seats ({{seats}}) cannot exceed car capacity ({{capacity}}).",
+            "ruleBigLuggageExceedsCar": "Rule big luggage limit ({{limit}}) exceeds car capacity ({{capacity}}).",
+            "ruleSmallLuggageExceedsCar": "Rule small luggage limit ({{limit}}) exceeds car capacity ({{capacity}})."
         }
     },
     "tripFields": {

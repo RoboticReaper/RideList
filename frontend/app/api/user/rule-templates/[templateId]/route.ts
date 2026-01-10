@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
+import { getTranslationForUser } from '@/app/api/lib/i18n';
 
 export async function GET(
     req: Request,
@@ -11,15 +12,21 @@ export async function GET(
     const client = await pool.connect();
     try {
         const user = await verifyUserFromRequest(req.headers.get('authorization') ?? undefined);
-        if (!user || !user.uid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!user || !user.uid) {
+            const t = await getTranslationForUser(null, client);
+            return NextResponse.json({ error: t('api.errors.unauthorized') }, { status: 401 });
+        }
+
+        const t = await getTranslationForUser(user.uid, client);
 
         const res = await client.query('SELECT * FROM rule_templates WHERE id = $1 AND driver = $2', [templateId, user.uid]);
 
-        if (res.rowCount === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+        if (res.rowCount === 0) return NextResponse.json({ error: t('api.errors.notFound') }, { status: 404 });
         return NextResponse.json({ template: res.rows[0] });
     } catch (error: any) {
         console.error("Get Rule Template API Error:", error);
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+        const t = await getTranslationForUser(null, client);
+        return NextResponse.json({ error: error.message || t('api.errors.internalError') }, { status: 500 });
     } finally { client.release(); }
 }
 
@@ -31,7 +38,12 @@ export async function PUT(
     const client = await pool.connect();
     try {
         const user = await verifyUserFromRequest(req.headers.get('authorization') ?? undefined);
-        if (!user || !user.uid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!user || !user.uid) {
+            const t = await getTranslationForUser(null, client);
+            return NextResponse.json({ error: t('api.errors.unauthorized') }, { status: 401 });
+        }
+
+        const t = await getTranslationForUser(user.uid, client);
 
         const body = await req.json();
         const {
@@ -78,12 +90,13 @@ export async function PUT(
             ]
         );
 
-        if (res.rowCount === 0) return NextResponse.json({ error: 'Not found or unauthorized' }, { status: 404 });
+        if (res.rowCount === 0) return NextResponse.json({ error: t('api.errors.notFoundOrUnauthorized') }, { status: 404 });
         return NextResponse.json({ template: res.rows[0] });
 
     } catch (error: any) {
         console.error("Update Rule Template API Error:", error);
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+        const t = await getTranslationForUser(null, client);
+        return NextResponse.json({ error: error.message || t('api.errors.internalError') }, { status: 500 });
     } finally { client.release(); }
 }
 
@@ -95,18 +108,24 @@ export async function DELETE(
     const client = await pool.connect();
     try {
         const user = await verifyUserFromRequest(req.headers.get('authorization') ?? undefined);
-        if (!user || !user.uid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!user || !user.uid) {
+            const t = await getTranslationForUser(null, client);
+            return NextResponse.json({ error: t('api.errors.unauthorized') }, { status: 401 });
+        }
+
+        const t = await getTranslationForUser(user.uid, client);
 
         const check = await client.query('SELECT 1 FROM trip_templates WHERE rule = $1 LIMIT 1', [templateId]);
         if (check.rowCount && check.rowCount > 0) {
-            return NextResponse.json({ error: 'Cannot delete this rule template because it is currently linked to a trip template.' }, { status: 409 });
+            return NextResponse.json({ error: t('api.errors.ruleTemplateLinkedToTrip') }, { status: 409 });
         }
 
         const res = await client.query('DELETE FROM rule_templates WHERE id = $1 AND driver = $2 RETURNING id', [templateId, user.uid]);
-        if (res.rowCount === 0) return NextResponse.json({ error: 'Not found or unauthorized' }, { status: 404 });
+        if (res.rowCount === 0) return NextResponse.json({ error: t('api.errors.notFoundOrUnauthorized') }, { status: 404 });
         return NextResponse.json({ success: true, id: templateId });
     } catch (error: any) {
         console.error("Delete Rule Template API Error:", error);
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+        const t = await getTranslationForUser(null, client);
+        return NextResponse.json({ error: error.message || t('api.errors.internalError') }, { status: 500 });
     } finally { client.release(); }
 }
