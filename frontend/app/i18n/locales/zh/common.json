@@ -570,7 +570,7 @@
                 "flexibilityLabel": "时间浮动：± {{time}}",
                 "optional": "选填",
                 "preferredPickupLocation": "期望上车地点",
-                "preferredPickupLocationDesc": "选填——你希望在哪里上车？",
+                "preferredPickupLocationDesc": "选填——你希望在哪里上车？司机将会看到精准位置。",
                 "pickupLocationPlaceholder": "例如：Illini Union、Green St.",
                 "invalidPickupLocation": "请从建议中选择有效地点",
                 "riderNote": "上车备注",
@@ -1313,7 +1313,8 @@
                 "success": "预约更新成功",
                 "error": "预约更新失败",
                 "checkInWarningTitle": "频率限制与司机通知",
-                "checkInWarning": "行前确认已开始。你每 5 分钟只能修改一次预约信息，司机会收到相关通知。开始接送后将无法再编辑。"
+                "checkInWarning": "行前确认已开始。你每 5 分钟只能修改一次预约信息，司机会收到相关通知。开始接送后将无法再编辑。",
+                "resetToDeparture": "重置为出发时间"
             }
         },
         "validation": {

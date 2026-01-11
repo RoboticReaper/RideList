@@ -73,7 +73,7 @@ export function HeaderMenu() {
         <Group justify="space-between" h="100%" gap={0}>
           <Group h="100%" gap={0}>
             <LocalizedLink href="/">
-              <Image src="/logo.png" fit="contain" className={classes.logo} />
+              <Image src="/logo.svg" fit="contain" className={classes.logo} />
             </LocalizedLink>
           </Group>
 
@@ -216,7 +216,7 @@ export function HeaderMenu() {
         closeButtonProps={{ size: 'xl' }}
         title={
           <LocalizedLink href="/" onClick={closeDrawer}>
-            <Image src="/logo.png" fit="contain" h={44} w="auto" />
+            <Image src="/logo.svg" fit="contain" h={44} w="auto" />
           </LocalizedLink>
         }
         hiddenFrom="sm"

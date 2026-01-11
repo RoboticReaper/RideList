@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { LocalizedLink } from '../LocalizedLink';
 import { useTranslation } from 'react-i18next';
+import { Metadata } from 'next';
 
 dayjs.extend(relativeTime);
 

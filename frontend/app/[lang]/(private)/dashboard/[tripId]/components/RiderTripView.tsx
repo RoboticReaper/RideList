@@ -590,6 +590,16 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                         valueFormat="MM/DD/YYYY HH:mm"
                                         leftSection={<IconCalendar size={16} stroke={1.5} />}
                                     />
+                                    {editPreferredPickupTime && (
+                                        <Text
+                                            size="xs"
+                                            c="blue"
+                                            style={{ cursor: 'pointer', marginTop: 4 }}
+                                            onClick={() => setEditPreferredPickupTime(new Date(trip.departure_time))}
+                                        >
+                                            {t('tripDetails.rider.editBooking.resetToDeparture')}
+                                        </Text>
+                                    )}
                                 </Box>
                             ) : (
                                 <InfoItem

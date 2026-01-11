@@ -570,7 +570,7 @@
                 "flexibilityLabel": "Flexibility: +/- {{time}}",
                 "optional": "Optional",
                 "preferredPickupLocation": "Preferred Pickup Location",
-                "preferredPickupLocationDesc": "Optional – where would you like to be picked up?",
+                "preferredPickupLocationDesc": "Optional – where would you like to be picked up? Driver will see the exact address.",
                 "pickupLocationPlaceholder": "e.g. Illini Union, Green St.",
                 "invalidPickupLocation": "Please select a valid location from the suggestions",
                 "riderNote": "Pickup Notes",
@@ -1313,7 +1313,8 @@
                 "success": "Booking updated successfully",
                 "error": "Failed to update booking",
                 "checkInWarningTitle": "Rate Limit & Notify Driver",
-                "checkInWarning": "Check-in has started. You can only update booking details once every 5 minutes. Driver will be notified of these changes. Editing will be disabled after pickup begins."
+                "checkInWarning": "Check-in has started. You can only update booking details once every 5 minutes. Driver will be notified of these changes. Editing will be disabled after pickup begins.",
+                "resetToDeparture": "Reset to Departure"
             }
         },
         "validation": {

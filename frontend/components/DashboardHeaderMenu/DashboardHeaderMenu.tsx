@@ -75,8 +75,8 @@ export function DashboardHeaderMenu({ role, onRoleChange, drawerOpened, toggleDr
                     <Group h="100%" gap={0}>
                         <Burger opened={drawerOpened} onClick={toggleDrawer} hiddenFrom="sm" size="md" mr="xs" />
                         <LocalizedLink href="/">
-                            <Image src="/logo_small.png" fit="contain" className={classes.logo} hiddenFrom="xs" />
-                            <Image src="/logo.png" fit="contain" className={classes.logo} visibleFrom="xs" />
+                            <Image src="/logo_small.svg" fit="contain" className={classes.logo} hiddenFrom="xs" />
+                            <Image src="/logo.svg" fit="contain" className={classes.logo} visibleFrom="xs" />
                         </LocalizedLink>
                     </Group>
 
@@ -211,7 +211,7 @@ export function DashboardHeaderMenu({ role, onRoleChange, drawerOpened, toggleDr
                 closeButtonProps={{ size: 'xl' }}
                 title={
                     <LocalizedLink href="/" onClick={closeDrawer}>
-                        <Image src="/logo.png" fit="contain" h={40} w="auto" />
+                        <Image src="/logo.svg" fit="contain" h={40} w="auto" />
                     </LocalizedLink>
                 }
                 hiddenFrom="sm"

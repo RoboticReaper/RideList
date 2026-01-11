@@ -27,6 +27,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       default: t('metadata.title')
     },
     description: t('metadata.description'),
+    icons: {
+      icon: '/logo_small.svg'
+    },
 
     alternates: {
       canonical: `${baseUrl}/${lang}`,

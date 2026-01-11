@@ -50,9 +50,9 @@
 .logo {
     height: rem(40px);
 
-    @media (max-width: 400px) {
+    /* @media (max-width: 400px) {
         height: rem(30px);
-    }
+    } */
 
     width: auto;
 }

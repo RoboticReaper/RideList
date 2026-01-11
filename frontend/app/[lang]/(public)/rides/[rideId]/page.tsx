@@ -1058,6 +1058,7 @@ export default function RidePage() {
                             leftSection={<IconClock size={16} />}
                             value={bookingData.pickupTime}
                             valueFormat="MM/DD/YYYY HH:mm"
+                            minDate={new Date()}
                             onChange={(date: any) => {
                                 const d = (typeof date === 'string' && date) ? new Date(date) : date;
                                 setBookingData({ ...bookingData, pickupTime: d });

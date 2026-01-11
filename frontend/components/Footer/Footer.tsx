@@ -91,7 +91,7 @@ export function Footer() {
     <div className={classes.footer}>
       <Container className={classes.inner}>
         <LocalizedLink href="/">
-          <Image src="/logo.png" fit="contain" className={classes.logo} />
+          <Image src="/logo.svg" fit="contain" className={classes.logo} />
         </LocalizedLink>
         <Group className={classes.links}>{items}</Group>
       </Container>
