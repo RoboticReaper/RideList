@@ -3,7 +3,7 @@
         "findRide": "Find Ride",
         "postRide": "Post Ride",
         "how": "How It Works",
-        "trust": "Trust",
+        "trust": "Trust & Safety",
         "login": "Log in",
         "signup": "Sign up",
         "account": "Account",
@@ -1338,11 +1338,505 @@
     },
     "how": {
         "title": "How It Works",
-        "description": "Simple steps to get where you need to go.",
-        "steps": {
-            "step1": "Search for a ride by date and location",
-            "step2": "Compare verified drivers and prices",
-            "step3": "Book your seat and pay securely"
+        "toc": "Table of Contents",
+        "intro": {
+            "title": "What This Platform Is",
+            "description": "This platform helps UIUC students coordinate rides in a safe, transparent, and structured way.",
+            "note": "It is not a traditional rideshare or taxi service. Drivers post trips they are already planning to take, and riders request to join those trips under clearly defined rules.",
+            "listTitle": "The system is designed to:",
+            "list": [
+                "Minimize uncertainty before meeting",
+                "Protect personal information",
+                "Create clear records of what happened",
+                "Reduce misunderstandings through automation"
+            ]
+        },
+        "who": {
+            "title": "Who Can Use This Platform",
+            "access": {
+                "title": "University-only access",
+                "p1": "Access is restricted to users who sign in with a UIUC Microsoft account.",
+                "p2": "This ensures everyone on the platform belongs to the same university community.",
+                "p3": "There are no guest accounts and no public posting without login."
+            }
+        },
+        "profile": {
+            "title": "Account Creation & Profile Basics",
+            "creation": {
+                "title": "Automatic profile creation",
+                "p1": "When you log in for the first time:",
+                "list": [
+                    "A basic profile is created automatically",
+                    "No sensitive information is public by default",
+                    "You can use the platform immediately"
+                ]
+            },
+            "content": {
+                "title": "What your profile contains",
+                "p1": "Your profile may include:",
+                "list": [
+                    "Display name",
+                    "Profile photo",
+                    "Rider and/or driver statistics",
+                    "Optional phone number"
+                ],
+                "p2": "Your phone number and other sensitive fields are never public by default."
+            }
+        },
+        "privacy": {
+            "title": "Privacy-First Profile Design",
+            "visibility": {
+                "title": "Relationship-based visibility",
+                "p1": "Your full profile details are only visible to:",
+                "list1": [
+                    "People you currently have an active booking with",
+                    "People you very recently completed a trip with (short grace period)",
+                    "Yourself"
+                ],
+                "p2": "Strangers browsing the platform:",
+                "list2": [
+                    "May see a name preview (partially redacted)",
+                    "Will not see phone numbers",
+                    "Will not see precise locations"
+                ]
+            },
+            "records": {
+                "title": "Permanent records vs temporary contact",
+                "p1": "The system distinguishes between:",
+                "list": [
+                    "Identity history (who you rode with — permanent)",
+                    "Contact access (phone/payment — temporary)"
+                ],
+                "p2": "Contact information automatically expires after trips end."
+            }
+        },
+        "vehicles": {
+            "title": "Vehicles & Driver Requirements",
+            "registering": {
+                "title": "Registering a vehicle",
+                "p1": "Drivers must register vehicles before using them for trips.",
+                "p2": "Each vehicle includes:",
+                "list": [
+                    "Make, model, color, year",
+                    "Seat count",
+                    "License plate (never public before departure)"
+                ]
+            },
+            "requirements": {
+                "title": "Why vehicles are required",
+                "p1": "Vehicle information is essential for:",
+                "list": [
+                    "Safety",
+                    "Pickup coordination",
+                    "Dispute resolution"
+                ],
+                "p2": "Trips cannot safely start without an assigned vehicle."
+            }
+        },
+        "posting": {
+            "title": "Posting a Ride (Drivers)",
+            "details": {
+                "title": "Core trip details",
+                "p1": "When posting a trip, drivers provide:",
+                "list": [
+                    "From / To locations (public-safe text)",
+                    "Departure time",
+                    "Price",
+                    "Available seats",
+                    "Optional notes"
+                ],
+                "p2": "Exact addresses are not made public."
+            },
+            "location": {
+                "title": "Public-safe location text",
+                "p1": "The system automatically converts exact addresses into:",
+                "list": [
+                    "Neighborhoods",
+                    "Campuses",
+                    "General areas"
+                ],
+                "p2": "This protects privacy while still enabling discovery."
+            }
+        },
+        "rules": {
+            "title": "Trip Rules & What They Mean",
+            "luggage": {
+                "title": "Luggage limits",
+                "p1": "Drivers specify how much luggage is allowed per rider."
+            },
+            "radius": {
+                "title": "Pickup & drop-off radius",
+                "p1": "Drivers define how far they are willing to deviate from their route for pickup or drop-off.",
+                "p2": "Riders must choose locations within this radius."
+            },
+            "flexibility": {
+                "title": "Departure time flexibility",
+                "p1": "This defines how early or late a trip may realistically start."
+            },
+            "payment": {
+                "title": "Payment methods & payment window",
+                "p1": "Drivers list accepted payment methods.",
+                "p2": "If payment is required:",
+                "list": [
+                    "Riders must act within the defined time window",
+                    "The system automatically expires unpaid bookings"
+                ]
+            },
+            "autoAccept": {
+                "title": "Auto-accept",
+                "p1": "When enabled:",
+                "list1": [
+                    "Bookings are accepted immediately",
+                    "Payment window starts automatically"
+                ],
+                "p2": "When disabled:",
+                "list2": [
+                    "Driver manually approves each booking"
+                ]
+            }
+        },
+        "templates": {
+            "title": "Templates (Designed for Speed & Consistency)",
+            "ruleTemplates": {
+                "title": "Rule templates",
+                "p1": "Drivers can save frequently used rule configurations and reuse them across trips."
+            },
+            "tripTemplates": {
+                "title": "Trip templates",
+                "p1": "Drivers can save full trip setups (route + rules) and quickly post recurring trips.",
+                "p2": "Templates help reduce mistakes and ensure consistent expectations."
+            }
+        },
+        "searching": {
+            "title": "Searching for Trips (Riders)",
+            "criteria": {
+                "title": "What search looks at",
+                "p1": "Search considers:",
+                "list": [
+                    "Pickup proximity",
+                    "Drop-off proximity",
+                    "Departure time closeness",
+                    "Seat availability",
+                    "Filters (price, luggage, payment method, auto-accept)"
+                ]
+            },
+            "ranking": {
+                "title": "Ranking philosophy",
+                "p1": "Trips are ranked by a combined score balancing:",
+                "list": [
+                    "Time difference",
+                    "Distance deviation"
+                ],
+                "p2": "This avoids showing trips that are technically valid but impractical."
+            }
+        },
+        "booking": {
+            "title": "Booking a Trip (Riders)",
+            "states": {
+                "title": "Booking request states",
+                "p1": "A booking may be:",
+                "list": [
+                    "Waiting for approval",
+                    "Accepted with a payment window",
+                    "Pending payment confirmation",
+                    "Confirmed",
+                    "Expired (automatic)",
+                    "Cancelled or completed"
+                ]
+            },
+            "payment": {
+                "title": "Payment timing",
+                "p1": "Payment confirmation is time-bound to avoid holding seats indefinitely."
+            },
+            "visibility": {
+                "title": "What riders can see",
+                "p1": "Riders only gain access to:",
+                "list": [
+                    "Driver contact",
+                    "Pickup details"
+                ],
+                "p2": "when the booking is active and relevant."
+            }
+        },
+        "managing": {
+            "title": "Managing Bookings (Drivers)",
+            "control": {
+                "title": "Driver control",
+                "p1": "Drivers can:",
+                "list": [
+                    "Accept or reject bookings",
+                    "Remove riders (with reason)",
+                    "See who is ready for pickup",
+                    "Mark riders as picked up or no-show"
+                ]
+            },
+            "transparency": {
+                "title": "Transparency",
+                "p1": "Every status change is logged in history.",
+                "p2": "Nothing silently changes without a record."
+            }
+        },
+        "pickup": {
+            "title": "Pickup & Check-In Flow",
+            "window": {
+                "title": "Check-in window",
+                "p1": "Before departure:",
+                "list": [
+                    "Check-in opens automatically",
+                    "Riders confirm readiness",
+                    "Pickup coordination begins"
+                ]
+            },
+            "locations": {
+                "title": "Pickup locations",
+                "p1": "Riders may specify pickup notes or locations within the allowed radius.",
+                "p2": "Exact driver locations remain protected."
+            }
+        },
+        "lifecycle": {
+            "title": "Trip Lifecycle (End-to-End)",
+            "flow": {
+                "title": "Typical flow",
+                "list": [
+                    "Trip posted",
+                    "Riders book",
+                    "Payment window (if applicable)",
+                    "Check-in opens",
+                    "Trip departs",
+                    "Trip completes"
+                ]
+            },
+            "safeguards": {
+                "title": "Automation safeguards",
+                "p1": "The system may:",
+                "list": [
+                    "Lock trips at cutoff",
+                    "Expire unpaid bookings",
+                    "Auto-start check-in",
+                    "Auto-complete trips if drivers forget"
+                ],
+                "p2": "Automation exists to prevent dead states."
+            }
+        },
+        "notifications": {
+            "title": "Notifications & Alerts",
+            "inApp": {
+                "title": "In-app notifications",
+                "p1": "All important actions generate in-app notifications."
+            },
+            "push": {
+                "title": "Push notifications (optional)",
+                "p1": "Push notifications:",
+                "list": [
+                    "Are opt-in",
+                    "Respect user preferences",
+                    "Are used for time-sensitive events only"
+                ]
+            },
+            "triggers": {
+                "title": "What triggers notifications",
+                "p1": "Examples:",
+                "list": [
+                    "Booking accepted or expired",
+                    "Check-in started",
+                    "Trip cancelled or completed",
+                    "Important contact or vehicle changes"
+                ]
+            }
+        },
+        "historySection": {
+            "title": "History & Records",
+            "importance": {
+                "title": "Why history matters",
+                "p1": "Every trip, booking, and status change is recorded.",
+                "p2": "This protects both riders and drivers if questions arise later."
+            },
+            "retained": {
+                "title": "What is retained",
+                "list": [
+                    "Who participated",
+                    "What rules applied",
+                    "What actions occurred",
+                    "When events happened"
+                ]
+            }
+        },
+        "safety": {
+            "title": "Safety & Trust Principles",
+            "anonymous": {
+                "title": "No anonymous coordination",
+                "p1": "All users are verified through university login."
+            },
+            "sensitive": {
+                "title": "Limited exposure of sensitive info",
+                "p1": "Phone numbers, exact locations, and plates are:",
+                "list": [
+                    "Shown only when necessary",
+                    "Automatically revoked afterward"
+                ]
+            },
+            "automation": {
+                "title": "No silent automation",
+                "p1": "System actions are logged and notified."
+            }
+        },
+        "expectations": {
+            "title": "Proper Use Expectations",
+            "notTaxi": {
+                "title": "This is not a taxi service",
+                "p1": "Drivers are not obligated to accept all riders.",
+                "p2": "Riders are expected to respect rules and timing."
+            },
+            "abuse": {
+                "title": "Abuse prevention",
+                "p1": "Repeated misuse (no-shows, removals, etc.) is visible in history. These stats will have an impact in the system in the future."
+            }
+        },
+        "disclaimers": {
+            "title": "Disclaimers",
+            "p1": "This platform:",
+            "list": [
+                "Does not provide insurance",
+                "Does not guarantee trip completion",
+                "Does not mediate payments"
+            ],
+            "p2": "It exists to coordinate, not enforce real-world behavior."
+        },
+        "final": {
+            "title": "Final Notes",
+            "p1": "This system is intentionally designed to:",
+            "list": [
+                "Reduce ambiguity",
+                "Encourage accountability",
+                "Protect privacy",
+                "Scale safely within a university community"
+            ],
+            "p2": "If something feels “restricted,” it is usually intentional — to protect users on both sides."
+        }
+    },
+    "trust": {
+        "title": "Trust & Safety",
+        "toc": "On this page",
+        "intro": {
+            "title": "Our goal",
+            "p1": "This platform is designed to help UIUC students coordinate rides safely, transparently, and with clear expectations. While no system can eliminate all risk, we’ve built strong safeguards into identity, privacy, and trip coordination."
+        },
+        "who": {
+            "title": "Who is allowed on this platform",
+            "p1": "Only users authenticated through UIUC Microsoft login can create an account.",
+            "list": [
+                "No anonymous accounts",
+                "No external signups",
+                "Each account is tied to a real university identity"
+            ],
+            "p2": "This creates accountability and reduces abuse.",
+            "link": "Learn more about account creation in How it works → Getting started"
+        },
+        "identity": {
+            "title": "Identity & profile visibility",
+            "p1": "Profiles are intentionally privacy-aware.",
+            "list": [
+                "Full names, photos, and phone numbers are not public by default",
+                "Identity details become visible only when there is an active or recent trip relationship",
+                "Past trips do not grant permanent access to personal contact information"
+            ],
+            "p2": "Your profile is not meant to be a public directory.",
+            "link": "See detailed profile visibility rules in How it works → Profiles & privacy"
+        },
+        "location": {
+            "title": "Location privacy",
+            "p1": "Exact addresses are never publicly displayed.",
+            "list1": [
+                "Public trip listings show general areas, not exact pickup points"
+            ],
+            "p2": "Precise locations are only shared:",
+            "list2": [
+                "during active coordination windows",
+                "with users directly involved in the trip"
+            ],
+            "p3": "Latitude/longitude data is never exposed to unrelated users",
+            "p4": "Drivers control pickup radii, not exact addresses.",
+            "link": "See how location visibility works in How it works → Location handling"
+        },
+        "pickup": {
+            "title": "Pickup & meeting safety",
+            "p1": "To reduce pressure and ambiguity:",
+            "list": [
+                "Pickup coordination opens only when it’s operationally necessary",
+                "Riders and drivers can share notes during active trips",
+                "You are never required to meet before a trip becomes active",
+                "If something feels wrong, you can leave or remove a booking before departure"
+            ],
+            "p2": "Trust your judgment — the system supports it."
+        },
+        "payments": {
+            "title": "Payments & financial expectations",
+            "p1": "This platform does not process payments.",
+            "list": [
+                "Payments are arranged directly between riders and drivers",
+                "The system tracks payment status only to manage trip flow",
+                "No funds are held, escrowed, or guaranteed"
+            ],
+            "p2": "Booking history and timestamps are preserved for clarity.",
+            "link": "Learn how booking statuses work in How it works → Booking lifecycle"
+        },
+        "automation": {
+            "title": "Automated protections",
+            "p1": "The system uses automation to reduce confusion and unfairness:",
+            "list": [
+                "Seats are released if riders don’t pay within the allowed window",
+                "Trips are locked before departure to prevent last-minute chaos",
+                "Check-in, departure, and completion can be automated if forgotten",
+                "All system actions are logged and visible"
+            ],
+            "p2": "No silent or unexplained changes.",
+            "link": "See system automation rules in How it works → System behavior"
+        },
+        "disputes": {
+            "title": "Disputes & disagreements",
+            "p1": "This is a coordination platform, not an arbitration service.",
+            "list": [
+                "Users are responsible for communication and decisions",
+                "The system preserves booking history and action timestamps",
+                "Repeated misuse becomes visible through patterns and records"
+            ],
+            "p2": "Use common sense and communicate early."
+        },
+        "expectations": {
+            "title": "Community expectations",
+            "p1": "We expect all users to:",
+            "list": [
+                "Be honest about timing and availability",
+                "Communicate clearly and respectfully",
+                "Respect pickup rules and time windows",
+                "Treat others as you would want to be treated"
+            ],
+            "p2": "This platform works because the community does."
+        },
+        "not": {
+            "title": "What this platform is not",
+            "p1": "To avoid misunderstandings, this platform is not:",
+            "list": [
+                "a taxi or ride-hailing service",
+                "a payment processor",
+                "a safety guarantee",
+                "a substitute for personal judgment"
+            ],
+            "p2": "Use it responsibly."
+        },
+        "unsafe": {
+            "title": "If you feel unsafe",
+            "p1": "Your safety comes first.",
+            "list": [
+                "Do not proceed with a pickup if you feel uncomfortable",
+                "You are not obligated to continue a trip",
+                "Leaving a booking before departure is allowed"
+            ],
+            "p2": "Trust your instincts"
+        },
+        "cta": {
+            "title": "New here?",
+            "link": "Learn how everything fits together in How it works."
         }
     },
     "profile": {

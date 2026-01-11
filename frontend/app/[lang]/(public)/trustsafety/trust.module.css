@@ -1,0 +1,7 @@
+.tocLink {
+    transition: all 0.2s ease;
+
+    &:hover {
+        background-color: var(--mantine-color-gray-1);
+    }
+}

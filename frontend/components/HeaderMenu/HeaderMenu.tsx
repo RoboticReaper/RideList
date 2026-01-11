@@ -84,10 +84,10 @@ export function HeaderMenu() {
             <LocalizedLink href="/newRide" className={classes.link}>
               {t('headerMenu.postRide')}
             </LocalizedLink>
-            <LocalizedLink href="/" className={classes.link}>
+            <LocalizedLink href="/how" className={classes.link}>
               {t('headerMenu.how')}
             </LocalizedLink>
-            <LocalizedLink href="/" className={classes.link}>
+            <LocalizedLink href="/trustsafety" className={classes.link}>
               {t('headerMenu.trust')}
             </LocalizedLink>
           </Group>
@@ -231,10 +231,10 @@ export function HeaderMenu() {
           <LocalizedLink href="/newRide" className={classes.mobileLink} onClick={closeDrawer}>
             {t('headerMenu.postRide')}
           </LocalizedLink>
-          <LocalizedLink href="/" className={classes.mobileLink} onClick={closeDrawer}>
+          <LocalizedLink href="/how" className={classes.mobileLink} onClick={closeDrawer}>
             {t('headerMenu.how')}
           </LocalizedLink>
-          <LocalizedLink href="/" className={classes.mobileLink} onClick={closeDrawer}>
+          <LocalizedLink href="/trustsafety" className={classes.mobileLink} onClick={closeDrawer}>
             {t('headerMenu.trust')}
           </LocalizedLink>
 
