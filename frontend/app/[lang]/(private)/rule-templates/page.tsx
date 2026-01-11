@@ -60,7 +60,7 @@ export default function RuleTemplatesPage() {
 
                             <Group gap="xs" mb="sm">
                                 {template.auto_accept && <Badge color="green" variant="light">{t('templates.rules.form.autoAccept')}</Badge>}
-                                <Badge color="gray" variant="light">Luggage: {template.big_luggage_lim ?? '∞'}L {template.small_luggage_lim ?? '∞'}S</Badge>
+                                <Badge color="gray" variant="light">{t('templates.rules.luggageDisplay', { big: template.big_luggage_lim ?? '∞', small: template.small_luggage_lim ?? '∞' })}</Badge>
                             </Group>
 
                             <Text size="sm" c="dimmed" lineClamp={2}>

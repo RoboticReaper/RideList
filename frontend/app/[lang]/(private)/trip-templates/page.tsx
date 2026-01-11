@@ -61,7 +61,7 @@ export default function TripTemplatesPage() {
 
                             <Group gap="xs" mb="sm">
                                 <Badge color="blue" variant="light">${template.price}</Badge>
-                                <Badge color="gray" variant="light">{template.total_seats} seats</Badge>
+                                <Badge color="gray" variant="light">{t('templates.trips.seatsCount', { count: template.total_seats })}</Badge>
                             </Group>
 
                             <Text size="sm" c="dimmed" lineClamp={2} style={{ minHeight: '40px' }}>

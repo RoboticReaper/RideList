@@ -12,14 +12,14 @@ import {
   Text,
   Input,
 } from '@mantine/core';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 import { useForm } from '@mantine/form';
 import { upperFirst, useToggle } from '@mantine/hooks';
 import { MicrosoftButton } from './MicrosoftButton';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../firebase/AuthContext';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { getLocalizedHref } from '../LocalizedLink';
+import { getLocalizedHref, LocalizedLink } from '../LocalizedLink';
 import { signInWithUIUC } from '../firebase/AuthContext';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { getAuth } from 'firebase/auth';
@@ -130,7 +130,15 @@ export function AuthForm(props: PaperProps) {
 
       <Input.Wrapper label={t('auth.agreementsLabel')} withAsterisk error={error}>
         <Checkbox
-          label={t('auth.agreementsCheckbox')}
+          label={
+            <Trans
+              i18nKey="auth.agreementsCheckbox"
+              components={{
+                1: <Anchor component={LocalizedLink} href="/privacy" target="_blank" inherit c="blue" />,
+                3: <Anchor component={LocalizedLink} href="/tos" target="_blank" inherit c="blue" />
+              }}
+            />
+          }
           mt="xs"
           mb={error ? 'xs' : undefined}
           checked={checked}

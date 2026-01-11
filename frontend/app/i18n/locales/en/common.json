@@ -45,7 +45,7 @@
             "small": "Small",
             "none": "None",
             "plate": "Plate",
-            "standard": "Standard",
+            "standard": "Not provided",
             "noneProvided": "None provided",
             "notProvidedByDriver": "Not provided by driver",
             "notAssigned": "Not assigned",
@@ -115,49 +115,245 @@
         "description": "A tool for organizing peer-to-peer ride sharing information near UIUC and Chicago."
     },
     "riderSteps": {
-        "title": "Find Your Ride in 3 Steps",
-        "description": "Search, compare, and book. All in one place without requiring accounts up-front.",
-        "search": "Search",
-        "searchDesc": "Enter from, to, and time to see all available rides. No more scrolling through chats or comments.",
-        "compare": "Compare",
-        "compareDesc": "Sort by price, driver rating, pickup time and distance. Filter with your own rules.",
-        "book": "Book",
-        "bookDesc": "Reserve a spot with verified UIUC email and pay on time. All drivers are verified.",
-        "screenshotPlaceholder": "Screenshot Placeholder"
+        "title": "Find Your Ride in 3 Simple Steps",
+        "description": "Search, compare, and book verified rides — no group chats, no spam, no guessing.",
+        "search": "Search rides that fit your plan",
+        "searchDesc": "Enter where you’re going and when. See real rides that match — all in one place.\n\n• Public-safe pickup areas\n• Live availability\n• Browse without an account",
+        "compare": "Compare clearly, decide confidently",
+        "compareDesc": "Compare price, timing, distance, luggage space, and driver ratings at a glance.\n\n• Verified drivers\n• Clear trip rules\n• Seats shown upfront",
+        "book": "Book your seat, stress-free",
+        "bookDesc": "Reserve with your UIUC email. The system handles confirmations and reminders for you.\n\n• Secure booking flow\n• Automatic status updates\n• No chasing messages",
+        "screenshotPlaceholder": "Screenshot Placeholder",
+        "footer": "Built for the UIUC community with privacy and clarity first.",
+        "howItWorksLink": "→ Learn how it works",
+        "captions": {
+            "step1": "Search results page",
+            "step2": "Trip detailed information page",
+            "step3": "Manage booking state page"
+        }
     },
     "driverSteps": {
-        "title": "Find Your Ride in 3 Steps",
-        "description": "Search, compare, and book. All in one place without requiring accounts up-front.",
-        "search": "Search",
-        "searchDesc": "Enter from, to, and time to see all available rides. No more scrolling through chats or comments.",
-        "compare": "Compare",
-        "compareDesc": "Sort by price, driver rating, pickup time and distance. Filter with your own rules.",
-        "book": "Book",
-        "bookDesc": "Reserve a spot with verified UIUC email and pay on time. All drivers are verified.",
-        "screenshotPlaceholder": "Screenshot Placeholder"
+        "title": "Post a Ride in 3 Simple Steps",
+        "description": "Set the rules once. The system handles the rest.",
+        "post": "Post your ride with clear rules",
+        "postDesc": "Set your route, time, price, and preferences in one place.\n\n• Public-safe locations\n• Luggage & payment rules\n• Auto-accept or manual approval",
+        "manage": "Manage bookings without chaos",
+        "manageDesc": "See who joined, who paid, and who’s ready — all in one dashboard.\n\n• Real-time booking status\n• Automatic pay windows\n• No group chats",
+        "drive": "Pick up and go",
+        "driveDesc": "Start pickup when ready. The system locks details and handles the rest.\n\n• Check-in & no-show handling\n• Car info frozen for safety\n• Trip history saved automatically",
+        "screenshotPlaceholder": "Screenshot Placeholder",
+        "footer": "Designed to reduce coordination, not add more work.",
+        "howItWorksLink": "→ Learn how it works",
+        "captions": {
+            "step1": "Trip rules setting",
+            "step2": "Rider management page",
+            "step3": "Showing a trip with departed state"
+        }
     },
     "footer": {
         "contact": "Contact",
-        "privacy": "Privacy",
+        "faq": "FAQ",
+        "howItWorks": "How It Works",
+        "trustSafety": "Trust & Safety",
+        "privacy": "Privacy Policy",
+        "tos": "Terms of Service",
         "blog": "Blog",
         "careers": "Careers"
     },
+    "feedback": {
+        "modalTitle": "Contact support",
+        "description": "Found a bug or have a suggestion? Let us know!",
+        "placeholder": "Type your message here...",
+        "submit": "Send Message",
+        "rateLimit": "Please wait 10 minutes before sending another feedback.",
+        "emptyMessage": "Message cannot be empty.",
+        "success": "Message received! Thank you."
+    },
     "trustSafety": {
         "title": "Frequently Asked Questions",
-        "questions": {
-            "resetPass": "How can I reset my password?",
-            "multiAccount": "Can I create more that one account?",
-            "newsletter": "How can I subscribe to monthly newsletter?",
-            "creditCard": "Do you store credit card information securely?",
-            "payment": "What payment systems to you work with?"
-        },
-        "placeholder": "It can’t help but hear a pin drop from over half a mile away, so it lives deep in the mountains where there aren’t many people or Pokémon.It was born from sludge on the ocean floor. In a sterile environment, the germs within its body can’t multiply, and it dies.It has no eyeballs, so it can’t see. It checks its surroundings via the ultrasonic waves it emits from its mouth."
+        "sections": {
+            "accounts": {
+                "title": "Accounts & Access",
+                "questions": [
+                    {
+                        "q": "Who can use this platform?",
+                        "a": "This platform is currently available to users with a valid UIUC Microsoft account. This helps keep the community trusted and accountable."
+                    },
+                    {
+                        "q": "Do I need to create a profile?",
+                        "a": "A basic profile is created automatically when you sign in. You can edit your name and photo later if you choose."
+                    },
+                    {
+                        "q": "Is my real name visible to everyone?",
+                        "a": "No. Your full name is only shown to people who are actively booking or riding with you. Public viewers see a shortened or anonymized name."
+                    }
+                ]
+            },
+            "posting": {
+                "title": "Posting a Trip (Drivers)",
+                "questions": [
+                    {
+                        "q": "Do I need to add a car before posting a trip?",
+                        "a": "Yes. Every trip must be associated with a car so riders know what to expect."
+                    },
+                    {
+                        "q": "Can I reuse trip or rule settings?",
+                        "a": "Yes. You can save trip templates and rule templates to quickly post similar trips in the future."
+                    },
+                    {
+                        "q": "What does “Auto-accept” mean?",
+                        "a": "If enabled, riders who meet your rules will be automatically accepted without manual approval."
+                    },
+                    {
+                        "q": "Can I edit trip details after riders join?",
+                        "a": "Some fields can be edited before pickup starts. Once pickup begins, trip rules and car info are locked for safety."
+                    }
+                ]
+            },
+            "locations": {
+                "title": "Locations & Privacy",
+                "questions": [
+                    {
+                        "q": "Are exact pickup and drop-off addresses public?",
+                        "a": "No. Public listings show general areas, not exact addresses."
+                    },
+                    {
+                        "q": "When are exact locations shared?",
+                        "a": "Exact pickup details are only shared between drivers and riders during active coordination."
+                    },
+                    {
+                        "q": "Why can’t I see someone’s address yet?",
+                        "a": "Location details unlock only when they are operationally needed (e.g., during check-in or pickup)."
+                    }
+                ]
+            },
+            "searching": {
+                "title": "Searching & Booking (Riders)",
+                "questions": [
+                    {
+                        "q": "How does search ranking work?",
+                        "a": "Results are ranked using a combination of time proximity, pickup distance, and drop-off distance."
+                    },
+                    {
+                        "q": "Can I book multiple trips?",
+                        "a": "Yes, but you can only have one active booking per trip."
+                    },
+                    {
+                        "q": "What happens after I request to join a trip?",
+                        "a": "Depending on the trip rules, you may be:\n\n- auto-accepted\n- waiting for driver approval\n- given a payment window"
+                    }
+                ]
+            },
+            "payments": {
+                "title": "Payments",
+                "questions": [
+                    {
+                        "q": "What payment methods are supported?",
+                        "a": "Supported methods are listed on each trip. These may include cash or digital payment methods."
+                    },
+                    {
+                        "q": "What is a payment window?",
+                        "a": "Some trips require payment within a set time. If payment isn’t confirmed in time, the booking may expire automatically."
+                    },
+                    {
+                        "q": "What happens if my payment times out?",
+                        "a": "Your booking will be marked as expired, and the seat may be released."
+                    }
+                ]
+            },
+            "pickup": {
+                "title": "Check-in & Pickup",
+                "questions": [
+                    {
+                        "q": "What is check-in?",
+                        "a": "Check-in allows riders to mark themselves as ready for pickup."
+                    },
+                    {
+                        "q": "Can I change my pickup note during check-in?",
+                        "a": "Yes, but changes are rate-limited to prevent spam."
+                    },
+                    {
+                        "q": "What happens when the driver starts pickup?",
+                        "a": "Pickup begins, trip details are locked, and riders who are not picked up may be marked as no-shows."
+                    }
+                ]
+            },
+            "lifecycle": {
+                "title": "Trip Lifecycle & Automation",
+                "questions": [
+                    {
+                        "q": "What happens if a driver is late?",
+                        "a": "The system may:\n\n- send reminders\n- automatically start pickup after a grace period"
+                    },
+                    {
+                        "q": "What if a driver forgets to complete the trip?",
+                        "a": "Trips may be automatically completed after a set amount of time."
+                    },
+                    {
+                        "q": "Can trips be cancelled after pickup starts?",
+                        "a": "No. After pickup starts, trips can only be completed or aborted."
+                    }
+                ]
+            },
+            "notifications": {
+                "title": "Notifications",
+                "questions": [
+                    {
+                        "q": "What notifications will I receive?",
+                        "a": "You’ll receive notifications for important events like booking updates, check-in, pickup start, and trip changes."
+                    },
+                    {
+                        "q": "Can I turn off notifications?",
+                        "a": "Non-critical notifications can be adjusted in your settings. Important notifications cannot be disabled."
+                    }
+                ]
+            },
+            "safety": {
+                "title": "Safety & Trust",
+                "questions": [
+                    {
+                        "q": "How do you prevent misuse?",
+                        "a": "We use:\n\n- verified accounts\n- limited data visibility\n- event logs\n- automated safeguards"
+                    },
+                    {
+                        "q": "Is my phone number public?",
+                        "a": "No. Phone numbers are only shared temporarily during active trips or short grace periods afterward."
+                    }
+                ]
+            },
+            "history": {
+                "title": "History & Records",
+                "questions": [
+                    {
+                        "q": "Can I see past trips and bookings?",
+                        "a": "Yes. Your trip and booking history is always available to you."
+                    },
+                    {
+                        "q": "Why can I still see someone’s name from a past trip?",
+                        "a": "Past interactions act as a “receipt” so you know who you interacted with, but contact details are hidden."
+                    }
+                ]
+            },
+            "general": {
+                "title": "General",
+                "questions": [
+                    {
+                        "q": "Is this a rideshare company?",
+                        "a": "No. This platform helps students coordinate rides. Drivers and riders arrange details directly."
+                    },
+                    {
+                        "q": "Who do I contact if something goes wrong?",
+                        "a": "Use the reporting tools in the app or contact support through the help page."
+                    }
+                ]
+            }
+        }
     },
     "auth": {
         "loginWelcome": "Welcome to RideList, login with",
         "uiucOnly": "Only UIUC accounts (@illinois.edu) are currently allowed for student verification.",
         "agreementsLabel": "Agreements",
-        "agreementsCheckbox": "I agree to privacy policy and terms of service",
+        "agreementsCheckbox": "I agree to <1>privacy policy</1> and <3>terms of service</3>",
         "agreementsError": "Please check agreements to login",
         "completeProfileTitle": "Complete your Profile",
         "fullNameLabel": "Full Name",
@@ -528,6 +724,10 @@
                 "ruleTemplateName": "e.g. Standard Rules",
                 "tripTemplateName": "e.g. Daily Commute"
             },
+            "sourceBadge": {
+                "tripTemplate": "Trip template: {{name}}",
+                "ruleTemplate": "Rule template: {{name}}"
+            },
             "errors": {
                 "flexibilityRequired": "Please specify departure flexibility.",
                 "pickupRadiusRequired": "Please specify pickup radius.",
@@ -801,6 +1001,13 @@
                     "impact3": "This action cannot be undone.",
                     "confirm": "Cancel Trip"
                 },
+                "editNote": {
+                    "title": "Note for {{name}}",
+                    "privateReminder": "This note is private and only visible to you.",
+                    "viewProfile": "View Profile",
+                    "label": "Private Note",
+                    "placeholder": "Add a private note regarding this rider..."
+                },
                 "abortTrip": {
                     "title": "Abort Trip",
                     "description": "Use this option if something goes wrong after the trip has started.",
@@ -837,17 +1044,19 @@
             },
             "reasons": {
                 "reason": "Reason",
-                "luggage": "Did not meet luggage requirements",
-                "pickup": "Pickup expectations did not match trip rules",
-                "noResponse": "Did not respond / confirm in time",
-                "mistake": "Joined by mistake / duplicate booking",
-                "driverMistake": "Driver mistake (removed unintentionally)",
-                "otherPre": "Other (requires short note)",
-                "violated": "Violated trip rules after booking",
-                "lateCancel": "Late cancellation after payment window",
-                "noShow": "No-show / unresponsive after payment",
-                "paymentIssue": "Payment issue (invalid / reversed / disputed)",
-                "otherPost": "Other (requires note)"
+                "luggage": "Luggage exceeds limits",
+                "pickup": "Pickup location not workable",
+                "noResponse": "Did not respond in time",
+                "detailsMismatch": "Booking details incorrect",
+                "capacity": "Seats no longer available",
+                "duplicate": "Duplicate or accidental booking",
+                "otherPre": "Other (before payment)",
+                "violated": "Violated trip rules",
+                "lateCancel": "Late cancellation by rider",
+                "noShow": "Did not show up",
+                "paymentIssue": "Payment verification issue",
+                "safety": "Safety or conduct concern",
+                "otherPost": "Other (after payment)"
             }
         },
         "edit": {
@@ -1017,7 +1226,7 @@
                 "ready": "Ready",
                 "notReady": "Not marked ready",
                 "checkInBegins": "Check-in begins {{time}}",
-                "standard": "Standard",
+                "standard": "Not provided",
                 "noneProvided": "None provided",
                 "contactHidden": "Contact hidden until approved",
                 "bookingInactive": "Booking no longer active",
@@ -1071,7 +1280,7 @@
             "alerts": {
                 "bookingRemoved": {
                     "title": "Booking Removed",
-                    "description": "Your booking has been removed by the driver. Please contact them at {{phone}} for more information."
+                    "description": "Your booking has been removed by the driver. Reason: {{reason}}"
                 },
                 "manageState": "Manage your booking information here. If paying with cash at pickup, you can mark payment as sent to avoid expiring pay window.",
                 "cancelledTrip": {
@@ -1248,12 +1457,14 @@
             "errors": {
                 "notFound": "Template not found",
                 "loadFailed": "Failed to load template"
-            }
+            },
+            "luggageDisplay": "Luggage: {{big}}L {{small}}S"
         },
         "trips": {
             "title": "Trip Templates",
             "create": "Create Trip Template",
             "noTemplates": "No trip templates found. Create one to get started!",
+            "seatsCount": "{{count}} seats",
             "form": {
                 "editTitle": "Edit Trip Template",
                 "addTitle": "New Trip Template",
@@ -1266,7 +1477,9 @@
                 "driverNotesPlaceholder": "I will be driving a blue sedan...",
                 "sectionRoute": "Route & Vehicle",
                 "from": "From",
+                "fromPlaceholder": "Start Location",
                 "to": "To",
+                "toPlaceholder": "Destination",
                 "price": "Price ($)",
                 "totalSeats": "Total Seats",
                 "vehicle": "Vehicle",
@@ -1867,6 +2080,7 @@
     },
     "profile": {
         "changePhoto": "Change Photo",
+        "removePhoto": "Remove Photo",
         "verifiedStudent": "Verified Student",
         "joined": "Joined",
         "phone": "Phone",
@@ -2179,5 +2393,816 @@
         "pickup": "Pickup",
         "dropoff": "Dropoff",
         "unavailable": "Map preview unavailable"
+    },
+    "tos": {
+        "title": "Terms of Service",
+        "sections": {
+            "effectiveDate": {
+                "title": "Effective Date",
+                "body": [
+                    "These Terms of Service (“Terms”) are effective as of the date you first access or use the platform.",
+                    "By creating an account or using the platform, you agree to these Terms. If you do not agree, do not use the platform."
+                ]
+            },
+            "platform": {
+                "title": "What This Platform Is (and Is Not)",
+                "subsections": [
+                    {
+                        "title": "Platform role",
+                        "body": [
+                            "This platform is a coordination tool that helps users discover, post, and manage shared rides.",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "We do not provide transportation services.",
+                                    "We do not employ drivers.",
+                                    "We do not act as an agent, broker, or guarantor for any ride."
+                                ]
+                            },
+                            "All trips are arranged directly between users."
+                        ]
+                    },
+                    {
+                        "title": "No transportation guarantee",
+                        "body": [
+                            "We do not guarantee that:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "a trip will occur",
+                                    "a driver will arrive on time",
+                                    "a rider will be picked up",
+                                    "a trip will be completed"
+                                ]
+                            },
+                            "Use of the platform is at your own discretion and risk."
+                        ]
+                    }
+                ]
+            },
+            "eligibility": {
+                "title": "Eligibility and Accounts",
+                "subsections": [
+                    {
+                        "title": "Account requirements",
+                        "body": [
+                            "To use the platform, you must:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "Sign in using an approved university Microsoft account (e.g., UIUC)",
+                                    "Provide accurate and truthful information",
+                                    "Maintain only one account"
+                                ]
+                            },
+                            "We may suspend or terminate accounts that violate these requirements."
+                        ]
+                    },
+                    {
+                        "title": "Account responsibility",
+                        "body": [
+                            "You are responsible for:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "All activity under your account",
+                                    "Keeping your account secure",
+                                    "Logging out on shared or public devices"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            "roles": {
+                "title": "User Roles and Responsibilities",
+                "subsections": [
+                    {
+                        "title": "Drivers",
+                        "body": [
+                            "If you post trips as a driver, you are responsible for:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "Holding a valid driver’s license",
+                                    "Having legally required insurance",
+                                    "Ensuring your vehicle is safe and roadworthy",
+                                    "Complying with all applicable laws"
+                                ]
+                            },
+                            "You are solely responsible for driving behavior and safety."
+                        ]
+                    },
+                    {
+                        "title": "Riders",
+                        "body": [
+                            "If you join trips as a rider, you are responsible for:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "Showing up on time",
+                                    "Communicating clearly",
+                                    "Respectful behavior",
+                                    "Following applicable laws"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            "vehicles": {
+                "title": "Vehicles and Car Information",
+                "subsections": [
+                    {
+                        "title": "Vehicle requirements",
+                        "body": [
+                            "Drivers must only post trips using vehicles they are authorized to operate.",
+                            "Vehicle information may be required to:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "Display seating capacity",
+                                    "Enforce luggage limits",
+                                    "Support safety and coordination"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Vehicle snapshots",
+                        "body": [
+                            "Once a trip begins, vehicle information may be snapshotted and frozen for record-keeping and safety purposes."
+                        ]
+                    }
+                ]
+            },
+            "tripCreation": {
+                "title": "Trip Creation and Rules",
+                "subsections": [
+                    {
+                        "title": "Trip details",
+                        "body": [
+                            "When creating a trip, drivers define:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "Route and timing",
+                                    "Seat and luggage limits",
+                                    "Pickup and drop-off flexibility",
+                                    "Payment methods",
+                                    "Booking rules"
+                                ]
+                            },
+                            "Drivers are responsible for ensuring trip details are accurate."
+                        ]
+                    },
+                    {
+                        "title": "Location privacy",
+                        "body": [
+                            "Exact addresses may be processed into public-safe location labels (e.g., neighborhood or landmark) to protect privacy.",
+                            "Precise location details may only be shared with relevant users during active coordination windows."
+                        ]
+                    }
+                ]
+            },
+            "booking": {
+                "title": "Booking and Payments",
+                "subsections": [
+                    {
+                        "title": "Booking process",
+                        "body": [
+                            "Riders may request or join trips depending on driver settings.",
+                            "Bookings may:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "Require approval",
+                                    "Be automatically accepted",
+                                    "Be subject to payment windows"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Payments",
+                        "body": [
+                            "The platform does not process payments unless explicitly stated otherwise.",
+                            "All payment arrangements are made directly between users.",
+                            "We do not:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "Hold funds",
+                                    "Guarantee payments",
+                                    "Resolve payment disputes"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            "automation": {
+                "title": "Automation and System Behavior",
+                "subsections": [
+                    {
+                        "title": "Automated actions",
+                        "body": [
+                            "The platform includes automated systems that may:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "Expire unpaid bookings",
+                                    "Lock trips at cutoff times",
+                                    "Start check-in windows",
+                                    "Auto-start trips if drivers are late",
+                                    "Auto-complete trips after extended inactivity"
+                                ]
+                            },
+                            "These actions are best-effort safeguards, not guarantees."
+                        ]
+                    },
+                    {
+                        "title": "Notifications",
+                        "body": [
+                            "Notifications are provided for convenience.",
+                            "We do not guarantee:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "delivery",
+                                    "timing",
+                                    "accuracy in all cases"
+                                ]
+                            },
+                            "Users are responsible for checking trip status within the platform."
+                        ]
+                    }
+                ]
+            },
+            "privacy": {
+                "title": "Privacy and Data Visibility",
+                "subsections": [
+                    {
+                        "title": "Context-based visibility",
+                        "body": [
+                            "Personal information (such as names, phone numbers, pickup notes) is shown only when relevant to an active or recent trip.",
+                            "Access may change automatically based on:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "trip status",
+                                    "booking status",
+                                    "time since trip completion"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Historical records",
+                        "body": [
+                            "The platform may retain limited historical records (e.g., completed trips, bookings, ratings) for safety, accountability, and system integrity."
+                        ]
+                    }
+                ]
+            },
+            "safety": {
+                "title": "Safety and Conduct",
+                "subsections": [
+                    {
+                        "title": "Expected behavior",
+                        "body": [
+                            "Users must:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "Treat others respectfully",
+                                    "Avoid harassment, discrimination, or abuse",
+                                    "Avoid illegal activity"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Reporting and enforcement",
+                        "body": [
+                            "We may investigate reports of misuse and take action including:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "warnings",
+                                    "suspensions",
+                                    "permanent bans"
+                                ]
+                            },
+                            "We are not obligated to mediate disputes."
+                        ]
+                    }
+                ]
+            },
+            "suspension": {
+                "title": "Account Suspension and Termination",
+                "subsections": [
+                    {
+                        "title": "Our rights",
+                        "body": [
+                            "We reserve the right to suspend or terminate accounts at any time for:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "policy violations",
+                                    "safety concerns",
+                                    "abuse or misuse",
+                                    "system integrity reasons"
+                                ]
+                            },
+                            "We are not required to provide continued access."
+                        ]
+                    }
+                ]
+            },
+            "liability": {
+                "title": "Limitation of Liability",
+                "subsections": [
+                    {
+                        "title": "Use at your own risk",
+                        "body": [
+                            "To the fullest extent permitted by law:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "We are not liable for accidents, injuries, losses, or damages",
+                                    "We are not responsible for user behavior",
+                                    "We are not responsible for missed rides or failed coordination"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "title": "No warranties",
+                        "body": [
+                            "The platform is provided “as is” without warranties of any kind."
+                        ]
+                    }
+                ]
+            },
+            "changes": {
+                "title": "Changes to These Terms",
+                "subsections": [
+                    {
+                        "title": "Updates",
+                        "body": [
+                            "We may update these Terms from time to time.",
+                            "If changes are significant, we may notify users.",
+                            "Continued use of the platform constitutes acceptance of the updated Terms."
+                        ]
+                    }
+                ]
+            },
+            "contact": {
+                "title": "Contact",
+                "subsections": [
+                    {
+                        "title": "Questions or concerns",
+                        "body": [
+                            "If you have questions about these Terms, contact button is available in the footer."
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "privacyPolicy": {
+        "title": "Privacy Policy",
+        "sections": {
+            "effectiveDate": {
+                "title": "Effective Date",
+                "body": [
+                    "This Privacy Policy is effective as of the date you first use the platform.",
+                    "By using the platform, you agree to the collection and use of information as described here. If you do not agree, do not use the platform."
+                ]
+            },
+            "philosophy": {
+                "title": "Our Privacy Philosophy",
+                "subsections": [
+                    {
+                        "title": "Design principles",
+                        "body": [
+                            "This platform is built with privacy by default, context-based visibility, and data minimization in mind.",
+                            "We aim to:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "collect only what is necessary",
+                                    "show personal information only when relevant",
+                                    "automatically reduce visibility when coordination ends"
+                                ]
+                            },
+                            "Privacy is enforced primarily through system rules, not manual settings."
+                        ]
+                    }
+                ]
+            },
+            "collection": {
+                "title": "Information We Collect",
+                "subsections": [
+                    {
+                        "title": "Account information",
+                        "body": [
+                            "When you create an account, we collect:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "your university-linked account ID",
+                                    "your name",
+                                    "your email address",
+                                    "account creation time"
+                                ]
+                            },
+                            "This information is required to identify users and prevent abuse."
+                        ]
+                    },
+                    {
+                        "title": "Profile information",
+                        "body": [
+                            "You may provide or generate:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "display name",
+                                    "profile photo",
+                                    "phone number",
+                                    "language preferences"
+                                ]
+                            },
+                            "Some profile fields may be optional, but certain features may require them."
+                        ]
+                    },
+                    {
+                        "title": "Trip and booking information",
+                        "body": [
+                            "When you post or join trips, we collect:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "trip routes and times",
+                                    "booking details (seats, luggage, notes)",
+                                    "payment method preferences (not payment itself)",
+                                    "timestamps and status changes"
+                                ]
+                            },
+                            "This information is required to coordinate trips and enforce system rules."
+                        ]
+                    },
+                    {
+                        "title": "Vehicle information",
+                        "body": [
+                            "If you post trips as a driver, we may collect:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "vehicle make, model, color, year",
+                                    "seating and luggage capacity",
+                                    "license plate (limited visibility)"
+                                ]
+                            },
+                            "Vehicle information is used for coordination and safety."
+                        ]
+                    },
+                    {
+                        "title": "System and technical data",
+                        "body": [
+                            "We automatically collect limited technical data such as:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "device identifiers (for notifications)",
+                                    "timestamps of actions",
+                                    "system-generated events",
+                                    "notification delivery status"
+                                ]
+                            },
+                            "We do not use this data for advertising."
+                        ]
+                    }
+                ]
+            },
+            "usage": {
+                "title": "How We Use Information",
+                "subsections": [
+                    {
+                        "title": "Core platform functionality",
+                        "body": [
+                            "We use collected information to:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "display trips in search results",
+                                    "manage bookings and trip status",
+                                    "notify users of relevant events",
+                                    "enforce booking rules and deadlines",
+                                    "support safety and accountability"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Search result visibility",
+                        "body": [
+                            "To help riders make informed decisions, some driver information is shown in search results, including:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "driver name",
+                                    "profile photo",
+                                    "rating and completed trips"
+                                ]
+                            },
+                            "This information is intentionally limited and does not include:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "phone number",
+                                    "exact addresses",
+                                    "payment details"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Automation and system decisions",
+                        "body": [
+                            "Some data is used to power automated actions, such as:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "expiring unpaid bookings",
+                                    "locking trips at cutoff times",
+                                    "starting check-in windows",
+                                    "auto-starting or auto-completing trips"
+                                ]
+                            },
+                            "These actions are based on timestamps and rules, not personal profiling."
+                        ]
+                    }
+                ]
+            },
+            "contextVisibility": {
+                "title": "Context-Based Visibility",
+                "subsections": [
+                    {
+                        "title": "What this means",
+                        "body": [
+                            "Information visibility depends on context, including:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "whether you have an active booking",
+                                    "whether a trip is ongoing or recently completed",
+                                    "whether coordination is still necessary"
+                                ]
+                            },
+                            "Visibility is automatically reduced once the context ends."
+                        ]
+                    },
+                    {
+                        "title": "Examples",
+                        "body": [
+                            "A rider may see a driver’s phone number during an active trip, but not afterward.",
+                            "A driver may see rider contact details only while pickup coordination is relevant.",
+                            "Past trips revert to anonymized or limited views.",
+                            "This reduces long-term exposure of personal data."
+                        ]
+                    }
+                ]
+            },
+            "locationPrivacy": {
+                "title": "Location Privacy",
+                "subsections": [
+                    {
+                        "title": "Public-safe locations",
+                        "body": [
+                            "Exact addresses entered by drivers may be processed into public-safe location labels, such as:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "neighborhoods",
+                                    "landmarks",
+                                    "general areas"
+                                ]
+                            },
+                            "This protects precise location privacy while keeping trips discoverable."
+                        ]
+                    },
+                    {
+                        "title": "Precise coordinates",
+                        "body": [
+                            "Precise geographic coordinates may be:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "stored for internal validation",
+                                    "used to enforce pickup radius rules",
+                                    "shown only when strictly necessary for coordination"
+                                ]
+                            },
+                            "They are never broadly public."
+                        ]
+                    }
+                ]
+            },
+            "photosIdentity": {
+                "title": "Photos and Identity",
+                "subsections": [
+                    {
+                        "title": "Profile photos",
+                        "body": [
+                            "Profile photos may be displayed:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "in search results",
+                                    "on trip pages",
+                                    "during active coordination"
+                                ]
+                            },
+                            "Photos may be hidden or removed from view once coordination ends."
+                        ]
+                    },
+                    {
+                        "title": "Names",
+                        "body": [
+                            "Names may be:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "shown fully in active contexts",
+                                    "partially redacted in inactive or historical views"
+                                ]
+                            },
+                            "This balances trust and privacy."
+                        ]
+                    }
+                ]
+            },
+            "payments": {
+                "title": "Payments and Financial Information",
+                "subsections": [
+                    {
+                        "title": "No payment processing",
+                        "body": [
+                            "Unless explicitly stated otherwise:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "we do not process payments",
+                                    "we do not store payment credentials",
+                                    "we do not handle refunds"
+                                ]
+                            },
+                            "Any payment handles or methods are shared only during active coordination windows."
+                        ]
+                    }
+                ]
+            },
+            "retention": {
+                "title": "Data Retention",
+                "subsections": [
+                    {
+                        "title": "Operational records",
+                        "body": [
+                            "We retain some data for:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "safety",
+                                    "dispute context",
+                                    "system integrity",
+                                    "abuse prevention"
+                                ]
+                            },
+                            "Examples include:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "trip events",
+                                    "booking status history",
+                                    "vehicle snapshots at departure"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Retention limits",
+                        "body": [
+                            "We do not retain unnecessary personal data indefinitely.",
+                            "Visibility and access are reduced automatically over time."
+                        ]
+                    }
+                ]
+            },
+            "sharing": {
+                "title": "Data Sharing",
+                "subsections": [
+                    {
+                        "title": "With other users",
+                        "body": [
+                            "Your information may be shared with other users only when relevant, such as:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "drivers seeing rider details during pickup",
+                                    "riders seeing driver details during a booked trip"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "title": "With third parties",
+                        "body": [
+                            "We do not sell user data.",
+                            "We may use trusted services for:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "authentication",
+                                    "hosting",
+                                    "notifications"
+                                ]
+                            },
+                            "These services only receive the minimum data required to function."
+                        ]
+                    }
+                ]
+            },
+            "security": {
+                "title": "Security",
+                "subsections": [
+                    {
+                        "title": "Protection measures",
+                        "body": [
+                            "We use reasonable technical and organizational measures to protect data, including:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "access control",
+                                    "role-based visibility",
+                                    "database constraints",
+                                    "audit logging"
+                                ]
+                            },
+                            "No system is perfectly secure, but we actively design to reduce risk."
+                        ]
+                    }
+                ]
+            },
+            "rights": {
+                "title": "Your Choices and Rights",
+                "subsections": [
+                    {
+                        "title": "Access and updates",
+                        "body": [
+                            "You can:",
+                            {
+                                "type": "list",
+                                "items": [
+                                    "view and update your profile",
+                                    "control some notification settings",
+                                    "choose whether to post trips or join them"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Account deletion",
+                        "body": [
+                            "If you stop using the platform, some historical data may remain for safety and integrity purposes, but will no longer be publicly visible."
+                        ]
+                    }
+                ]
+            },
+            "changes": {
+                "title": "Changes to This Policy",
+                "subsections": [
+                    {
+                        "title": "Updates",
+                        "body": [
+                            "We may update this Privacy Policy as the platform evolves.",
+                            "If changes are significant, we may notify users. Continued use means acceptance of the updated policy."
+                        ]
+                    }
+                ]
+            },
+            "contact": {
+                "title": "Contact",
+                "subsections": [
+                    {
+                        "title": "Questions or concerns",
+                        "body": [
+                            "If you have questions about privacy or data handling, contact is available in the footer"
+                        ]
+                    }
+                ]
+            }
+        }
     }
 }

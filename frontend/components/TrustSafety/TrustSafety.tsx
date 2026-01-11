@@ -1,42 +1,47 @@
 'use client';
 import { useTranslation } from 'react-i18next';
-import { Accordion, Container, Title } from '@mantine/core';
+import { Accordion, Container, Title, Stack, Text } from '@mantine/core';
 import classes from './TrustSafety.module.css';
+
+const SECTION_KEYS = [
+  'accounts',
+  'posting',
+  'locations',
+  'searching',
+  'payments',
+  'pickup',
+  'lifecycle',
+  'notifications',
+  'safety',
+  'history',
+  'general',
+] as const;
 
 export function TrustSafety() {
   const { t } = useTranslation('common');
 
   return (
     <Container size="sm" className={classes.wrapper}>
-      <Title ta="center" className={classes.title}>
+      <Title ta="center" className={classes.title} id="faq">
         {t('trustSafety.title')}
       </Title>
 
-      <Accordion variant="separated">
-        <Accordion.Item className={classes.item} value="reset-password">
-          <Accordion.Control>{t('trustSafety.questions.resetPass')}</Accordion.Control>
-          <Accordion.Panel>{t('trustSafety.placeholder')}</Accordion.Panel>
-        </Accordion.Item>
-
-        <Accordion.Item className={classes.item} value="another-account">
-          <Accordion.Control>{t('trustSafety.questions.multiAccount')}</Accordion.Control>
-          <Accordion.Panel>{t('trustSafety.placeholder')}</Accordion.Panel>
-        </Accordion.Item>
-
-        <Accordion.Item className={classes.item} value="newsletter">
-          <Accordion.Control>{t('trustSafety.questions.newsletter')}</Accordion.Control>
-          <Accordion.Panel>{t('trustSafety.placeholder')}</Accordion.Panel>
-        </Accordion.Item>
-
-        <Accordion.Item className={classes.item} value="credit-card">
-          <Accordion.Control>{t('trustSafety.questions.creditCard')}</Accordion.Control>
-          <Accordion.Panel>{t('trustSafety.placeholder')}</Accordion.Panel>
-        </Accordion.Item>
-
-        <Accordion.Item className={classes.item} value="payment">
-          <Accordion.Control>{t('trustSafety.questions.payment')}</Accordion.Control>
-          <Accordion.Panel>{t('trustSafety.placeholder')}</Accordion.Panel>
-        </Accordion.Item>
+      <Accordion variant="separated" multiple>
+        {SECTION_KEYS.map((key) => (
+          <Accordion.Item className={classes.item} value={key} key={key}>
+            <Accordion.Control>{t(`trustSafety.sections.${key}.title`)}</Accordion.Control>
+            <Accordion.Panel>
+              <Stack gap="xl" py="xs">
+                {(t(`trustSafety.sections.${key}.questions`, { returnObjects: true }) as any[])?.map((qa: any, i: number) => (
+                  <div key={i}>
+                    <Text fw={700} mb="xs" size="lg" c="blue.7">{qa.q}</Text>
+                    <Text style={{ whiteSpace: 'pre-line' }} lh={1.6}>{qa.a}</Text>
+                  </div>
+                ))}
+              </Stack>
+            </Accordion.Panel>
+          </Accordion.Item>
+        ))}
       </Accordion>
     </Container>
   );

@@ -8,6 +8,7 @@ import { createNotification } from '@/app/api/lib/createNotification';
 import { isPickupValid } from '@/app/api/lib/geoUtils';
 import { parsePostgresIntervalToMs } from '@/app/api/lib/intervalUtils';
 import { getTranslationForUser } from '@/app/api/lib/i18n';
+import { redactName } from '@/app/api/lib/redactName';
 
 
 export async function GET(
@@ -170,9 +171,7 @@ export async function GET(
             if (identityVisible) {
                 displayName = row.rider_name;
             } else {
-                displayName = row.rider_name
-                    ? row.rider_name.substring(0, 3) + '***'
-                    : 'Anon';
+                displayName = redactName(row.rider_name);
             }
 
             return {

@@ -56,6 +56,7 @@ export default function ProfilePage() {
     const [nameError, setNameError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
+    const [removePhoto, setRemovePhoto] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const isOwner = user?.uid === uid;
@@ -68,6 +69,7 @@ export default function ProfilePage() {
             setEditSmallLuggage(profile.rider_profile?.default_small_luggage || 0);
             setNameError(null);
             setPendingPhoto(null);
+            setRemovePhoto(false);
             setIsEditing(true);
         }
     };
@@ -78,6 +80,7 @@ export default function ProfilePage() {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPendingPhoto(reader.result as string);
+                setRemovePhoto(false);
             };
             reader.readAsDataURL(file);
         }
@@ -86,6 +89,7 @@ export default function ProfilePage() {
     const cancelEditing = () => {
         setIsEditing(false);
         setNameError(null);
+        setRemovePhoto(false);
     };
 
     const saveProfile = async () => {
@@ -109,6 +113,7 @@ export default function ProfilePage() {
                     name: editName,
                     phone: editPhone,
                     profile_image_base64: pendingPhoto,
+                    remove_photo: removePhoto,
                     rider_config: {
                         default_big_luggage: editBigLuggage,
                         default_small_luggage: editSmallLuggage
@@ -167,9 +172,13 @@ export default function ProfilePage() {
             <Paper radius="md" withBorder p="lg" bg="var(--mantine-color-body)">
                 <Group align="flex-start">
                     <Stack align="center" gap="xs">
-                        <Avatar src={pendingPhoto || profile.photo_url} size={120} radius={120} />
+                        <Avatar
+                            src={removePhoto ? null : (pendingPhoto || profile.photo_url)}
+                            size={120}
+                            radius={120}
+                        />
                         {isEditing && (
-                            <>
+                            <Stack gap={8}>
                                 <Button
                                     size="xs"
                                     variant="light"
@@ -185,7 +194,21 @@ export default function ProfilePage() {
                                     accept="image/*"
                                     onChange={handleFileChange}
                                 />
-                            </>
+                                {(profile.photo_url || pendingPhoto) && !removePhoto && (
+                                    <Button
+                                        color="red"
+                                        variant="light"
+                                        size="xs"
+                                        leftSection={<IconX size={14} />}
+                                        onClick={() => {
+                                            setRemovePhoto(true);
+                                            setPendingPhoto(null);
+                                        }}
+                                    >
+                                        {t('profile.removePhoto')}
+                                    </Button>
+                                )}
+                            </Stack>
                         )}
                     </Stack>
                     <Stack gap="xs" style={{ flex: 1 }}>

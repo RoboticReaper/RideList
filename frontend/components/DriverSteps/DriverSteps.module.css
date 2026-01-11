@@ -1,10 +1,8 @@
 .wrapper {
   padding-top: var(--mantine-spacing-xl);
   padding-bottom: var(--mantine-spacing-xl);
-  background-image: radial-gradient(
-    var(--mantine-color-blue-6) 0%,
-    var(--mantine-color-blue-4) 100%
-  );
+  background-image: radial-gradient(var(--mantine-color-blue-6) 0%,
+      var(--mantine-color-blue-4) 100%);
   background-repeat: no-repeat;
   background-position: top left;
   position: relative;
@@ -27,8 +25,7 @@
 .description {
   text-align: center;
 
-  @media (max-width: $mantine-breakpoint-sm) {
-  }
+  @media (max-width: $mantine-breakpoint-sm) {}
 }
 
 .stepsWrapper {
@@ -51,7 +48,7 @@
 }
 
 .stepDescription {
-  font-size: var(--mantine-font-size-lg);
+  font-size: var(--mantine-font-size-md);
   line-height: 1.6;
 }
 

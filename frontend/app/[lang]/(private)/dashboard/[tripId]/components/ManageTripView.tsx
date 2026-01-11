@@ -78,22 +78,24 @@ function RemoveRiderModal({ booking, onClose, onConfirm, loading }: { booking: B
 
 
     const isPrePayment = booking.status === 'waiting_approval' || booking.status === 'joined_with_pay_window';
-    // const reasons = isPrePayment ? PRE_PAYMENT_REASONS : POST_PAYMENT_REASONS; // Replaced by localized arrays
+
     const prePaymentReasons = [
-        { value: 'Luggage requirements not met', label: t('tripDetails.manage.reasons.luggage') },
-        { value: 'Pickup mismatch', label: t('tripDetails.manage.reasons.pickup') },
-        { value: 'No response', label: t('tripDetails.manage.reasons.noResponse') },
-        { value: 'Mistake booking', label: t('tripDetails.manage.reasons.mistake') },
-        { value: 'Driver mistake', label: t('tripDetails.manage.reasons.driverMistake') },
-        { value: 'Other (pre-payment)', label: t('tripDetails.manage.reasons.otherPre') }
+        { value: 'Luggage exceeds limits', label: t('tripDetails.manage.reasons.luggage') },
+        { value: 'Pickup location not workable', label: t('tripDetails.manage.reasons.pickup') },
+        { value: 'Did not respond in time', label: t('tripDetails.manage.reasons.noResponse') },
+        { value: 'Booking details incorrect', label: t('tripDetails.manage.reasons.detailsMismatch') },
+        { value: 'Seats no longer available', label: t('tripDetails.manage.reasons.capacity') },
+        { value: 'Duplicate or accidental booking', label: t('tripDetails.manage.reasons.duplicate') },
+        { value: 'Other (before payment)', label: t('tripDetails.manage.reasons.otherPre') }
     ];
 
     const postPaymentReasons = [
-        { value: 'Violated rules', label: t('tripDetails.manage.reasons.violated') },
-        { value: 'Late cancellation', label: t('tripDetails.manage.reasons.lateCancel') },
-        { value: 'No-show', label: t('tripDetails.manage.reasons.noShow') },
-        { value: 'Payment issue', label: t('tripDetails.manage.reasons.paymentIssue') },
-        { value: 'Other (post-payment)', label: t('tripDetails.manage.reasons.otherPost') }
+        { value: 'Did not show up', label: t('tripDetails.manage.reasons.noShow') },
+        { value: 'Violated trip rules', label: t('tripDetails.manage.reasons.violated') },
+        { value: 'Late cancellation by rider', label: t('tripDetails.manage.reasons.lateCancel') },
+        { value: 'Payment verification issue', label: t('tripDetails.manage.reasons.paymentIssue') },
+        { value: 'Safety or conduct concern', label: t('tripDetails.manage.reasons.safety') },
+        { value: 'Other (after payment)', label: t('tripDetails.manage.reasons.otherPost') }
     ];
 
     const reasons = isPrePayment ? prePaymentReasons : postPaymentReasons;

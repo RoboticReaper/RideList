@@ -1,12 +1,13 @@
 'use client'
 
 import { IconSearch, IconArrowsSort, IconCalendarCheck } from '@tabler/icons-react';
-import { Container, Text, Title, Grid, ThemeIcon, rem } from '@mantine/core';
+import { Container, Text, Title, Grid, ThemeIcon, rem, Image } from '@mantine/core';
 import classes from './RiderSteps.module.css';
 import { useTranslation } from 'react-i18next';
+import { LocalizedLink } from '../LocalizedLink';
 
 export function RiderSteps() {
-	const { t } = useTranslation('common');
+	const { t, i18n } = useTranslation('common');
 
 	const data = [
 		{
@@ -46,23 +47,49 @@ export function RiderSteps() {
 									stroke={1.5}
 								/>
 							</ThemeIcon>
-							<Title order={2} className={classes.stepTitle}>
+							<Title order={3} className={classes.stepTitle}>
 								{item.title}
 							</Title>
-							<Text c="dimmed" className={classes.stepDescription}>
+							<Text
+								c="dimmed"
+								className={classes.stepDescription}
+								style={{ whiteSpace: 'pre-line' }}
+							>
 								{item.description}
 							</Text>
 						</Grid.Col>
 						<Grid.Col span={{ base: 12, md: 6 }}>
-							<div className={classes.screenshotPlaceholder}>
-								<Text c="dimmed" size="sm">
-									{t('riderSteps.screenshotPlaceholder')}
-								</Text>
-							</div>
+							<Image
+								src={`/demoPic/${i18n.language.startsWith('zh') ? 'zh' : 'en'}/rider step ${index + 1}.png`}
+								alt={item.title}
+								radius="md"
+								className={classes.screenshot}
+							/>
+							<Text c="dimmed" size="xs" ta="center" mt="xs">
+								{t(`riderSteps.captions.step${index + 1}` as any)}
+							</Text>
 						</Grid.Col>
 					</Grid>
 				))}
 			</div>
+
+			<Container p={0} mt="xl" style={{ textAlign: 'center' }}>
+				<Text c="dimmed" size="sm" mb="xs">
+					{t('riderSteps.footer')}
+				</Text>
+				<Title order={4} size="sm">
+					<LocalizedLink
+						href="/how"
+						style={{
+							textDecoration: 'none',
+							color: 'inherit',
+							fontWeight: 600,
+						}}
+					>
+						{t('riderSteps.howItWorksLink')}
+					</LocalizedLink>
+				</Title>
+			</Container>
 		</Container>
 	);
 }

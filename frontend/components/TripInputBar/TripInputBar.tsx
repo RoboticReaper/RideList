@@ -197,7 +197,10 @@ export function TripInputBar() {
     const renderSourceBadge = (field: string) => {
         if (fieldSources[field] === 'template' && fieldSourceInfos[field]) {
             const info = fieldSourceInfos[field];
-            return <Badge size="xs" variant="light" color={info.type === 'Trip' ? 'blue' : 'green'}>{info.type} template: {info.name}</Badge>;
+            const badgeText = info.type === 'Trip'
+                ? t('rides.create.sourceBadge.tripTemplate', { name: info.name })
+                : t('rides.create.sourceBadge.ruleTemplate', { name: info.name });
+            return <Badge size="xs" variant="light" color={info.type === 'Trip' ? 'blue' : 'green'}>{badgeText}</Badge>;
         }
         return null;
     };

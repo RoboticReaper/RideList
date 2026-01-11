@@ -18,8 +18,7 @@
 .description {
   text-align: center;
 
-  @media (max-width: $mantine-breakpoint-sm) {
-  }
+  @media (max-width: $mantine-breakpoint-sm) {}
 }
 
 .stepsWrapper {
@@ -42,7 +41,7 @@
 }
 
 .stepDescription {
-  font-size: var(--mantine-font-size-lg);
+  font-size: var(--mantine-font-size-md);
   line-height: 1.6;
 }
 

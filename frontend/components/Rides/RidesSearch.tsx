@@ -461,6 +461,7 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
                             label={t('rides.common.date')}
                             placeholder={t('rides.search.datePlaceholder')}
                             value={startTime}
+                            valueFormat="MM/DD/YYYY HH:mm"
                             onChange={(val) => {
                                 if (typeof val === 'string') {
                                     setStartTime(new Date(val));

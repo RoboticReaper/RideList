@@ -64,6 +64,13 @@ export const NOTIFICATION_TYPES = {
             'trip_updated',                     // trip info/rules changed
             'trip_completed'
         ]
+    },
+
+    ADMIN: {
+        ALWAYS_REMIND: [
+            'new_feedback'
+        ],
+        OPTIONAL_REMIND: []
     }
 };
 
@@ -100,7 +107,8 @@ export async function createNotification({
         NOTIFICATION_TYPES.DRIVER.ALWAYS_REMIND.includes(type) ||
         NOTIFICATION_TYPES.DRIVER.OPTIONAL_REMIND.includes(type) ||
         NOTIFICATION_TYPES.RIDER.ALWAYS_REMIND.includes(type) ||
-        NOTIFICATION_TYPES.RIDER.OPTIONAL_REMIND.includes(type);
+        NOTIFICATION_TYPES.RIDER.OPTIONAL_REMIND.includes(type) ||
+        NOTIFICATION_TYPES.ADMIN.ALWAYS_REMIND.includes(type);
 
     if (!isValidType) {
         console.warn(`Unknown notification type: ${type}`);

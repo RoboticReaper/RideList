@@ -52,7 +52,8 @@ create table users (
   id text primary key,
   created_at timestamptz not null default now(),
   email text not null unique,
-  last_active timestamptz           -- used more like last website load
+  last_active timestamptz,           -- used more like last website load
+  is_admin bool not null default false
 );
 
 create table profile_global (
@@ -407,6 +408,16 @@ CREATE TABLE booking_mutations (
   actor text NOT NULL, -- rider or driver
   change jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+create table feedbacks (
+  id uuid primary key default gen_random_uuid(),
+  actor text not null references users(id),
+  message text not null,
+  read bool not null default false,
+
+  created_at timestamptz not null default now(),
+  read_at timestamptz
 );
 
 CREATE INDEX ON booking_mutations (booking_id, created_at, actor);

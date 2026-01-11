@@ -36,7 +36,7 @@ export const LocalizedLink = forwardRef<HTMLAnchorElement, LocalizedLinkProps>(
       <Link
         href={finalHref}
         ref={ref}
-        // target={target}
+        target={target}
         {...props}
 
         suppressHydrationWarning

@@ -23,7 +23,7 @@ export function EditDriverNoteModal({ opened, onClose, riderName, riderId, initi
     }, [initialNote, opened]);
 
     return (
-        <Modal opened={opened} onClose={onClose} title={`Note for ${riderName}`}>
+        <Modal opened={opened} onClose={onClose} title={t('tripDetails.manage.modals.editNote.title', { name: riderName })}>
             <Stack>
                 <Text size="sm" c="dimmed">
                     {t('tripDetails.manage.modals.editNote.privateReminder', 'This note is private and only visible to you.')}

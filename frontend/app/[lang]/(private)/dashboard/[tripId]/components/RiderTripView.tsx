@@ -407,7 +407,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                     <Alert color="blue" icon={<IconInfoCircle />} title={t('tripDetails.rider.alerts.bookingRemoved.title')}>
                         <Trans
                             i18nKey="tripDetails.rider.alerts.bookingRemoved.description"
-                            values={{ phone: trip.driver?.phone }}
+                            values={{ reason: trip.user_booking?.removal_reason || t('common.unknown') }}
                         />
                     </Alert>
                 )}
@@ -587,6 +587,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                         placeholder={t('tripDetails.rider.labels.preferredPickup')}
                                         minDate={new Date()} // Optional: restrict to future? Logic depends on flexibility, but usually not past.
                                         clearable
+                                        valueFormat="MM/DD/YYYY HH:mm"
                                         leftSection={<IconCalendar size={16} stroke={1.5} />}
                                     />
                                 </Box>

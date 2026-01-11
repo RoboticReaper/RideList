@@ -13,6 +13,7 @@ import { markTripAsDone } from '@/app/api/lib/tripActions';
 import { areIntervalsEqual } from '@/app/api/lib/intervalUtils';
 import { checkDriverRequirementsForDeparture } from '@/app/api/lib/tripValidation';
 import { logTripEvent } from '@/app/api/lib/tripEvents';
+import { redactName } from '@/app/api/lib/redactName';
 
 export async function GET(
     req: Request,
@@ -202,7 +203,7 @@ export async function GET(
         }
 
         // Identity
-        const displayName = canViewReceipt ? row.driver_name : (row.driver_name ? (row.driver_name.substring(0, 3) + '***') : 'Anon');
+        const displayName = canViewReceipt ? row.driver_name : redactName(row.driver_name);
         const photoUrl = canViewReceipt ? row.driver_photo_url : null;
 
         // Contact Fields

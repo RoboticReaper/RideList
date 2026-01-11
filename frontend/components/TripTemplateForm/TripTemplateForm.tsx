@@ -281,7 +281,7 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
                 <Stack>
                     <Autocomplete
                         label={t('templates.trips.form.from')}
-                        placeholder="Start Location"
+                        placeholder={t('templates.trips.form.fromPlaceholder')}
                         data={startSuggestions}
                         value={startLocation}
                         onChange={handleStartChange}
@@ -289,7 +289,7 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
                     />
                     <Autocomplete
                         label={t('templates.trips.form.to')}
-                        placeholder="Destination"
+                        placeholder={t('templates.trips.form.toPlaceholder')}
                         data={endSuggestions}
                         value={endLocation}
                         onChange={handleEndChange}

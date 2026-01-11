@@ -145,7 +145,7 @@ export function HeaderMenu() {
                       <Button>{t('headerMenu.login')}</Button>
                     </LocalizedLink>
                   ) : (
-                    <Menu shadow="md" width={200}>
+                    <Menu shadow="md" width={230}>
                       <Menu.Target>
                         <UnstyledButton visibleFrom="sm">
                           <Avatar src={user?.photoURL} radius="xl" />

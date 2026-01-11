@@ -5,6 +5,7 @@ import { createNotification } from '@/app/api/lib/createNotification';
 import { bucket, adminAuth } from '@/app/api/lib/firebase-admin'; // Add import
 import sharp from 'sharp';
 import { getTranslationForUser } from '@/app/api/lib/i18n';
+import { redactName } from '@/app/api/lib/redactName';
 
 
 export async function GET(
@@ -140,7 +141,7 @@ export async function GET(
         // Redaction:
         // Level 2/Owner: "John Smith"
         // Level 0: "Joh***" (or "Anon" if short name)
-        const displayName = hasFullNameAccess ? profile.name : (profile.name ? (profile.name.substring(0, 3) + '***') : 'Anon');
+        const displayName = hasFullNameAccess ? profile.name : redactName(profile.name);
 
         // Phone:
         // Level 2/Owner: "+1555..."
@@ -201,7 +202,7 @@ export async function PATCH(
         const t = await getTranslationForUser(user.uid, client);
 
         const body = await req.json();
-        const { name, phone, rider_config, profile_image_base64 } = body;
+        const { name, phone, rider_config, profile_image_base64, remove_photo } = body;
 
         // Basic validation
         if (!name || name.trim() === "") {
@@ -209,7 +210,9 @@ export async function PATCH(
         }
 
         let newPhotoUrl = null;
-        if (profile_image_base64) {
+        let shouldRemovePhoto = remove_photo === true;
+
+        if (profile_image_base64 || shouldRemovePhoto) {
             try {
                 // Feature: Delete old photo if exists
                 const existingProfile = await client.query('SELECT photo_url FROM profile_global WHERE id = $1', [targetUserId]);
@@ -238,47 +241,49 @@ export async function PATCH(
                     }
                 }
 
-                // Expecting data:image/jpeg;base64,...
-                const matches = profile_image_base64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+                if (!shouldRemovePhoto && profile_image_base64) {
+                    // Expecting data:image/jpeg;base64,...
+                    const matches = profile_image_base64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
 
-                if (matches && matches.length === 3) {
-                    let contentType = matches[1];
-                    let imageBuffer: any = Buffer.from(matches[2], 'base64');
+                    if (matches && matches.length === 3) {
+                        let contentType = matches[1];
+                        let imageBuffer: any = Buffer.from(matches[2], 'base64');
 
-                    // Compression Logic for large files (> 5MB)
-                    if (imageBuffer.byteLength > 5 * 1024 * 1024) {
-                        console.log(`Compressing image (Original: ${(imageBuffer.byteLength / 1024 / 1024).toFixed(2)}MB)`);
-                        try {
-                            imageBuffer = await sharp(imageBuffer)
-                                .resize({
-                                    width: 1920,
-                                    height: 1920,
-                                    fit: 'inside',
-                                    withoutEnlargement: true
-                                })
-                                .jpeg({ quality: 80 })
-                                .toBuffer();
-                            contentType = 'image/jpeg';
-                            console.log(`Compression complete (New: ${(imageBuffer.byteLength / 1024 / 1024).toFixed(2)}MB)`);
-                        } catch (compErr) {
-                            console.error("Compression failed, proceeding with original:", compErr);
-                            // If compression fails, we try to proceed with original or could throw
+                        // Compression Logic for large files (> 5MB)
+                        if (imageBuffer.byteLength > 5 * 1024 * 1024) {
+                            console.log(`Compressing image (Original: ${(imageBuffer.byteLength / 1024 / 1024).toFixed(2)}MB)`);
+                            try {
+                                imageBuffer = await sharp(imageBuffer)
+                                    .resize({
+                                        width: 1920,
+                                        height: 1920,
+                                        fit: 'inside',
+                                        withoutEnlargement: true
+                                    })
+                                    .jpeg({ quality: 80 })
+                                    .toBuffer();
+                                contentType = 'image/jpeg';
+                                console.log(`Compression complete (New: ${(imageBuffer.byteLength / 1024 / 1024).toFixed(2)}MB)`);
+                            } catch (compErr) {
+                                console.error("Compression failed, proceeding with original:", compErr);
+                                // If compression fails, we try to proceed with original or could throw
+                            }
                         }
+
+                        const filename = `profile_photos/${targetUserId}/${Date.now()}.jpg`; // Force jpg extension or derive? keeping simple for now
+                        const file = bucket.file(filename);
+
+                        await file.save(imageBuffer as any, {
+                            metadata: { contentType: contentType },
+                            public: true, // Make public
+                        });
+
+                        // Construct public URL
+                        // "https://storage.googleapis.com/[BUCKET_NAME]/[OBJECT_NAME]" is standard public link
+                        // Or use file.publicUrl() if available (bucket.file object sometimes implies authenticated access only unless properly configured)
+                        // The standard firebase pattern:
+                        newPhotoUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
                     }
-
-                    const filename = `profile_photos/${targetUserId}/${Date.now()}.jpg`; // Force jpg extension or derive? keeping simple for now
-                    const file = bucket.file(filename);
-
-                    await file.save(imageBuffer as any, {
-                        metadata: { contentType: contentType },
-                        public: true, // Make public
-                    });
-
-                    // Construct public URL
-                    // "https://storage.googleapis.com/[BUCKET_NAME]/[OBJECT_NAME]" is standard public link
-                    // Or use file.publicUrl() if available (bucket.file object sometimes implies authenticated access only unless properly configured)
-                    // The standard firebase pattern:
-                    newPhotoUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
                 }
             } catch (uploadError) {
                 console.error("Image upload failed:", uploadError);
@@ -292,7 +297,12 @@ export async function PATCH(
         const oldPhone = currentProfileRes.rows[0]?.phone;
         const currentPhotoUrl = currentProfileRes.rows[0]?.photo_url;
 
-        const photoUrlToSave = newPhotoUrl || currentPhotoUrl;
+        let photoUrlToSave = currentPhotoUrl;
+        if (shouldRemovePhoto) {
+            photoUrlToSave = null;
+        } else if (newPhotoUrl) {
+            photoUrlToSave = newPhotoUrl;
+        }
 
         // Update Global Profile
         const updateGlobalRes = await client.query(
@@ -319,7 +329,8 @@ export async function PATCH(
         }
 
         // Sync Photo URL to Firebase Auth
-        if (photoUrlToSave) {
+        // If we changed the photo (either new upload or removal)
+        if (shouldRemovePhoto || newPhotoUrl) {
             try {
                 await adminAuth.updateUser(targetUserId, {
                     photoURL: photoUrlToSave
