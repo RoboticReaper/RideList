@@ -176,7 +176,7 @@ export default function HowPage() {
                                 <IconInfoCircle size={20} />
                             </ThemeIcon>
                             <div style={{ flex: 1 }}>
-                                <Text size="md" mb="xs" fw={500}>Note</Text>
+                                <Text size="md" mb="xs" fw={500}>{t('how.intro.noteTitle')}</Text>
                                 <Text>{t('how.intro.note')}</Text>
                             </div>
                         </Group>

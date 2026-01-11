@@ -1,34 +1,2183 @@
 {
     "headerMenu": {
-        "findRide": "找拼车",
-        "postRide": "发布拼车",
+        "findRide": "查找行程",
+        "postRide": "发布行程",
         "how": "使用说明",
-        "trust": "安全与信用",
+        "trust": "安全与信任",
         "login": "登录",
-        "signup": "注册"
+        "signup": "注册",
+        "account": "账号",
+        "dashboard": "我的行程",
+        "profile": "个人资料",
+        "settings": "设置",
+        "history": "历史记录",
+        "logout": "退出登录",
+        "language": "语言",
+        "roles": {
+            "rider": "乘客",
+            "driver": "司机"
+        },
+        "notifications": {
+            "ui": {
+                "title": "通知",
+                "markAllRead": "全部标为已读",
+                "markRead": "标为已读",
+                "empty": "暂无通知",
+                "loadMore": "加载更多"
+            }
+        }
+    },
+    "dashboard": {
+        "driver": {
+            "title": "即将出发的行程",
+            "noTrips": "你目前没有安排中的行程。",
+            "postRide": "发布行程"
+        },
+        "rider": {
+            "title": "即将参加的行程",
+            "noTrips": "你目前没有即将参加的行程。",
+            "findRide": "查找行程"
+        },
+        "common": {
+            "refresh": "刷新",
+            "loadMore": "加载更多",
+            "big": "大",
+            "small": "小",
+            "none": "无",
+            "plate": "车牌",
+            "standard": "标准",
+            "noneProvided": "未提供",
+            "notProvidedByDriver": "司机未提供",
+            "notAssigned": "未分配",
+            "at": "于",
+            "noVehicle": "未设置车辆"
+        },
+        "tripCard": {
+            "seatsLeft": "剩余座位",
+            "actionRequired": "需要处理",
+            "driverPhoneRequired": "请先在 <1>个人资料</1> 中填写手机号，才能开始该行程。",
+            "carRequired": "请先 <1>为该行程指定车辆</1>。",
+            "manageTrip": "管理行程",
+            "manageBooking": "管理预约",
+            "viewPosting": "查看完整信息",
+            "checkInStarted": "已开始行前确认",
+            "labels": {
+                "trip": "行程：",
+                "booking": "预约：",
+                "seats": "座位",
+                "seats_plural": "座位",
+                "big": "大",
+                "small": "小"
+            },
+            "cancelBooking": "取消预约",
+            "confirmCancel": "确定要取消该预约吗？",
+            "cancelSuccess": "预约已取消（未完成付款）。",
+            "markPayment": "标记已付款",
+            "paymentSuccess": "已标记为已付款，等待司机确认。"
+        },
+        "navbar": {
+            "dashboard": "行程概览",
+            "history": "历史记录",
+            "roleSettings": "通知设置",
+            "tripTemplates": "行程模板",
+            "ruleTemplates": "规则模板",
+            "myVehicles": "我的车辆"
+        }
     },
     "hero": {
-        "title1": "拼车信息，",
-        "titleColored": "一眼看懂",
+        "title1": "一眼就能看懂的",
+        "titleColored": "行程信息",
         "title2": "",
-        "description": "不用翻群、不用加好友， UIUC–芝加哥拼车一次就搞清楚",
-        "list1": "价格 / 时间 / 上车点统一展示，方便对比",
-        "list2": "座位实时更新，不用反复问",
-        "list3": "司机信息清楚，有记录可查",
-        "actionTxt": "查看拼车 →"
+        "description": "不再翻帖、不用猜。UIUC 与芝加哥之间的行程信息，一目了然。",
+        "list1": "价格、时间、上车地点清晰对比",
+        "list2": "实时显示剩余座位，无需反复确认",
+        "list3": "司机信息透明，可查看过往行程记录",
+        "actionTxt": "浏览行程 →",
+        "dashboardBtn": "前往我的行程"
+    },
+    "settings": {
+        "title": "账号设置",
+        "roleLinkPre": "想要单独配置通知偏好？",
+        "roleLink": "前往通知设置",
+        "general": "通用设置",
+        "generalDesc": "管理与你账号相关的基础偏好设置。",
+        "language": "语言",
+        "languagePlaceholder": "选择语言",
+        "save": "保存设置",
+        "notifications": {
+            "saveSuccess": "设置已成功保存",
+            "saveError": "保存设置失败",
+            "fetchError": "获取设置失败"
+        }
     },
     "metadata": {
-        "title": "拼车版",
-        "description": "为 UIUC 与芝加哥地区的用户提供的拼车信息管理工具."
+        "title": "RideList",
+        "description": "用于整理 UIUC 与芝加哥附近学生之间拼车行程信息的工具。"
     },
     "riderSteps": {
-        "title": "Find Your Ride in 3 Steps",
-        "description": "Search, compare, and book. All in one place without requiring accounts up-front.",
-        "search": "Search",
-        "searchDesc": "Enter from, to, and time to see all available rides. No more scrolling through chats or comments.",
-        "compare": "Compare",
-        "compareDesc": "Sort by price, driver rating, pickup time and distance. Filter with your own rules.",
-        "book": "Book",
-        "bookDesc": "Reserve a spot with verified UIUC email and pay on time. All drivers are verified."
+        "title": "三步找到合适的行程",
+        "description": "搜索、对比、预约，一站完成，无需提前注册账号。",
+        "search": "搜索",
+        "searchDesc": "输入出发地、目的地和时间，即可查看所有可用行程。不用再翻聊天记录或评论。",
+        "compare": "对比",
+        "compareDesc": "按价格、司机评分、上车时间和距离排序，并可根据自己的规则进行筛选。",
+        "book": "预约",
+        "bookDesc": "使用已验证的 UIUC 邮箱预约座位，并按时完成付款。所有司机均经过学生身份验证。",
+        "screenshotPlaceholder": "页面示意图"
+    },
+    "driverSteps": {
+        "title": "三步发布你的行程",
+        "description": "填写信息、设置规则、发布行程，全流程集中管理。",
+        "search": "填写",
+        "searchDesc": "填写出发地、目的地、时间及可用座位，清晰展示你的行程信息。",
+        "compare": "设置",
+        "compareDesc": "设置价格、上车地点、行程规则，并选择是否自动接受预约。",
+        "book": "发布",
+        "bookDesc": "发布后，符合条件的乘客可直接预约，你只需确认即可。",
+        "screenshotPlaceholder": "页面示意图"
+    },
+    "footer": {
+        "contact": "联系我们",
+        "privacy": "隐私政策",
+        "blog": "博客",
+        "careers": "加入我们"
+    },
+    "trustSafety": {
+        "title": "常见问题",
+        "questions": {
+            "resetPass": "如何重置密码？",
+            "multiAccount": "可以创建多个账号吗？",
+            "newsletter": "如何订阅每月通讯？",
+            "creditCard": "你们会安全地存储信用卡信息吗？",
+            "payment": "你们支持哪些支付方式？"
+        },
+        "placeholder": "此处将展示与账号、安全和使用相关的常见问题说明。"
+    },
+    "auth": {
+        "loginWelcome": "欢迎使用 RideList，请使用以下方式登录",
+        "uiucOnly": "目前仅支持 UIUC 学生账号（@illinois.edu）登录，用于学生身份验证。",
+        "agreementsLabel": "用户协议",
+        "agreementsCheckbox": "我已阅读并同意隐私政策和服务条款",
+        "agreementsError": "请先同意相关协议后再登录",
+        "completeProfileTitle": "完善个人资料",
+        "fullNameLabel": "姓名",
+        "fullNamePlaceholder": "请输入你的姓名",
+        "nameRequired": "姓名为必填项",
+        "phoneLabel": "手机号",
+        "phonePlaceholder": "选填",
+        "saveProfile": "保存资料",
+        "saveProfileError": "保存个人资料失败",
+        "testerLogin": "测试账号登录"
+    },
+    "rides": {
+        "errors": {
+            "invalidStart": "请从下拉建议中选择有效的出发地点",
+            "invalidStartTitle": "出发地点无效",
+            "invalidEnd": "请从下拉菜单中选择有效的目的地。",
+            "invalidEndTitle": "目的地无效",
+            "dateRequired": "请选择出发时间。",
+            "dateRequiredTitle": "需要出发时间",
+            "pastDate": "出发时间不能早于当前时间。",
+            "pastDateTitle": "时间无效",
+            "priceRequired": "请输入有效的价格。",
+            "priceRequiredTitle": "需要价格",
+            "seatsRequired": "请至少提供 1 个座位。",
+            "seatsRequiredTitle": "需要座位数",
+            "carSeatsRequired": "如果添加了车辆，请填写可载客人数。",
+            "carSeatsRequiredTitle": "需要填写车辆座位数",
+            "capacityExceeded": "车辆可载人数（{{capacity}}）不能小于行程座位数（{{seats}}）。",
+            "capacityExceededTitle": "超出车辆容量",
+            "luggageCheck": "行李容量提醒",
+            "bigLuggageExceeded": "大件行李上限（{{limit}}）超过车辆容量（{{capacity}}）。请返回调整行李限制，避免车辆超载。",
+            "smallLuggageExceeded": "小件行李上限（{{limit}}）超过车辆容量（{{capacity}}）。请返回调整行李限制，避免车辆超载。",
+            "bigLuggageRequired": "请填写大件行李容量（或填写 0）。",
+            "bigLuggageRequiredTitle": "需要填写大件行李上限",
+            "smallLuggageRequired": "请填写小件行李容量（或填写 0）。",
+            "smallLuggageRequiredTitle": "需要填写小件行李上限",
+            "templateNameRequired": "请为行程模板填写名称。",
+            "templateNameRequiredTitle": "需要模板名称",
+            "ruleTemplateNameRequired": "请为规则模板填写名称。",
+            "paymentMethodRequired": "请至少选择一种支付方式。",
+            "paymentMethodRequiredTitle": "需要支付方式",
+            "flexibilityRequired": "请填写出发时间浮动范围。",
+            "flexibilityRequiredTitle": "需要时间浮动",
+            "pickupRadiusRequired": "请填写接送半径。",
+            "pickupRadiusRequiredTitle": "需要接送半径",
+            "dropoffRadiusRequired": "请填写下车半径。",
+            "dropoffRadiusRequiredTitle": "需要下车半径",
+            "payWindowRequired": "请填写付款时限。",
+            "payWindowRequiredTitle": "需要付款时限",
+            "invalidCutoffTime": "请输入有效的预约截止小时数。",
+            "invalidCutoffTimeTitle": "预约截止时间无效",
+            "postingTrip": "正在创建行程...",
+            "postingTripTitle": "发布行程中",
+            "success": "行程创建成功",
+            "successTitle": "成功",
+            "error": "行程创建失败",
+            "errorTitle": "错误",
+            "templateLoaded": "已从模板加载规则。",
+            "templateLoadedTitle": "模板已加载",
+            "share": {
+                "button": "分享行程",
+                "copied": "已复制到剪贴板！",
+                "text": "嗨！我这里有一个拼车行程：\n\n📍 上车地点：{{- from}}\n📍 下车地点：{{- to}}\n🕒 出发时间：{{- time}}\n\n查看详情 / 申请加入：\n{{- link}}\n\nRideList｜UIUC 校内拼车"
+            }
+        },
+        "common": {
+            "startLocation": "出发地点",
+            "endLocation": "目的地",
+            "date": "日期与时间",
+            "price": "价格",
+            "seats": "座位数",
+            "bigLuggage": "大件行李",
+            "smallLuggage": "小件行李",
+            "paymentMethods": "支付方式",
+            "autoAccept": "自动接受",
+            "vehicle": "车辆",
+            "logistics": "行程安排",
+            "settings": "设置"
+        },
+        "search": {
+            "title": "查找行程",
+            "noResults": "未找到符合条件的行程。",
+            "startPlaceholder": "从哪里出发？",
+            "endPlaceholder": "前往哪里？",
+            "datePlaceholder": "选择日期",
+            "searchBtn": "搜索",
+            "more": "更多",
+            "hide": "收起",
+            "advancedFilters": "高级筛选",
+            "maxPrice": "最高价格",
+            "autoAcceptOnly": "仅显示自动接受",
+            "paymentPlaceholder": "选择相关支付方式"
+        },
+        "card": {
+            "today": "今天",
+            "seatsAvailable": "剩余 {{count}} / {{total}} 个座位",
+            "viewDetails": "查看详情",
+            "instant": "即时确认",
+            "trips": "{{count}} 个行程",
+            "autoAcceptTooltip": "自动接受：预约后立即确认",
+            "luggageTooltip": "行李：大件 {{big}}，小件 {{small}}",
+            "flexibility": {
+                "hours": "± {{hours}}小时",
+                "hoursAndMinutes": "± {{hours}}小时 {{minutes}}分",
+                "minutes": "± {{minutes}}分钟"
+            },
+            "relativeTime": {
+                "hoursAndMinutes": "{{hours}}小时 {{minutes}}分后",
+                "minutes": "{{minutes}}分后"
+            }
+        },
+        "detail": {
+            "alerts": {
+                "errorTitle": "错误",
+                "notFoundTitle": "未找到",
+                "notFound": "未找到该行程"
+            },
+            "header": {
+                "bookingClosed": "已停止预约",
+                "posted": "发布于 {{time}}"
+            },
+            "time": {
+                "exact": "（固定时间）",
+                "exactTime": "固定时间",
+                "flexibilityFormat": "± {{time}}",
+                "hours": "{{count}} 小时",
+                "hours_plural": "{{count}} 小时",
+                "minutes": "{{count}} 分钟",
+                "minutes_plural": "{{count}} 分钟",
+                "days": "{{count}} 天",
+                "days_plural": "{{count}} 天",
+                "flexibility": "（± {{time}}）",
+                "bookingClosesIn": "预约将在出发前 {{time}} 截止"
+            },
+            "cutoff": {
+                "bookingCloses": "预约将在出发前 {{time}} 截止"
+            },
+            "summary": {
+                "perSeat": "每个座位",
+                "status": "状态",
+                "seatsAvailable": "剩余 {{count}} 个座位",
+                "totalSeats": "总座位数：{{count}}",
+                "paymentNote": "付款由乘客与司机自行完成",
+                "driversNote": "司机备注"
+            },
+            "buttons": {
+                "manageTrip": "管理行程",
+                "bookingCancelled": "预约已取消",
+                "bookingClosed": "预约已关闭",
+                "manageDashboard": "前往行程管理",
+                "bookNow": "立即预约",
+                "loginToBook": "登录后预约",
+                "cannotBook": "该行程无法预约"
+            },
+            "driver": {
+                "title": "司机信息",
+                "verifiedStudent": "已验证学生",
+                "memberSince": "加入于 {{year}} 年",
+                "phoneNotProvided": "司机未提供",
+                "bookToView": "预约后可查看",
+                "hiddenUntilApproved": "通过审核后显示联系方式",
+                "bookingInactive": "预约已失效",
+                "contactExpired": "联系方式已过期",
+                "bookingNotActive": "预约未生效",
+                "rating": "评分",
+                "tripsCompleted": "已完成行程"
+            },
+            "vehicle": {
+                "title": "车辆信息",
+                "tripEnded": "行程已结束",
+                "notProvided": "未提供",
+                "visibleWhenDeparted": "出发后可见",
+                "hidden": "已隐藏",
+                "bookToView": "预约后可查看",
+                "confirmedNote": "车辆信息将在出发前由司机确认。"
+            },
+            "rules": {
+                "title": "行程规则",
+                "luggage": "行李",
+                "big": "大件",
+                "small": "小件",
+                "autoAccept": "自动接受",
+                "autoAcceptTooltip": "开启自动接受后，预约将直接进入付款流程；关闭则需等待司机手动确认后才能付款。",
+                "instantlyAccepted": "预约将被立即接受",
+                "approvalRequired": "需要司机确认",
+                "cancellationPolicy": "取消政策",
+                "cancellationDefault": "具体取消政策将由司机在出发前说明。",
+                "pickupInstructions": "上车说明",
+                "noRestrictions": "无特殊限制"
+            },
+            "payment": {
+                "title": "支付方式",
+                "none": "无",
+                "handleLabel": "支付账号 / 联系方式",
+                "notProvided": "司机未提供",
+                "disclaimer": "RideList 不参与或处理任何付款。"
+            },
+            "safety": {
+                "disclaimer": "RideList 不雇佣司机。请在公共场所会面，并提前与司机确认行程细节。"
+            },
+            "booking": {
+                "modalTitle": "预约详情",
+                "seats": "座位数",
+                "maxSeats": "最多 {{count}} 个",
+                "bigLuggage": "大件行李",
+                "smallLuggage": "小件行李",
+                "maxLuggage": "最多 {{count}} 件",
+                "intendedPayment": "计划使用的支付方式",
+                "selectPayment": "选择你的支付方式",
+                "noPaymentMethods": "司机未指定支付方式",
+                "preferredPickup": "期望上车时间",
+                "resetToDeparture": "重置为出发时间",
+                "exactTimeOnly": "仅限固定时间",
+                "flexibilityLabel": "时间浮动：± {{time}}",
+                "optional": "选填",
+                "preferredPickupLocation": "期望上车地点",
+                "preferredPickupLocationDesc": "选填——你希望在哪里上车？",
+                "pickupLocationPlaceholder": "例如：Illini Union、Green St.",
+                "invalidPickupLocation": "请从建议中选择有效地点",
+                "riderNote": "上车备注",
+                "riderNoteDesc": "选填——给司机的补充说明",
+                "riderNotePlaceholder": "例如：我会穿红色外套",
+                "confirmBooking": "确认预约"
+            },
+            "bookingSuccess": {
+                "title": "预约已提交",
+                "payNow": "付款时限",
+                "payWindowMessage": "请在 {{time}} 内向司机完成付款以确认座位。你可以在行程管理中查看预约状态。",
+                "waitingApproval": "请求已发送",
+                "waitingMessage": "等待司机确认。确认后你将收到通知并在付款时限内完成付款。",
+                "enablePushTitle": "接收通知？",
+                "enablePushMessage": "及时获取行程相关更新。",
+                "enablePushBtn": "开启通知",
+                "closeBtn": "关闭"
+            },
+            "notifications": {
+                "ownTripError": {
+                    "title": "错误",
+                    "message": "不能预约自己发布的行程。"
+                },
+                "profileRequired": {
+                    "title": "需要完善资料",
+                    "message": "请先完善个人资料后再进行预约。"
+                },
+                "bookingAccepted": {
+                    "title": "预约已通过",
+                    "message": "请尽快与司机完成付款。"
+                },
+                "success": {
+                    "title": "成功",
+                    "messageWaiting": "预约请求已发送，等待司机确认。",
+                    "messagePayment": "预约已创建，请前往付款。"
+                },
+                "error": {
+                    "title": "错误",
+                    "defaultMessage": "预约失败"
+                }
+            }
+        },
+        "create": {
+            "title": "发布新行程",
+            "restoredDraftTitle": "已恢复草稿",
+            "restoredDraftMessage": "我们已为你恢复上次未完成的行程信息。",
+            "steps": {
+                "route": "路线",
+                "routeDesc": "地点与时间",
+                "details": "详情",
+                "detailsDesc": "价格与座位",
+                "vehicle": "车辆",
+                "vehicleDesc": "你的车辆",
+                "logistics": "行程安排",
+                "logisticsDesc": "支付与行李",
+                "settings": "设置",
+                "settingsDesc": "高级规则"
+            },
+            "labels": {
+                "loadTemplate": "从模板加载",
+                "tripRoute": "行程路线",
+                "locationPrivacyDesc": "具体地址仅对你可见，发布的行程只会显示大致区域。",
+                "from": "出发地",
+                "to": "目的地",
+                "startingLoc": "出发位置",
+                "dest": "到达位置",
+                "departure": "出发时间",
+                "pickDateTime": "选择日期和时间",
+                "nextDetails": "下一步：行程详情",
+                "tripDetails": "行程详情",
+                "pricePerPerson": "每人价格（美元）",
+                "totalSeats": "可用总座位数",
+                "capacityDesc": "你最多可搭载多少乘客？",
+                "back": "返回",
+                "nextVehicle": "下一步：车辆",
+                "vehicleDetails": "车辆信息",
+                "selectSavedVehicle": "选择已保存的车辆",
+                "addVehicleDesc": "或添加新车辆",
+                "noVehicle": "未选择车辆",
+                "addNewVehicle": "添加新车辆",
+                "vehicleInfoOptional": "车辆信息（选填）",
+                "make": "品牌",
+                "model": "型号",
+                "color": "颜色",
+                "year": "年份",
+                "plate": "车牌号",
+                "templates": "模板",
+                "totalBigLuggage": "大件行李总容量",
+                "totalSmallLuggage": "小件行李总容量",
+                "carCapacity": "可载人数",
+                "carCapacityDesc": "车辆最多可搭载多少乘客？",
+                "nextLogistics": "下一步：行程安排",
+                "logistics": "行程安排",
+                "loadSavedTemplate": "加载已保存模板",
+                "paymentMethods": "支付方式",
+                "paymentMethodsPlaceholder": "选择或输入接受的支付方式，留空表示不接受任何方式。",
+                "paymentHandle": "收款账号 / 联系方式",
+                "paymentHandleDesc": "乘客应向谁付款？（例如：@username）",
+                "pickupRules": "上车规则",
+                "pickupRulesPlaceholder": "例如：在公交站等候，寻找红色车辆",
+                "cancelPolicy": "取消政策",
+                "cancelPolicyPlaceholder": "例如：出发前 24 小时内可免费取消",
+                "bigLuggageCap": "每人可携带的大件行李",
+                "smallLuggageCap": "每人可携带的小件行李",
+                "largeSuitcases": "大号行李箱",
+                "carryOns": "随身行李",
+                "nextSettings": "下一步：设置",
+                "settings": "设置",
+                "advancedSettings": "搜索相关设置",
+                "flexibility": "出发时间浮动（小时）",
+                "flexibilityDesc": "你可能提前或延后的时间范围，乘客将在该范围内搜索和预约。",
+                "pickupRadius": "接送半径（米）",
+                "dropoffRadius": "下车半径（米）",
+                "pickupRadiusDesc": "你愿意在出发地周围多大范围内接送乘客",
+                "dropoffRadiusDesc": "你愿意在到达地周围多大范围内下车",
+                "advancedRules": "高级规则",
+                "autoAccept": "自动接受预约",
+                "autoAcceptDesc": "自动通过符合条件的预约请求",
+                "autoStartCheckIn": "自动开始行前确认",
+                "autoStartCheckInDesc": "在行程开始前自动提醒乘客确认，出发时将自动开始确认流程。",
+                "startCheckInHrs": "行前确认开始时间（小时）",
+                "enableCutoff": "自动预约截止",
+                "enableCutoffDesc": "在出发前 X 小时自动停止接受预约",
+                "hoursBefore": "出发前小时数",
+                "hoursBeforeDesc": "例如：1.5 表示 1 小时 30 分钟",
+                "payWindow": "付款时限（分钟）",
+                "payWindowDesc": "司机通过后，乘客可付款的时间",
+                "tripNotes": "行程备注",
+                "tripNotesPlaceholder": "任何补充说明，例如“在主入口集合”“不接受宠物”等",
+                "saveLogistics": "保存行程安排与规则（规则模板）",
+                "saveTrip": "保存完整行程（行程模板）",
+                "linkTemplate": "关联规则模板与行程模板",
+                "linkTemplateDesc": "将该规则集与行程模板关联，便于自动加载。",
+                "ruleTemplateName": "规则模板名称",
+                "tripTemplateName": "行程模板名称",
+                "saveLogisticsTemplate": "保存行程安排与规则（规则模板）",
+                "saveTripTemplate": "保存完整行程（行程模板）",
+                "autoCheckIn": "行前确认开始时间（小时）",
+                "postTrip": "发布行程"
+            },
+            "placeholders": {
+                "make": "选填（如：Toyota）",
+                "model": "选填（如：Camry）",
+                "color": "选填（如：白色）",
+                "year": "选填（如：2022）",
+                "optional": "选填",
+                "seats": "必填（如：4）",
+                "selectRuleTemplate": "选择规则模板以自动填充",
+                "paymentHandle": "Venmo：@user，微信：user123",
+                "selectTemplate": "选择行程模板",
+                "ruleTemplateName": "例如：标准规则",
+                "tripTemplateName": "例如：每日通勤"
+            },
+            "errors": {
+                "flexibilityRequired": "请填写出发时间浮动范围。",
+                "pickupRadiusRequired": "请填写接送半径。",
+                "dropoffRadiusRequired": "请填写下车半径。",
+                "payWindowRequired": "请填写付款时限。",
+                "invalidCutoff": "请输入有效的预约截止小时数。",
+                "templateNameRequired": "请填写模板名称。"
+            },
+            "success": {
+                "title": "成功",
+                "message": "你的行程已成功发布。"
+            },
+            "loading": {
+                "title": "发布行程中",
+                "message": "请稍候..."
+            },
+            "completion": {
+                "title": "行程已发布",
+                "subtitle": "你的行程已上线，可供预约。",
+                "redirecting": "{{countdown}} 秒后跳转至行程页面...",
+                "startNewDraft": "开始新草稿",
+                "viewPost": "查看行程",
+                "enableInBrowser": "请在浏览器设置中开启推送通知，以接收行程更新。",
+                "enablePushLink": "开启推送通知",
+                "enablePushSuffix": "以获取行程更新。"
+            },
+            "modals": {
+                "auth": {
+                    "title": "需要登录",
+                    "message": "你的行程信息已临时保存。请登录或注册账号以发布行程，返回后将自动恢复进度。",
+                    "cancel": "取消",
+                    "login": "登录并继续"
+                },
+                "profile": {
+                    "title": "完善个人资料",
+                    "message": "你的进度已保存。请先完善个人资料以发布行程。",
+                    "cancel": "取消",
+                    "goToProfile": "前往个人资料"
+                }
+            },
+            "defaults": {
+                "untitledTrip": "未命名行程",
+                "tripTemplate": "行程模板",
+                "unnamedTemplate": "未命名模板"
+            }
+        }
+    },
+    "common": {
+        "loading": "加载中...",
+        "edit": "编辑",
+        "delete": "删除",
+        "save": "保存",
+        "cancel": "取消",
+        "new": "新建",
+        "none": "无",
+        "ready": "就绪",
+        "selectOrType": "选择或输入...",
+        "eg": "例如",
+        "unknown": "未知"
+    },
+    "status": {
+        "trip": {
+            "bookable": "可预约",
+            "locked": "已锁定",
+            "full": "已满",
+            "departed": "已出发",
+            "completed": "已完成",
+            "cancelled": "已取消",
+            "aborted": "已终止"
+        },
+        "booking": {
+            "waiting_approval": "等待司机确认",
+            "joined_with_pay_window": "已加入（待付款）",
+            "pending_pay_confirmation_from_driver": "等待司机确认付款",
+            "confirmed": "已确认",
+            "pay_timeout": "付款超时",
+            "left_paid": "已退出（已付款）",
+            "left_unpaid": "已退出（未付款）",
+            "removed": "已移除",
+            "cancelled": "已取消",
+            "completed": "已完成",
+            "no_show": "未按时到达"
+        }
+    },
+    "tripDetails": {
+        "tabs": {
+            "manage": "管理行程",
+            "edit": "编辑行程"
+        },
+        "status": {
+            "paid": "已付款",
+            "unpaid": "未付款",
+            "tripEnded": "行程已结束"
+        },
+        "driver": {
+            "title": "司机信息"
+        },
+        "success": {
+            "title": "成功"
+        },
+        "alerts": {
+            "incorrectRole": "身份不匹配",
+            "driverViewingRider": "你是该行程的司机，但当前以乘客视角查看。",
+            "switchToDriver": "切换为司机视角",
+            "riderViewingDriver": "你是该行程的乘客，但当前以司机视角查看。",
+            "switchToRider": "切换为乘客视角",
+            "readOnly": "只读模式",
+            "readOnlyMessage": "该行程已被标记为 {{status}}，无法再进行修改。",
+            "editingMode": "编辑模式",
+            "editingModeMessage": "修改并保存后，将立即更新该行程的公开信息。",
+            "bookingRemoved": "预约已移除",
+            "bookingRemovedMessage": "司机当前无法接送你。{{phone}} 你可以重新预约该行程，但需要司机手动确认。",
+            "contactDriverForRefund": "如需退款，请联系司机：{{phone}}。",
+            "manageBookingInfo": "你可以在此管理预约状态，或查看公开行程详情。如有问题请联系司机。",
+            "tripCancelledPaid": "行程已取消 / 已终止",
+            "tripCancelledPaidMessage": "该行程已被取消或终止。由于你已完成付款，请联系司机 <1>{{phone}}</1> 进行退款。",
+            "viewingSnapshot": "正在查看预约快照",
+            "viewingSnapshotMessage": "你当前查看的是预约时的行程规则。",
+            "noBookings": {
+                "title": "暂无预约",
+                "description": "目前还没有乘客预约该行程。"
+            }
+        },
+        "manage": {
+            "notifications": {
+                "noVehicle": {
+                    "title": "未设置车辆",
+                    "message": "请在开始接送前为该行程指定车辆。"
+                },
+                "profileIncomplete": {
+                    "title": "个人资料未完善",
+                    "message": "请先在 <1>个人资料</1> 中填写手机号，才能开始接送。"
+                },
+                "statusUpdateSuccess": "行程状态已更新",
+                "statusUpdateError": "更新行程状态失败",
+                "fetchError": "获取预约信息失败",
+                "actionFailed": "操作失败",
+                "updateStatusFailed": "更新状态失败",
+                "startCheckInFailed": "启动行前确认失败",
+                "checkInStarted": "行前确认已开启",
+                "success": {
+                    "title": "成功"
+                },
+                "error": {
+                    "title": "错误"
+                },
+                "removeSuccess": {
+                    "message": "已成功移除乘客"
+                },
+                "pickedUpSuccess": {
+                    "message": "已标记乘客为已上车"
+                },
+                "updateSuccess": {
+                    "message": "预约信息已更新"
+                }
+            },
+            "table": {
+                "rider": "乘客",
+                "phone": "手机号",
+                "pickupLocation": "上车地点",
+                "preferredTime": "期望时间",
+                "riderNote": "上车备注",
+                "status": "状态",
+                "seats": "座位",
+                "luggage": "行李",
+                "paymentMethod": "支付方式",
+                "bookedAt": "预约时间",
+                "actions": "操作"
+            },
+            "pickup": {
+                "hidden": "已隐藏",
+                "hiddenReason": "行程已结束或预约无效",
+                "notProvided": "未提供"
+            },
+            "note": {
+                "notProvided": "未提供"
+            },
+            "activeBookingsCount": "有效预约（{{count}}）",
+            "activeBookings": "有效预约",
+            "activeBookings_plural": "有效预约",
+            "inactiveBookings": "无效预约",
+            "inactiveBookingsCount": "无效预约（{{count}}）",
+            "rides": "{{count}} 个行程",
+            "sort": {
+                "label": "排序方式",
+                "placeholder": "选择排序...",
+                "ascending": "升序",
+                "descending": "降序",
+                "bookedAt": "预约时间",
+                "riderName": "乘客姓名",
+                "riderReady": "乘客是否就绪",
+                "status": "状态",
+                "pickedUp": "是否上车",
+                "seats": "座位",
+                "luggage": "行李"
+            },
+            "actions": {
+                "accept": "接受",
+                "reject": "拒绝",
+                "remove": "移除...",
+                "removeEllipsis": "移除...",
+                "confirmPaid": "确认已付款",
+                "markPickedUp": "标记已上车",
+                "enableCheckIn": "开启行前确认",
+                "startPickup": "开始接送",
+                "tripCompleted": "完成行程",
+                "abortTrip": "终止行程",
+                "unlockTrip": "解锁行程",
+                "lockTrip": "锁定行程",
+                "cancelTrip": "取消行程",
+                "back": "返回",
+                "cancel": "取消",
+                "markPaymentSent": "标记已付款",
+                "checkInNow": "立即确认",
+                "cancelBooking": "取消预约"
+            },
+            "modals": {
+                "removeRider": {
+                    "title": "移除乘客",
+                    "description": "你即将把 <1>{{name}}</1> 从该行程中移除，请选择原因。",
+                    "reasonLabel": "原因",
+                    "reasonPlaceholder": "请选择原因",
+                    "noteLabel": "补充说明（可选）",
+                    "notePlaceholder": "该说明将对乘客可见",
+                    "confirm": "移除乘客"
+                },
+                "startPickup": {
+                    "title": "开始接送？",
+                    "description": "此操作将正式开始本次行程的接送流程。",
+                    "impactTitle": "操作后将发生",
+                    "impactDescription": "开始接送后：",
+                    "impact1": "乘客将收到接送开始的通知。",
+                    "impact2": "行程规则和车辆信息将被锁定，无法再修改。",
+                    "impact3": "将不再允许新的乘客加入该行程。",
+                    "impact4": "你将无法再移除已有乘客。",
+                    "impact5": "未被标记为已上车的乘客将被标记为未到达。",
+                    "confirm": "开始接送"
+                },
+                "enableCheckIn": {
+                    "title": "开启行前确认？",
+                    "description": "允许乘客标记自己是否已准备好上车。",
+                    "impactTitle": "操作后将发生",
+                    "impact1": "乘客将收到行前确认已开启的通知。",
+                    "impact2": "当乘客标记为已就绪时，你将收到通知。",
+                    "impact3": "在行前确认期间，乘客可修改预约信息（每位乘客每 5 分钟最多一次）。",
+                    "confirm": "开启行前确认"
+                },
+                "lockTrip": {
+                    "title": "锁定行程",
+                    "description": "锁定后将停止接受新的预约。",
+                    "impactTitle": "操作后将发生",
+                    "impact1": "已有预约将继续保持有效。",
+                    "impact2": "新的乘客将无法再预约该行程。",
+                    "impact3": "该行程将不再出现在搜索结果中。",
+                    "confirm": "锁定行程"
+                },
+                "unlockTrip": {
+                    "title": "解锁行程",
+                    "description": "解锁后，如仍有空位，将允许新的预约。",
+                    "impactTitle": "操作后将发生",
+                    "impact1": "乘客将可以再次搜索并预约该行程。",
+                    "impact2": "超过预约截止时间的行程无法解锁。",
+                    "confirm": "解锁行程"
+                },
+                "cancelTrip": {
+                    "title": "取消行程",
+                    "description": "该操作将为所有乘客取消整个行程。",
+                    "impactTitle": "操作后将发生",
+                    "impact1": "所有乘客将收到行程取消的通知。",
+                    "impact2": "所有有效预约将被标记为已取消。",
+                    "impact3": "此操作无法撤销。",
+                    "confirm": "取消行程"
+                },
+                "abortTrip": {
+                    "title": "终止行程",
+                    "description": "当行程开始后出现异常情况时使用此选项。",
+                    "impactTitle": "操作后将发生",
+                    "impact1": "已上车的乘客将被标记为已完成。",
+                    "impact2": "未上车的乘客将被标记为已取消。",
+                    "confirm": "终止行程"
+                },
+                "completeTrip": {
+                    "title": "完成行程",
+                    "description": "该操作将标记行程已完成并关闭所有剩余操作。未上车的乘客将被标记为未到达。",
+                    "confirm": "完成行程"
+                }
+            },
+            "phone": {
+                "missing": "未提供",
+                "notProvided": "乘客未提供手机号",
+                "hidden": "已隐藏",
+                "hiddenReasons": {
+                    "tripEnded": "行程已结束",
+                    "riderRemoved": "乘客已被移除",
+                    "notConfirmed": "等待确认",
+                    "bookingInactive": "预约已失效"
+                },
+                "editNote": {
+                    "label": "编辑备注",
+                    "privateReminder": "该备注仅你可见。",
+                    "viewProfile": "查看资料",
+                    "placeholder": "为该预约添加私密备注..."
+                }
+            },
+            "status": {
+                "pickedUpSuffix": "（已上车）"
+            },
+            "reasons": {
+                "reason": "原因",
+                "luggage": "不符合行李要求",
+                "pickup": "上车要求与行程规则不符",
+                "noResponse": "未及时回复 / 确认",
+                "mistake": "误操作 / 重复预约",
+                "driverMistake": "司机操作失误（误移除）",
+                "otherPre": "其他（需填写说明）",
+                "violated": "预约后违反行程规则",
+                "lateCancel": "付款后临时取消",
+                "noShow": "付款后未到 / 无响应",
+                "paymentIssue": "付款问题（无效 / 撤回 / 争议）",
+                "otherPost": "其他（需填写说明）"
+            }
+        },
+        "edit": {
+            "sections": {
+                "tripDetails": "行程详情",
+                "rulesLogistics": "规则与安排",
+                "settings": "设置",
+                "advancedRules": "高级规则"
+            },
+            "alerts": {
+                "readOnly": {
+                    "title": "只读模式",
+                    "completed": "行程已完成，无法修改。",
+                    "cancelled": "行程已取消，无法修改。",
+                    "departed": "行程已出发，无法修改。"
+                },
+                "editingMode": {
+                    "title": "编辑模式",
+                    "description": "修改并保存后将立即更新行程信息。"
+                }
+            },
+            "labels": {
+                "from": "出发地",
+                "to": "目的地",
+                "pickupRadius": "接送半径（米）",
+                "dropoffRadius": "下车半径（米）",
+                "departureTime": "出发时间",
+                "price": "价格（美元）",
+                "totalSeats": "总座位数",
+                "vehicle": "车辆",
+                "tripNotes": "行程备注",
+                "paymentMethods": "支付方式",
+                "paymentHandle": "收款账号",
+                "pickupRules": "上车规则",
+                "cancellationPolicy": "取消政策",
+                "bigLuggageLimit": "大件行李上限",
+                "smallLuggageLimit": "小件行李上限",
+                "departureFlexibility": "出发时间浮动（小时）",
+                "autoAccept": "自动接受预约",
+                "autoStartCheckIn": "自动开始行前确认",
+                "startCheckInTime": "行前确认开始时间（小时）",
+                "bookingCutoff": "启用预约截止",
+                "cutoffHours": "出发前小时数",
+                "payWindow": "付款时限（分钟）"
+            },
+            "placeholders": {
+                "from": "出发地点",
+                "to": "目的地",
+                "selectCar": "选择车辆",
+                "pickDate": "选择日期和时间",
+                "tripNotes": "任何补充说明？",
+                "paymentMethods": "选择或输入支付方式",
+                "paymentHandle": "例如：@username",
+                "pickupRules": "例如：在公交站等候",
+                "cancellationPolicy": "例如：出发前 24 小时内可免费取消"
+            },
+            "descriptions": {
+                "pickupRadius": "你愿意在出发地点周围多大范围内接送乘客",
+                "dropoffRadius": "你愿意在到达地点周围多大范围内下车",
+                "departureFlexibility": "你可能提前或延后的时间范围，乘客将在该范围内搜索和预约。",
+                "autoAccept": "自动通过符合条件的预约请求",
+                "autoStartCheckIn": "在行程开始前自动提醒乘客确认，出发时将自动开始确认流程。",
+                "bookingCutoff": "在出发前 X 小时停止接受预约",
+                "cutoffHours": "出发前的小时数",
+                "payWindow": "司机通过预约后，乘客可付款的时间"
+            },
+            "notes": {
+                "addVehicle": "保存更改后，前往 <1>我的车辆</1> 添加新车辆"
+            },
+            "actions": {
+                "saveChanges": "保存修改"
+            },
+            "notifications": {
+                "missingStart": {
+                    "title": "缺少出发地点",
+                    "message": "请选择出发地点。"
+                },
+                "missingDest": {
+                    "title": "缺少目的地",
+                    "message": "请选择目的地。"
+                },
+                "invalidStart": {
+                    "title": "出发地点无效",
+                    "message": "请从建议中选择有效的出发地点。"
+                },
+                "invalidDest": {
+                    "title": "目的地无效",
+                    "message": "请从建议中选择有效的目的地。"
+                },
+                "missingDeparture": {
+                    "title": "缺少出发时间",
+                    "message": "请选择出发时间。"
+                },
+                "invalidDeparture": {
+                    "title": "出发时间无效",
+                    "message": "出发时间不能早于当前时间。"
+                },
+                "invalidSeats": {
+                    "title": "座位数无效",
+                    "message": "总座位数至少为 1。"
+                },
+                "invalidPrice": {
+                    "title": "价格无效",
+                    "message": "请输入有效价格（大于等于 0）。"
+                },
+                "invalidPickupRadius": {
+                    "title": "接送半径无效",
+                    "message": "接送半径必须大于 0 米。"
+                },
+                "invalidDropoffRadius": {
+                    "title": "下车半径无效",
+                    "message": "下车半径必须大于 0 米。"
+                },
+                "invalidFlexibility": {
+                    "title": "时间浮动无效",
+                    "message": "请填写时间浮动（0 表示无）。"
+                },
+                "capacityExceeded": {
+                    "title": "超出车辆容量",
+                    "message": "总座位数（{{total}}）不能超过车辆可载人数（{{capacity}}）。"
+                },
+                "bigLuggageExceeded": {
+                    "title": "大件行李上限",
+                    "message": "大件行李上限（{{limit}}）超过车辆容量（{{capacity}}），请调整。"
+                },
+                "smallLuggageExceeded": {
+                    "title": "小件行李上限",
+                    "message": "小件行李上限（{{limit}}）超过车辆容量（{{capacity}}），请调整。"
+                },
+                "updateFailed": "更新行程失败",
+                "success": {
+                    "title": "成功",
+                    "message": "行程更新成功"
+                },
+                "error": {
+                    "title": "错误"
+                }
+            }
+        },
+        "rider": {
+            "bookingDetails": "预约详情",
+            "tripDetails": "行程详情",
+            "labels": {
+                "bookedAt": "预约时间",
+                "seatsBooked": "已预约座位",
+                "luggage": "行李",
+                "intendedPayment": "计划支付方式",
+                "paymentStatus": "付款状态（由司机确认）",
+                "pickedUpAt": "上车时间",
+                "readyForPickup": "已准备上车",
+                "preferredPickup": "期望上车时间",
+                "departure": "出发时间",
+                "tripStatus": "行程状态",
+                "cancellationPolicy": "取消政策",
+                "pickupInstructions": "上车说明",
+                "driverContact": "司机联系方式",
+                "vehicle": "车辆",
+                "paymentMethods": "支付方式",
+                "paymentHandle": "收款账号",
+                "driverNotes": "司机备注",
+                "pickupLocation": "期望上车地点",
+                "riderNote": "上车备注"
+            },
+            "values": {
+                "paid": "已付款",
+                "unpaid": "未付款",
+                "ready": "已就绪",
+                "notReady": "未标记就绪",
+                "checkInBegins": "行前确认将于 {{time}} 开始",
+                "standard": "标准",
+                "noneProvided": "未提供",
+                "contactHidden": "通过审核后显示联系方式",
+                "bookingInactive": "预约已失效",
+                "contactExpired": "联系方式已过期",
+                "bookToView": "预约后可查看",
+                "notAssigned": "未分配",
+                "tripEnded": "行程已结束",
+                "visibleWhenDeparted": "出发后可见",
+                "none": "无",
+                "big": "大件",
+                "small": "小件"
+            },
+            "actions": {
+                "cancelBooking": "取消预约",
+                "markPayment": "标记已付款",
+                "checkInNow": "立即确认",
+                "viewSnapshot": "查看预约快照",
+                "viewProfile": "查看资料"
+            },
+            "modals": {
+                "leaveTrip": {
+                    "title": "退出行程",
+                    "description": "确定要取消该预约吗？此操作无法撤销。",
+                    "cancel": "取消",
+                    "confirm": "确认"
+                }
+            },
+            "sections": {
+                "bookingDetails": "预约详情",
+                "tripDetails": "行程详情"
+            },
+            "notifications": {
+                "updateStatusFailed": "更新状态失败",
+                "cancelBookingFailed": "取消预约失败",
+                "success": {
+                    "title": "成功"
+                },
+                "error": {
+                    "title": "错误"
+                },
+                "markedPaid": {
+                    "message": "已标记为已付款"
+                },
+                "markedReady": {
+                    "message": "你已成功完成行前确认"
+                },
+                "bookingCancelled": {
+                    "message": "预约已取消（{{status}}）"
+                }
+            },
+            "alerts": {
+                "bookingRemoved": {
+                    "title": "预约已移除",
+                    "description": "你的预约已被司机移除。如需了解详情，请联系司机：{{phone}}。"
+                },
+                "manageState": "你可以在此管理预约信息。如选择上车后现金支付，可提前标记已付款以避免付款时限过期。",
+                "cancelledTrip": {
+                    "title": "行程已取消",
+                    "description": "该行程已被司机取消。如需了解详情，请联系司机 <1>{{phone}}</1>。"
+                }
+            },
+            "snapshot": {
+                "switchLabel": "查看预约快照",
+                "alertTitle": "正在查看快照",
+                "alertMessage": "你当前查看的是预约时的行程规则，司机可能已在之后进行了修改。"
+            },
+            "statusMessages": {
+                "bookToView": "预约后可查看",
+                "contactHidden": "通过审核后显示联系方式",
+                "bookingNotActive": "预约已失效",
+                "contactExpired": "联系方式已过期",
+                "visibleWhenDeparted": "出发后可见"
+            },
+            "ready": "已就绪",
+            "notReady": "未标记就绪",
+            "departureTime": "出发时间",
+            "editBooking": {
+                "editButton": "编辑预约",
+                "saveButton": "保存修改",
+                "cancelButton": "取消",
+                "saving": "保存中...",
+                "pickupLocationPlaceholder": "搜索上车地点",
+                "invalidPickupLocation": "请从建议中选择有效地点",
+                "success": "预约更新成功",
+                "error": "预约更新失败",
+                "checkInWarningTitle": "频率限制与司机通知",
+                "checkInWarning": "行前确认已开始。你每 5 分钟只能修改一次预约信息，司机会收到相关通知。开始接送后将无法再编辑。"
+            }
+        },
+        "validation": {
+            "missingStart": "缺少出发地点",
+            "missingStartMessage": "请选择出发地点。",
+            "missingDest": "缺少目的地",
+            "missingDestMessage": "请选择目的地。",
+            "invalidStart": "出发地点无效",
+            "invalidStartMessage": "请从建议中选择有效的出发地点。",
+            "invalidDest": "目的地无效",
+            "invalidDestMessage": "请从建议中选择有效的目的地。",
+            "missingDep": "缺少出发时间",
+            "missingDepMessage": "请选择出发时间。",
+            "invalidDep": "出发时间无效",
+            "invalidDepMessage": "出发时间不能早于当前时间。",
+            "invalidSeats": "座位数无效",
+            "invalidSeatsMessage": "总座位数至少为 1。",
+            "invalidPrice": "价格无效",
+            "invalidPriceMessage": "请输入有效价格（大于等于 0）。",
+            "invalidPickupRadius": "接送半径无效",
+            "invalidPickupRadiusMessage": "接送半径必须大于 0 米。",
+            "invalidDropoffRadius": "下车半径无效",
+            "invalidDropoffRadiusMessage": "下车半径必须大于 0 米。",
+            "invalidFlexibility": "时间浮动无效",
+            "invalidFlexibilityMessage": "请填写时间浮动（0 表示无）。",
+            "capacityExceeded": "超出车辆容量",
+            "capacityExceededMessage": "总座位数（{{seats}}）不能超过车辆可载人数（{{capacity}}）。",
+            "bigLuggageLimit": "大件行李上限",
+            "bigLuggageLimitMessage": "大件行李上限（{{limit}}）超过车辆容量（{{capacity}}），请调整行李限制以避免超载。",
+            "smallLuggageLimit": "小件行李上限",
+            "smallLuggageLimitMessage": "小件行李上限（{{limit}}）超过车辆容量（{{capacity}}），请调整行李限制以避免超载。"
+        }
+    },
+    "history": {
+        "driverTitle": "司机历史",
+        "riderTitle": "乘客历史",
+        "refresh": "刷新",
+        "loadMore": "加载更多",
+        "driver": {
+            "title": "司机历史",
+            "pastDrives": "历史行程",
+            "noTrips": "暂无历史行程。"
+        },
+        "rider": {
+            "title": "乘客历史",
+            "pastRides": "历史乘车记录",
+            "noRides": "暂无历史乘车记录。"
+        }
+    },
+    "cars": {
+        "title": "我的车辆",
+        "noVehicles": "暂无车辆",
+        "noVehiclesDesc": "添加第一辆车后即可开始发布行程。",
+        "addCar": "添加新车辆",
+        "addCarShort": "添加车辆",
+        "form": {
+            "editTitle": "编辑车辆",
+            "addTitle": "添加新车辆",
+            "delete": "删除",
+            "save": "保存车辆",
+            "cancel": "取消",
+            "make": "品牌",
+            "makePlaceholder": "Toyota",
+            "model": "型号",
+            "modelPlaceholder": "Camry",
+            "color": "颜色",
+            "colorPlaceholder": "银色",
+            "year": "年份",
+            "plate": "车牌号",
+            "platePlaceholder": "ABC-1234",
+            "plateDesc": "用于帮助乘客识别你的车辆。",
+            "capacity": "载客能力",
+            "seats": "乘客座位数",
+            "bigLuggage": "大件行李容量",
+            "smallLuggage": "小件行李容量",
+            "notifications": {
+                "seatsError": "乘客座位数必须大于 0",
+                "saveSuccess": "车辆保存成功",
+                "saveError": "保存车辆失败",
+                "deleteSuccess": "车辆已删除",
+                "deleteError": "删除车辆失败"
+            },
+            "modals": {
+                "deleteTitle": "确认删除",
+                "deleteMessage": "确定要删除该车辆吗？此操作无法撤销。",
+                "confirmDelete": "删除车辆"
+            }
+        },
+        "errors": {
+            "fetchFailed": "获取车辆列表失败",
+            "fetchDetailsFailed": "获取车辆详情失败"
+        }
+    },
+    "templates": {
+        "rules": {
+            "title": "规则模板",
+            "create": "新建规则模板",
+            "noTemplates": "暂无规则模板，创建一个开始使用吧！",
+            "noPickupRules": "未设置上车规则",
+            "form": {
+                "editTitle": "编辑规则模板",
+                "addTitle": "新建规则模板",
+                "delete": "删除模板",
+                "cancel": "取消",
+                "name": "模板名称",
+                "namePlaceholder": "例如：标准规则",
+                "sectionRules": "规则与行程安排",
+                "bigLuggage": "大件行李上限",
+                "smallLuggage": "小件行李上限",
+                "flexibility": "出发时间浮动（小时）",
+                "autoAccept": "自动接受预约",
+                "autoAcceptDesc": "自动确认符合条件的预约",
+                "payWindow": "付款时限（分钟）",
+                "payWindowDesc": "乘客加入后可付款的时间",
+                "pickupRules": "上车规则",
+                "pickupRulesPlaceholder": "例如：仅限路边上车",
+                "cancellationPolicy": "取消政策",
+                "cancellationPolicyPlaceholder": "例如：出发前 24 小时内可免费取消",
+                "pickupRadius": "接送半径（米）",
+                "dropoffRadius": "下车半径（米）",
+                "cutoff": "预约截止时间",
+                "cutoffHrs": "出发前小时数",
+                "autoStartCheckIn": "自动开始行前确认",
+                "autoStartCheckInDesc": "为该规则集自动开启行前确认",
+                "paymentMethods": "支付方式",
+                "paymentHandle": "收款账号（选填）",
+                "paymentHandlePlaceholder": "例如：@username",
+                "save": "保存模板",
+                "notifications": {
+                    "nameRequired": "模板名称为必填项",
+                    "saveSuccess": "模板保存成功",
+                    "saveError": "保存模板失败",
+                    "deleteError": "删除模板失败"
+                },
+                "modals": {
+                    "deleteTitle": "确认删除",
+                    "deleteMessage": "确定要删除该规则模板吗？此操作无法撤销。",
+                    "confirmDelete": "删除模板"
+                }
+            },
+            "errors": {
+                "notFound": "未找到模板",
+                "loadFailed": "加载模板失败"
+            }
+        },
+        "trips": {
+            "title": "行程模板",
+            "create": "新建行程模板",
+            "noTemplates": "暂无行程模板，创建一个开始使用吧！",
+            "form": {
+                "editTitle": "编辑行程模板",
+                "addTitle": "新建行程模板",
+                "delete": "删除模板",
+                "cancel": "取消",
+                "name": "模板名称",
+                "namePlaceholder": "例如：日常通勤",
+                "driverNotes": "司机备注",
+                "driverNotesDesc": "给乘客的说明（例如：上车细节）",
+                "driverNotesPlaceholder": "我将驾驶一辆蓝色轿车……",
+                "sectionRoute": "路线与车辆",
+                "from": "出发地",
+                "to": "目的地",
+                "price": "价格（美元）",
+                "totalSeats": "总座位数",
+                "vehicle": "车辆",
+                "vehiclePlaceholder": "选择车辆...",
+                "noVehicle": "未选择车辆",
+                "vehicleHelp": "如需添加新车辆，请先保存修改并前往 <1>我的车辆</1> 页面。",
+                "ruleTemplate": "规则模板",
+                "ruleTemplatePlaceholder": "关联规则模板...",
+                "ruleTemplateDesc": "自动填充行李限制、支付方式等设置。",
+                "noRules": "未关联规则",
+                "save": "保存行程模板",
+                "notifications": {
+                    "nameRequired": "模板名称为必填项",
+                    "saveSuccess": "模板保存成功",
+                    "saveError": "保存模板失败",
+                    "deleteError": "删除模板失败"
+                },
+                "modals": {
+                    "deleteTitle": "确认删除",
+                    "deleteMessage": "确定要删除该行程模板吗？此操作无法撤销。",
+                    "confirmDelete": "删除模板"
+                }
+            },
+            "errors": {
+                "notFound": "未找到模板",
+                "loadFailed": "加载模板失败"
+            }
+        }
+    },
+    "roleSettings": {
+        "title": "{{role}} 设置",
+        "switch": "<1>切换到 {{role}} 设置</1>，或前往 <2>账号设置</2>。",
+        "goToAccount": "前往账号设置",
+        "prefs": {
+            "title": "通知偏好",
+            "description": "管理你希望接收的可选通知。关键提醒无法关闭。"
+        },
+        "push": {
+            "title": "推送通知",
+            "desc": "接收行程与预约的实时更新。",
+            "description": "接收行程与预约的实时更新。",
+            "status": "状态",
+            "installRequired": "需要安装",
+            "notEnabled": "未启用",
+            "enabled": "已启用",
+            "blocked": "已阻止",
+            "installApp": "安装应用",
+            "fixInBrowser": "在浏览器中修复",
+            "enablePush": "开启推送",
+            "iosInstall": "将应用添加到主屏幕以启用通知。",
+            "androidInstall": "通知已启用，安装应用可获得更佳体验。",
+            "allSet": "你已成功开启推送通知。",
+            "blockedDesc": "你已阻止通知，需要在浏览器设置中手动开启。",
+            "enableDesc": "开启通知以实时获取最新动态。",
+            "unblockBrowser": "请前往浏览器设置，允许该网站的通知权限。",
+            "fixBrowser": "在浏览器中修复"
+        },
+        "preferences": {
+            "title": "通知偏好",
+            "desc": "管理你希望接收的可选通知。关键提醒无法关闭。",
+            "tripFull": "行程已满",
+            "tripFullDesc": "当你的行程被预约满时接收通知。",
+            "payTimeout": "付款超时",
+            "payTimeoutDesc": "当乘客未在规定时间内完成付款时接收通知。",
+            "tripUpdates": "行程更新",
+            "tripUpdatesDesc": "当司机更新行程信息时接收通知。",
+            "tripCompleted": "行程完成",
+            "tripCompletedDesc": "当你的行程被标记为完成时接收通知。"
+        },
+        "save": "保存设置",
+        "notifications": {
+            "saveSuccess": "设置保存成功",
+            "saveError": "保存设置失败",
+            "fetchError": "获取设置失败",
+            "ui": {
+                "title": "通知",
+                "markAllRead": "全部标为已读",
+                "markRead": "标为已读",
+                "empty": "暂无通知",
+                "loadMore": "加载更多"
+            }
+        },
+        "install": {
+            "title": "安装应用",
+            "description": "安装应用以获得最佳使用体验",
+            "button": "安装应用",
+            "iosInstructions": "点击分享按钮并选择“添加到主屏幕”"
+        }
+    },
+    "about": {
+        "title": "关于我们",
+        "description": "为 UIUC 学生社区提供安全、透明、实惠的拼车体验。",
+        "content": "RideList 旨在解决 UIUC 校内拼车信息分散的问题。不再需要翻找 Facebook 群组或聊天记录。我们为学生提供一个集中、可搜索、并经过身份验证的平台，用于发布和查找行程。"
+    },
+    "how": {
+        "title": "使用说明",
+        "toc": "目录",
+        "intro": {
+            "noteTitle": "注意",
+            "title": "这个平台是什么",
+            "description": "该平台用于帮助 UIUC 学生以安全、透明、有结构的方式协调拼车行程。",
+            "note": "这不是传统的打车或出租车服务。司机发布的是自己原本就计划进行的行程，乘客在明确规则下申请加入这些行程。",
+            "listTitle": "系统的设计目标是：",
+            "list": [
+                "减少线下见面前的不确定性",
+                "保护个人隐私信息",
+                "清晰记录行程过程中发生的事情",
+                "通过自动化机制减少误解"
+            ]
+        },
+        "who": {
+            "title": "谁可以使用该平台",
+            "access": {
+                "title": "仅限学校用户",
+                "p1": "平台仅对使用 UIUC Microsoft 账号登录的用户开放。",
+                "p2": "这确保平台上的所有用户都来自同一大学社区。",
+                "p3": "不支持访客账号，也不允许未登录的公开发布。"
+            }
+        },
+        "profile": {
+            "title": "账号创建与个人资料基础",
+            "creation": {
+                "title": "自动创建个人资料",
+                "p1": "首次登录时：",
+                "list": [
+                    "系统会自动创建一个基础个人资料",
+                    "默认不会公开任何敏感信息",
+                    "你可以立即开始使用平台"
+                ]
+            },
+            "content": {
+                "title": "个人资料包含的内容",
+                "p1": "你的个人资料可能包括：",
+                "list": [
+                    "显示名称",
+                    "头像",
+                    "乘客和/或司机相关统计信息",
+                    "可选填写的手机号"
+                ],
+                "p2": "手机号及其他敏感字段默认不会公开显示。"
+            }
+        },
+        "privacy": {
+            "title": "以隐私为核心的资料设计",
+            "visibility": {
+                "title": "基于关系的可见性",
+                "p1": "你的完整个人资料仅对以下对象可见：",
+                "list1": [
+                    "当前与你存在有效预约关系的人",
+                    "近期与你完成过行程的人（短暂缓冲期）",
+                    "你自己"
+                ],
+                "p2": "浏览平台的其他用户：",
+                "list2": [
+                    "只能看到部分隐藏的姓名预览",
+                    "无法看到手机号",
+                    "无法看到精确位置"
+                ]
+            },
+            "records": {
+                "title": "永久记录与临时联系方式",
+                "p1": "系统区分以下两类信息：",
+                "list": [
+                    "身份与行程历史（永久保留）",
+                    "联系方式与支付信息（临时有效）"
+                ],
+                "p2": "联系方式会在行程结束后自动失效。"
+            }
+        },
+        "vehicles": {
+            "title": "车辆与司机要求",
+            "registering": {
+                "title": "登记车辆",
+                "p1": "司机在用于行程前必须先登记车辆。",
+                "p2": "每辆车包含以下信息：",
+                "list": [
+                    "品牌、型号、颜色、年份",
+                    "座位数量",
+                    "车牌号（出发前不会公开）"
+                ]
+            },
+            "requirements": {
+                "title": "为什么必须提供车辆信息",
+                "p1": "车辆信息对于以下方面至关重要：",
+                "list": [
+                    "安全性",
+                    "上车协调",
+                    "纠纷处理"
+                ],
+                "p2": "未指定车辆的行程无法安全开始。"
+            }
+        },
+        "posting": {
+            "title": "发布行程（司机）",
+            "details": {
+                "title": "核心行程信息",
+                "p1": "发布行程时，司机需要提供：",
+                "list": [
+                    "出发地 / 目的地（安全公开文本）",
+                    "出发时间",
+                    "价格",
+                    "可用座位数",
+                    "可选备注"
+                ],
+                "p2": "精确地址不会被公开显示。"
+            },
+            "location": {
+                "title": "公开安全的位置描述",
+                "p1": "系统会自动将精确地址转换为：",
+                "list": [
+                    "街区",
+                    "校区",
+                    "大致区域"
+                ],
+                "p2": "在保障隐私的同时，仍可被搜索和发现。"
+            }
+        },
+        "rules": {
+            "title": "行程规则及其含义",
+            "luggage": {
+                "title": "行李限制",
+                "p1": "司机需要指定每位乘客可携带的行李数量。"
+            },
+            "radius": {
+                "title": "接送与下车半径",
+                "p1": "司机定义愿意为接送偏离原路线的最大范围。",
+                "p2": "乘客需在该范围内选择上车或下车地点。"
+            },
+            "flexibility": {
+                "title": "出发时间浮动",
+                "p1": "该设置用于描述行程可能提前或延后的合理范围。"
+            },
+            "payment": {
+                "title": "支付方式与付款时限",
+                "p1": "司机列出可接受的支付方式。",
+                "p2": "如需要付款：",
+                "list": [
+                    "乘客必须在规定时间内完成操作",
+                    "系统会自动取消超时未付款的预约"
+                ]
+            },
+            "autoAccept": {
+                "title": "自动接受",
+                "p1": "开启后：",
+                "list1": [
+                    "预约会被立即接受",
+                    "付款时限自动开始"
+                ],
+                "p2": "关闭后：",
+                "list2": [
+                    "司机需要手动确认每一条预约"
+                ]
+            }
+        },
+        "templates": {
+            "title": "模板（为速度与一致性而设计）",
+            "ruleTemplates": {
+                "title": "规则模板",
+                "p1": "司机可以保存常用规则配置，并在多个行程中重复使用。"
+            },
+            "tripTemplates": {
+                "title": "行程模板",
+                "p1": "司机可以保存完整行程设置（路线 + 规则），快速发布重复行程。",
+                "p2": "模板有助于减少错误，并确保规则一致。"
+            }
+        },
+        "searching": {
+            "title": "查找行程（乘客）",
+            "criteria": {
+                "title": "搜索考虑的因素",
+                "p1": "搜索会综合考虑：",
+                "list": [
+                    "上车距离",
+                    "下车距离",
+                    "出发时间接近程度",
+                    "座位可用情况",
+                    "筛选条件（价格、行李、支付方式、自动接受）"
+                ]
+            },
+            "ranking": {
+                "title": "排序逻辑",
+                "p1": "行程排序基于综合评分，平衡：",
+                "list": [
+                    "时间差",
+                    "路线偏离距离"
+                ],
+                "p2": "避免展示形式上可行但实际不合理的行程。"
+            }
+        },
+        "booking": {
+            "title": "预约行程（乘客）",
+            "states": {
+                "title": "预约状态",
+                "p1": "预约可能处于以下状态：",
+                "list": [
+                    "等待司机确认",
+                    "已接受并进入付款时限",
+                    "等待付款确认",
+                    "已确认",
+                    "已过期（自动）",
+                    "已取消或已完成"
+                ]
+            },
+            "payment": {
+                "title": "付款时效",
+                "p1": "付款确认设有时限，避免座位被长期占用。"
+            },
+            "visibility": {
+                "title": "乘客可见内容",
+                "p1": "仅在预约有效且相关时，乘客才能看到：",
+                "list": [
+                    "司机联系方式",
+                    "上车相关细节"
+                ],
+                "p2": ""
+            }
+        },
+        "managing": {
+            "title": "预约管理（司机）",
+            "control": {
+                "title": "司机的控制权",
+                "p1": "司机可以：",
+                "list": [
+                    "接受或拒绝预约",
+                    "基于原因移除乘客",
+                    "查看谁已准备上车",
+                    "标记乘客为已上车或未到"
+                ]
+            },
+            "transparency": {
+                "title": "透明性",
+                "p1": "每一次状态变更都会记录在历史中。",
+                "p2": "系统不会在没有记录的情况下悄然更改状态。"
+            }
+        },
+        "pickup": {
+            "title": "接送与行前确认流程",
+            "window": {
+                "title": "行前确认窗口",
+                "p1": "在出发前：",
+                "list": [
+                    "系统会自动开启行前确认",
+                    "乘客确认是否已就绪",
+                    "接送协调开始"
+                ]
+            },
+            "locations": {
+                "title": "上车地点",
+                "p1": "乘客可以在允许范围内填写上车地点或备注。",
+                "p2": "司机的精确位置始终受到保护。"
+            }
+        },
+        "lifecycle": {
+            "title": "行程生命周期（完整流程）",
+            "flow": {
+                "title": "典型流程",
+                "list": [
+                    "发布行程",
+                    "乘客预约",
+                    "付款时限（如适用）",
+                    "开启行前确认",
+                    "行程出发",
+                    "行程完成"
+                ]
+            },
+            "safeguards": {
+                "title": "自动化保护机制",
+                "p1": "系统可能会：",
+                "list": [
+                    "在截止时间锁定行程",
+                    "自动取消未付款预约",
+                    "自动开启行前确认",
+                    "在司机忘记操作时自动完成行程"
+                ],
+                "p2": "这些自动化机制用于避免系统进入异常状态。"
+            }
+        },
+        "notifications": {
+            "title": "通知与提醒",
+            "inApp": {
+                "title": "站内通知",
+                "p1": "所有关键操作都会生成站内通知。"
+            },
+            "push": {
+                "title": "推送通知（可选）",
+                "p1": "推送通知：",
+                "list": [
+                    "需要用户主动开启",
+                    "遵循个人偏好设置",
+                    "仅用于时间敏感事件"
+                ]
+            },
+            "triggers": {
+                "title": "触发通知的事件",
+                "p1": "例如：",
+                "list": [
+                    "预约被接受或过期",
+                    "行前确认开始",
+                    "行程被取消或完成",
+                    "重要的联系方式或车辆变更"
+                ]
+            }
+        },
+        "historySection": {
+            "title": "历史记录与留存",
+            "importance": {
+                "title": "为什么历史记录很重要",
+                "p1": "每一次行程、预约和状态变更都会被记录。",
+                "p2": "当事后出现疑问时，这些记录可保护乘客与司机双方。"
+            },
+            "retained": {
+                "title": "系统会保留的内容",
+                "list": [
+                    "参与人员",
+                    "适用规则",
+                    "发生的操作",
+                    "事件发生的时间"
+                ]
+            }
+        },
+        "safety": {
+            "title": "安全与信任原则",
+            "anonymous": {
+                "title": "不允许匿名使用",
+                "p1": "所有用户均通过学校账号验证。"
+            },
+            "sensitive": {
+                "title": "敏感信息的有限暴露",
+                "p1": "手机号、精确位置和车牌信息：",
+                "list": [
+                    "仅在必要时展示",
+                    "在行程结束后自动收回"
+                ]
+            },
+            "automation": {
+                "title": "无隐式自动化",
+                "p1": "系统的所有自动行为都会被记录并通知相关用户。"
+            }
+        },
+        "expectations": {
+            "title": "合理使用预期",
+            "notTaxi": {
+                "title": "这不是打车服务",
+                "p1": "司机没有义务接受所有预约。",
+                "p2": "乘客应遵守规则并尊重时间安排。"
+            },
+            "abuse": {
+                "title": "防止滥用",
+                "p1": "频繁的不当行为（如爽约、被移除等）会体现在历史记录中，并在未来对系统行为产生影响。"
+            }
+        },
+        "disclaimers": {
+            "title": "免责声明",
+            "p1": "本平台：",
+            "list": [
+                "不提供保险",
+                "不保证行程一定完成",
+                "不介入或处理付款"
+            ],
+            "p2": "平台的作用是协调，而非强制现实中的行为。"
+        },
+        "final": {
+            "title": "最后说明",
+            "p1": "该系统的设计初衷是：",
+            "list": [
+                "减少模糊空间",
+                "鼓励责任意识",
+                "保护隐私",
+                "在大学社区内安全扩展"
+            ],
+            "p2": "如果你觉得某些规则“受限”，通常是有意为之——用于保护行程双方。"
+        }
+    },
+    "trust": {
+        "title": "安全与信任",
+        "toc": "本页内容",
+        "intro": {
+            "title": "我们的目标",
+            "p1": "本平台旨在帮助 UIUC 学生以安全、透明、并具备清晰预期的方式协调拼车行程。虽然任何系统都无法消除所有风险，但我们在身份验证、隐私保护和行程协调方面设计了多层防护机制。"
+        },
+        "who": {
+            "title": "谁可以使用该平台",
+            "p1": "只有通过 UIUC Microsoft 登录认证的用户才能创建账号。",
+            "list": [
+                "不允许匿名账号",
+                "不支持校外注册",
+                "每个账号都绑定真实的大学身份"
+            ],
+            "p2": "这有助于建立责任机制并减少滥用行为。",
+            "link": "了解更多账号创建方式：使用说明 → 开始使用"
+        },
+        "identity": {
+            "title": "身份与资料可见性",
+            "p1": "个人资料在设计上始终以隐私为优先。",
+            "list": [
+                "姓名、头像和手机号默认不会公开",
+                "只有在存在当前或近期行程关系时，身份信息才会显示",
+                "历史行程不会永久授予他人查看联系方式的权限"
+            ],
+            "p2": "你的个人资料并不是一个公共名录。",
+            "link": "查看完整资料可见性规则：使用说明 → 个人资料与隐私"
+        },
+        "location": {
+            "title": "位置信息隐私",
+            "p1": "精确地址不会被公开展示。",
+            "list1": [
+                "公开的行程列表只显示大致区域，而非具体上车点"
+            ],
+            "p2": "精确位置信息仅在以下情况下共享：",
+            "list2": [
+                "行程处于有效协调阶段时",
+                "且仅限直接参与该行程的用户"
+            ],
+            "p3": "经纬度数据不会向无关用户暴露。",
+            "p4": "司机控制的是接送半径，而不是公开具体地址。",
+            "link": "查看位置可见性规则：使用说明 → 位置信息处理"
+        },
+        "pickup": {
+            "title": "接送与会面安全",
+            "p1": "为减少压力与模糊空间：",
+            "list": [
+                "接送协调仅在实际需要时才会开启",
+                "乘客与司机可在行程进行中共享备注信息",
+                "在行程生效前，你不会被要求提前会面",
+                "如感到不适，可在出发前退出或移除预约"
+            ],
+            "p2": "相信你的判断 —— 系统会为此提供支持。"
+        },
+        "payments": {
+            "title": "付款与财务预期",
+            "p1": "本平台不处理任何付款。",
+            "list": [
+                "付款由乘客与司机自行协商完成",
+                "系统仅记录付款状态以管理行程流程",
+                "不托管、不担保、不代管任何资金"
+            ],
+            "p2": "预约历史与时间戳会被保留，以确保信息清晰。",
+            "link": "了解预约状态如何运作：使用说明 → 预约生命周期"
+        },
+        "automation": {
+            "title": "自动化保护机制",
+            "p1": "系统通过自动化减少混乱和不公平情况：",
+            "list": [
+                "超出付款时限的预约将自动释放座位",
+                "行程会在出发前锁定，避免临时混乱",
+                "若司机忘记操作，行前确认、出发与完成状态可自动触发",
+                "所有系统行为都会被记录并可追溯"
+            ],
+            "p2": "不存在悄然发生或无法解释的变更。",
+            "link": "查看系统自动化规则：使用说明 → 系统行为"
+        },
+        "disputes": {
+            "title": "纠纷与分歧",
+            "p1": "本平台是协调工具，而非仲裁或裁决服务。",
+            "list": [
+                "用户需自行负责沟通与决策",
+                "系统会保留预约历史和操作时间记录",
+                "反复的不当行为会通过记录体现为可识别的模式"
+            ],
+            "p2": "请保持理性判断，并尽早沟通。"
+        },
+        "expectations": {
+            "title": "社区使用预期",
+            "p1": "我们期望所有用户：",
+            "list": [
+                "如实对待时间与可用性",
+                "清晰、尊重地进行沟通",
+                "遵守上车规则与时间窗口",
+                "以你希望被对待的方式对待他人"
+            ],
+            "p2": "平台的运作依赖于社区本身。"
+        },
+        "not": {
+            "title": "本平台不是什么",
+            "p1": "为避免误解，本平台不是：",
+            "list": [
+                "出租车或网约车服务",
+                "支付或资金处理平台",
+                "安全结果的保证",
+                "个人判断的替代品"
+            ],
+            "p2": "请负责任地使用本平台。"
+        },
+        "unsafe": {
+            "title": "如果你感到不安全",
+            "p1": "你的安全永远是第一位的。",
+            "list": [
+                "如果感到不适，请不要继续接送",
+                "你没有义务完成一次行程",
+                "在出发前退出预约是被允许的"
+            ],
+            "p2": "相信你的直觉。"
+        },
+        "cta": {
+            "title": "第一次使用？",
+            "link": "通过《使用说明》了解整个系统的运作方式。"
+        }
+    },
+    "profile": {
+        "changePhoto": "更换头像",
+        "verifiedStudent": "已认证学生",
+        "joined": "加入时间",
+        "phone": "手机号",
+        "phonePlaceholder": "用于行程协调",
+        "phoneHidden": "手机号已隐藏",
+        "phoneHiddenDesc": "仅对已确认的乘客 / 司机可见",
+        "noPhone": "未填写手机号",
+        "save": "保存修改",
+        "cancel": "取消",
+        "riderProfile": "乘客资料",
+        "driverProfile": "司机资料",
+        "ridesTaken": "已乘坐次数",
+        "rating": "评分",
+        "preferences": "偏好设置",
+        "preferencesDesc": "新预约的默认行李需求",
+        "smallLuggage": "小件行李",
+        "smallLuggageDesc": "背包、手提袋等",
+        "bigLuggage": "大件行李",
+        "bigLuggageDesc": "行李箱、大号旅行包等",
+        "tripsCompleted": "已完成行程",
+        "driverStatsDesc": "司机统计数据无法直接编辑。",
+        "errors": {
+            "nameRequired": "姓名为必填项",
+            "saveFailed": "保存个人资料失败",
+            "notFound": "未找到个人资料",
+            "fetchFailed": "获取个人资料失败"
+        }
+    },
+    "pwa": {
+        "blockedTitle": "通知已被阻止",
+        "blockedMessage": "由于该网站的通知权限被阻止，我们无法向你发送更新。",
+        "blockedGuide": "请检查浏览器设置并允许通知。",
+        "fixedBtn": "我已修复",
+        "installRequiredTitle": "需要安装才能启用推送",
+        "installRequiredMessage": "在 iOS 上接收推送通知，需要将本网站添加到主屏幕。",
+        "installGuideIOS1": "点击分享按钮",
+        "installGuideIOS2": "选择“添加到主屏幕”",
+        "laterBtn": "稍后再说",
+        "installTitle": "安装应用",
+        "installMessage": "安装应用可获得更佳体验和稳定的通知。",
+        "installGuideAndroid": "添加到主屏幕以便更方便访问。",
+        "notNowBtn": "暂不安装",
+        "closeBtn": "关闭",
+        "installBtn": "安装",
+        "getUpdatesTitle": "获取实时更新",
+        "getUpdatesMessage": "开启推送通知，第一时间接收行程与预约更新。",
+        "enableBtn": "开启通知"
+    },
+    "notifications": {
+        "types": {
+            "new_booking": {
+                "title": "新乘客加入",
+                "message": "有乘客加入了你的行程。"
+            },
+            "new_booking_request": {
+                "title": "新的预约请求",
+                "message": "有乘客请求加入你的行程。"
+            },
+            "trip_full": {
+                "title": "行程已满",
+                "message": "你的行程已被预约满。"
+            },
+            "payment_marked": {
+                "title": "乘客已付款",
+                "message": "乘客已完成付款，请进行确认。"
+            },
+            "rider_left": {
+                "title": "乘客已退出",
+                "message": "有乘客退出了你的行程。"
+            },
+            "rider_left_paid_bookable": {
+                "title": "乘客已退出",
+                "message": "已付款的乘客退出了行程，行程现可再次预约。"
+            },
+            "rider_left_paid": {
+                "title": "乘客已退出",
+                "message": "已付款的乘客退出了行程。"
+            },
+            "rider_left_pending_bookable": {
+                "title": "乘客已退出",
+                "message": "待确认付款的乘客退出了行程，行程现可再次预约。"
+            },
+            "rider_left_pending": {
+                "title": "乘客已退出",
+                "message": "待确认付款的乘客退出了行程。"
+            },
+            "rider_left_unpaid_bookable": {
+                "title": "乘客已退出",
+                "message": "未付款的乘客退出了行程，行程现可再次预约。"
+            },
+            "rider_left_unpaid": {
+                "title": "乘客已退出",
+                "message": "未付款的乘客退出了行程。"
+            },
+            "rider_ready": {
+                "title": "乘客已就绪",
+                "message": "乘客已完成行前确认，准备上车。"
+            },
+            "trip_auto_departed": {
+                "title": "行程已自动出发",
+                "message": "由于司机未操作，系统已自动将行程标记为出发。"
+            },
+            "trip_auto_locked": {
+                "title": "行程已锁定",
+                "message": "由于到达截止时间，系统已自动锁定行程。"
+            },
+            "booking_updated": {
+                "title": "预约已更新",
+                "message": "有乘客更新了其预约信息。"
+            },
+            "trip_late_warning": {
+                "title": "行程延迟",
+                "message": "行程已延迟，系统将在 {{time}} 自动出发。"
+            },
+            "pay_timeout": {
+                "title": "付款超时",
+                "message": "因付款超时，一条预约已被取消。"
+            },
+            "booking_rejected": {
+                "title": "预约被拒绝",
+                "message": "你的预约请求已被司机拒绝。"
+            },
+            "pay_window_started": {
+                "title": "预约已接受",
+                "message": "你的预约已被接受，请在规定时间内完成付款。"
+            },
+            "booking_confirmed": {
+                "title": "预约已确认",
+                "message": "司机已确认付款，行程已就绪！"
+            },
+            "booking_removed": {
+                "title": "预约被移除",
+                "message": "你的预约已被司机移除。"
+            },
+            "trip_cancelled": {
+                "title": "行程已取消",
+                "message": "司机已取消该行程。"
+            },
+            "trip_aborted": {
+                "title": "行程已终止",
+                "message": "该行程已被终止。"
+            },
+            "check_in_started": {
+                "title": "行前确认已开始",
+                "message": "司机已开启行前确认，请标记自己为已就绪。"
+            },
+            "trip_departed": {
+                "title": "行程已出发",
+                "message": "司机已开始行程。"
+            },
+            "trip_departed_definite": {
+                "title": "行程已出发",
+                "message": "司机已开始行程。"
+            },
+            "marked_no_show": {
+                "title": "未到达",
+                "message": "你已被标记为未按时到达。"
+            },
+            "trip_marked_no_show": {
+                "title": "未到达",
+                "message": "你已被标记为未到达。"
+            },
+            "picked_up": {
+                "title": "已上车",
+                "message": "你已成功上车。"
+            },
+            "driver_contact_changed": {
+                "title": "司机信息更新",
+                "message": "司机更新了联系方式。"
+            },
+            "driver_contact_changed_definite": {
+                "title": "司机联系方式更新",
+                "message": "司机已更新其手机号。"
+            },
+            "vehicle_updated": {
+                "title": "车辆信息更新",
+                "message": "司机更新了车辆信息。"
+            },
+            "vehicle_updated_definite": {
+                "title": "车辆信息已更新",
+                "message": "司机已更新本次行程的车辆信息。"
+            },
+            "trip_updated": {
+                "title": "行程更新",
+                "message": "行程信息已发生变更。"
+            },
+            "trip_completed": {
+                "title": "行程已完成",
+                "message": "行程已标记为完成。"
+            }
+        }
+    },
+    "api": {
+        "errors": {
+            "unauthorized": "未授权",
+            "forbidden": "无权限",
+            "tripNotFound": "未找到行程",
+            "profileRequired": "需要完善个人资料",
+            "internalError": "服务器内部错误",
+            "tripNotBookable": "该行程不可预约",
+            "ownTrip": "不能预约自己的行程",
+            "bookingClosed": "该行程已停止预约。",
+            "notEnoughSeats": "座位不足，仅剩 {{count}} 个。",
+            "tooManyBigBags": "大件行李过多，{{seats}} 个座位最多允许 {{limit}} 件。",
+            "tooManySmallBags": "小件行李过多，{{seats}} 个座位最多允许 {{limit}} 件。",
+            "flexibilityExceeded": "期望的上车时间超出司机设定的浮动范围。",
+            "locationTooFar": "上车地点距离过远，最大半径为 {{km}} 公里。",
+            "invalidPaymentMethod": "支付方式无效，必须为以下之一：{{methods}}",
+            "nonePaymentMethodRequired": "当司机未指定支付方式时，支付方式必须为“无”。",
+            "cannotRejoin": "无法重新加入该行程。",
+            "paymentMethodRequired": "必须选择支付方式。",
+            "alreadyActive": "你在该行程中已有一个有效预约。",
+            "mustBookAtLeastOne": "至少需要预约 1 个座位。",
+            "bookingNotFound": "未找到预约记录",
+            "tripReadOnly": "行程已完成、取消或终止，当前为只读状态。",
+            "bookingNotEditable": "当前状态下无法编辑预约。",
+            "bookingTripDeparted": "行程已出发，无法修改预约信息。",
+            "seatsLocked": "座位与行李信息只能在司机确认前修改。",
+            "minSeats": "至少需要预约一个座位。",
+            "notEnoughSeatsAccept": "可用座位不足，无法接受该预约。",
+            "luggageLimit": "{{type}} 行李数量超出限制（{{seats}} 个座位最多 {{limit}} 件）。",
+            "invalidPickupLocation": "请选择有效的上车地点。",
+            "pickupTooFar": "上车地点过远，请选择更靠近中心的位置。",
+            "noUpdateFields": "没有需要更新的字段。",
+            "rateLimit": "每 5 分钟只能修改一次。",
+            "invalidAction": "无效操作",
+            "bookingNotWaiting": "该预约当前不处于等待确认状态。",
+            "cannotRemoveConfirmed": "行程出发、取消、终止或完成后，无法移除已确认的乘客。",
+            "cannotRemoveStatus": "当前状态下无法移除该预约。",
+            "notPendingPayment": "该预约当前不处于待付款确认状态。",
+            "mustBeConfirmed": "预约必须已确认才能标记为已上车。",
+            "tripMustBeDeparted": "行程必须已出发才能标记乘客为已上车。",
+            "carNotFound": "未找到车辆或无权限访问。",
+            "departureTimePast": "出发时间不能早于当前时间。",
+            "invalidStatus": "无效状态",
+            "tripLockedStatus": "仅当行程为可预约或已满时才能锁定。",
+            "tripCompleteStatus": "仅当行程已出发或处于只读状态时才能标记为完成。",
+            "tripCancelStatus": "行程已出发或只读状态下无法取消。",
+            "tripAbortStatus": "行程未出发或为只读状态时无法终止。",
+            "departEarly": "除非所有乘客已完成行前确认，否则无法提前出发。",
+            "cannotUnlock": "无法解锁行程：已超过预约截止时间。",
+            "startLocationEmpty": "出发地不能为空。",
+            "destinationEmpty": "目的地不能为空。",
+            "rideNotFound": "未找到行程",
+            "cannotReduceSeats": "无法将总座位数减少到已预约座位数（{{seatsTaken}}）以下。",
+            "bookingAlreadyInactive": "该预约已处于非活跃状态。",
+            "cannotLeaveDeparted": "行程出发后无法退出。",
+            "bookingNotPaymentReady": "该预约当前不处于待付款状态。",
+            "notConfirmedOrPending": "预约未确认或未处于待付款确认状态。",
+            "checkInNotStarted": "该行程尚未开启行前确认。",
+            "alreadyReady": "你已标记为就绪。",
+            "tripCompletedOrCancelled": "行程已完成或已取消。",
+            "invalidPickupTimeFormat": "期望上车时间格式无效。",
+            "driverProfileNotFound": "未找到司机资料。",
+            "driverPhoneRequired": "司机需在个人资料中设置手机号才能开始行程。",
+            "carRequiredForDeparture": "开始行程前必须为该行程指定车辆。",
+            "profileIncomplete": "个人资料未完善",
+            "missingRequiredFieldsLocation": "缺少必要字段（需要位置信息或 PlaceID）。",
+            "invalidStartLocationId": "出发地 ID 无效",
+            "invalidStartLocationName": "出发地名称无效",
+            "invalidDestinationId": "目的地 ID 无效",
+            "invalidDestinationName": "目的地名称无效",
+            "invalidCarId": "车辆 ID 无效",
+            "seatsExceedCarCapacity": "行程座位数（{{seats}}）不能超过车辆载客能力（{{capacity}}）。",
+            "carSeatsRequired": "车辆信息中必须包含座位数量。",
+            "ruleTemplateNameRequired": "规则模板名称为必填项。",
+            "tripTemplateNameRequired": "行程模板名称为必填项。",
+            "profileNotFound": "未找到个人资料",
+            "nameRequired": "姓名不能为空",
+            "nameRequiredSimple": "姓名为必填项",
+            "imageUploadFailed": "图片上传失败",
+            "carNotFoundExact": "未找到车辆",
+            "profileCreateFailed": "创建个人资料失败",
+            "templateNameRequired": "模板名称为必填项",
+            "notFound": "未找到资源",
+            "notFoundOrUnauthorized": "未找到资源或无权限",
+            "ruleTemplateLinkedToTrip": "该规则模板已关联至行程模板，无法删除。",
+            "templateSeatsExceedCarCapacity": "模板中的座位数（{{seats}}）不能超过车辆载客能力（{{capacity}}）。",
+            "ruleBigLuggageExceedsCar": "规则中大件行李上限（{{limit}}）超过车辆容量（{{capacity}}）。",
+            "ruleSmallLuggageExceedsCar": "规则中小件行李上限（{{limit}}）超过车辆容量（{{capacity}}）。"
+        }
+    },
+    "tripFields": {
+        "departure_time": "出发时间",
+        "car": "车辆",
+        "from_text": "上车地点",
+        "to_text": "下车地点",
+        "price": "价格",
+        "pickup_rules": "上车规则",
+        "pickup_radius_meters": "接送半径",
+        "drop_off_radius_meters": "下车半径",
+        "cancellation_policy": "取消政策",
+        "cutoff_time": "预约截止时间",
+        "pay_window": "付款时限",
+        "start_check_in_hrs_before_departure": "行前确认时间",
+        "departure_time_flexibility": "出发时间浮动",
+        "notes": "备注",
+        "payment_methods": "支付方式",
+        "payment_handle": "收款账号"
+    },
+    "notifications_dynamic": {
+        "trip_updated": {
+            "one": "{{field}} 已更新",
+            "many": "{{fields}} 已更新",
+            "others": "{{fields}} 等内容已更新"
+        }
+    },
+    "map": {
+        "you": "你的位置",
+        "pickup": "上车点",
+        "dropoff": "下车点",
+        "unavailable": "地图预览不可用"
     }
 }

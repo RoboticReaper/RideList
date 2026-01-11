@@ -1,6 +1,7 @@
 import { Card, Text, Badge, Group, Stack, Button, Flex, Alert, Anchor } from '@mantine/core';
 import { getTripStatusConfig } from '@/utils/statusUtils';
-import { IconMapPin, IconCalendar, IconUsers, IconSteeringWheel, IconAlertTriangle } from '@tabler/icons-react';
+import { IconMapPin, IconCalendar, IconUsers, IconSteeringWheel, IconAlertTriangle, IconShare } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import dayjs from 'dayjs';
 import { LocalizedLink } from '@/components/LocalizedLink';
 import { useTranslation, Trans } from 'react-i18next';
@@ -118,6 +119,31 @@ export function TripCard({ trip }: TripCardProps) {
 
                 <Button component={LocalizedLink} href={`/dashboard/${trip.id}`} variant="light" fullWidth mt="xs">
                     {t('dashboard.tripCard.manageTrip')}
+                </Button>
+                <Button
+                    variant="subtle"
+                    fullWidth
+                    leftSection={<IconShare size={16} />}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const shareText = t('rides.errors.share.text', {
+                            from: trip.from_input_text || trip.from_text,
+                            to: trip.to_input_text || trip.to_text,
+                            time: dayjs(trip.departure_time).format('MMM D, YYYY h:mm A'),
+                            link: `${window.location.origin}/rides/${trip.id}`
+                        });
+
+                        navigator.clipboard.writeText(shareText);
+                        notifications.show({
+                            title: t('rides.errors.successTitle'),
+                            message: t('rides.errors.share.copied'),
+                            color: 'green'
+                        });
+                    }}
+                >
+                    {t('rides.errors.share.button')}
                 </Button>
             </Stack>
         </Card>

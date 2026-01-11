@@ -10,7 +10,7 @@ import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { useMediaQuery, useIntersection, useInterval, useWindowEvent } from '@mantine/hooks';
 import {
-    IconMapPin, IconCalendar, IconArmchair, IconCoin, IconInfoCircle, IconLuggage, IconClock, IconCar, IconStar, IconCheck, IconUser, IconAlertCircle, IconDashboard, IconPhone, IconRefresh, IconX
+    IconMapPin, IconCalendar, IconArmchair, IconCoin, IconInfoCircle, IconLuggage, IconClock, IconCar, IconStar, IconCheck, IconUser, IconAlertCircle, IconDashboard, IconPhone, IconRefresh, IconX, IconShare
 } from '@tabler/icons-react';
 import { LocalizedLink } from '@/components/LocalizedLink';
 import { BookingSuccessModal } from '@/components/BookingSuccessModal';
@@ -579,6 +579,29 @@ export default function RidePage() {
                                             ) : ride.status === 'bookable' ? t('rides.detail.buttons.loginToBook') : t('rides.detail.buttons.cannotBook')}
 
                                         </Button>
+                                        <Button
+                                            mt="sm"
+                                            size="sm"
+                                            variant="subtle"
+                                            color="gray"
+                                            ml="xs"
+                                            onClick={() => {
+                                                const shareText = t('rides.errors.share.text', {
+                                                    from: ride.from_text,
+                                                    to: ride.to_text,
+                                                    time: dayjs(ride.departure_time).format('MMM D, YYYY h:mm A'),
+                                                    link: `${window.location.origin}/rides/${ride.id}`
+                                                });
+                                                navigator.clipboard.writeText(shareText);
+                                                notifications.show({
+                                                    title: t('rides.errors.successTitle'),
+                                                    message: t('rides.errors.share.copied'),
+                                                    color: 'green'
+                                                });
+                                            }}
+                                        >
+                                            <IconShare size={20} />
+                                        </Button>
                                     </div>
                                     <div style={{ width: isSmallScreen ? '100%' : 140, marginTop: isSmallScreen ? 'var(--mantine-spacing-md)' : 0 }}>
                                         <Text size="sm" fw={500} mb={4} ta={isSmallScreen ? "left" : "right"}>
@@ -838,47 +861,70 @@ export default function RidePage() {
                                             </Text>
                                         )}
                                     </div>
-                                    <Button
-                                        size="md"
-                                        variant="filled"
-                                        color={
-                                            isDriver ? 'gray' :
-                                                ride.user_booking_status ? 'blue' :
-                                                    ride.status === 'bookable' ? 'blue' : 'gray'
-                                        }
-                                        disabled={(() => {
-                                            const isActiveBooking = !!ride.user_booking_status && !['removed', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status);
-                                            return !isDriver && !isActiveBooking && ride.status !== 'bookable';
-                                        })()}
-                                        onClick={() => {
-                                            if (!user) {
-                                                handleProtectedAction();
-                                                return;
+                                    <Group gap="xs">
+                                        <Button
+                                            variant="subtle"
+                                            color="gray"
+                                            size="md"
+                                            onClick={() => {
+                                                const shareText = t('rides.errors.share.text', {
+                                                    from: ride.from_text,
+                                                    to: ride.to_text,
+                                                    time: dayjs(ride.departure_time).format('MMM D, YYYY h:mm A'),
+                                                    link: `${window.location.origin}/rides/${ride.id}`
+                                                });
+                                                navigator.clipboard.writeText(shareText);
+                                                notifications.show({
+                                                    title: t('rides.errors.successTitle'),
+                                                    message: t('rides.errors.share.copied'),
+                                                    color: 'green'
+                                                });
+                                            }}
+                                        >
+                                            <IconShare size={24} />
+                                        </Button>
+                                        <Button
+                                            size="md"
+                                            variant="filled"
+                                            color={
+                                                isDriver ? 'gray' :
+                                                    ride.user_booking_status ? 'blue' :
+                                                        ride.status === 'bookable' ? 'blue' : 'gray'
                                             }
-                                            if (isDriver) {
-                                                router.push(`/dashboard/${rideId}`);
-                                                return;
-                                            }
-                                            const status = ride.user_booking_status;
-                                            const isInactive = ['removed', 'pay_timeout', 'left_paid', 'left_unpaid', 'cancelled'].includes(status || '');
+                                            disabled={(() => {
+                                                const isActiveBooking = !!ride.user_booking_status && !['removed', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status);
+                                                return !isDriver && !isActiveBooking && ride.status !== 'bookable';
+                                            })()}
+                                            onClick={() => {
+                                                if (!user) {
+                                                    handleProtectedAction();
+                                                    return;
+                                                }
+                                                if (isDriver) {
+                                                    router.push(`/dashboard/${rideId}`);
+                                                    return;
+                                                }
+                                                const status = ride.user_booking_status;
+                                                const isInactive = ['removed', 'pay_timeout', 'left_paid', 'left_unpaid', 'cancelled'].includes(status || '');
 
-                                            if (status && !isInactive) {
-                                                router.push(`/dashboard/${rideId}`);
-                                                return;
-                                            }
-                                            // window.scrollTo({ top: 0, behavior: 'smooth' });
-                                            setBookingOpen(true);
-                                        }}
-                                    >
-                                        {user ? (
-                                            isDriver ? t('rides.detail.buttons.manageTrip') :
-                                                (ride.user_booking_status === 'cancelled') ? t('rides.detail.buttons.bookingCancelled') :
-                                                    (ride.status === 'locked' && !ride.user_booking_status) ? t('rides.detail.buttons.bookingClosed') :
-                                                        ((ride.user_booking_status && !['removed', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) ? t('rides.detail.buttons.manageDashboard') : t('rides.detail.buttons.bookNow'))
-                                        ) :
-                                            ride.status === 'bookable' ? t('rides.detail.buttons.loginToBook') : t('rides.detail.buttons.cannotBook')}
+                                                if (status && !isInactive) {
+                                                    router.push(`/dashboard/${rideId}`);
+                                                    return;
+                                                }
+                                                // window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                setBookingOpen(true);
+                                            }}
+                                        >
+                                            {user ? (
+                                                isDriver ? t('rides.detail.buttons.manageTrip') :
+                                                    (ride.user_booking_status === 'cancelled') ? t('rides.detail.buttons.bookingCancelled') :
+                                                        (ride.status === 'locked' && !ride.user_booking_status) ? t('rides.detail.buttons.bookingClosed') :
+                                                            ((ride.user_booking_status && !['removed', 'pay_timeout', 'left_paid', 'left_unpaid'].includes(ride.user_booking_status)) ? t('rides.detail.buttons.manageDashboard') : t('rides.detail.buttons.bookNow'))
+                                            ) :
+                                                ride.status === 'bookable' ? t('rides.detail.buttons.loginToBook') : t('rides.detail.buttons.cannotBook')}
 
-                                    </Button>
+                                        </Button>
+                                    </Group>
                                 </Group>
                             </Container>
                         </Paper>

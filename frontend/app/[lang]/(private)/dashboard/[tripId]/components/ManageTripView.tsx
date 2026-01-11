@@ -48,12 +48,26 @@ interface ManageTripViewProps {
 
 
 const INACTIVE_STATUSES = ['pay_timeout', 'removed', 'left_paid', 'left_unpaid', 'cancelled'];
+
+const useDelayedConfirm = (isOpen: boolean, delay = 800) => {
+    const [disabled, setDisabled] = useState(true);
+    useEffect(() => {
+        if (isOpen) {
+            setDisabled(true);
+            const timer = setTimeout(() => setDisabled(false), delay);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen, delay]);
+    return disabled;
+};
+
 // Reasons are localized inside the component now
 
 function RemoveRiderModal({ booking, onClose, onConfirm, loading }: { booking: Booking | null, onClose: () => void, onConfirm: (reason: string) => void, loading: boolean }) {
     const { t } = useTranslation('common');
     const [reason, setReason] = useState<string | null>(null);
     const [note, setNote] = useState('');
+    const confirmDisabled = useDelayedConfirm(!!booking);
 
     useEffect(() => {
         setReason(null);
@@ -131,7 +145,7 @@ function RemoveRiderModal({ booking, onClose, onConfirm, loading }: { booking: B
                         color="red"
                         onClick={handleSubmit}
                         loading={loading}
-                        disabled={!reason || (isOther && !note.trim())}
+                        disabled={!reason || (isOther && !note.trim()) || confirmDisabled}
                     >
                         {t('tripDetails.manage.modals.removeRider.confirm')}
                     </Button>
@@ -171,6 +185,13 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
     const [editNoteModalOpen, setEditNoteModalOpen] = useState(false);
     const [bookingToEdit, setBookingToEdit] = useState<Booking | null>(null);
     const [noteLoading, setNoteLoading] = useState(false);
+
+    // Delays
+    const departConfirmDisabled = useDelayedConfirm(departModalOpen);
+    const checkInConfirmDisabled = useDelayedConfirm(checkInModalOpen);
+    const cancelConfirmDisabled = useDelayedConfirm(cancelModalOpen);
+    const abortConfirmDisabled = useDelayedConfirm(abortModalOpen);
+    const completeConfirmDisabled = useDelayedConfirm(completeModalOpen);
 
 
 
@@ -1065,13 +1086,27 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                             {t('tripDetails.manage.modals.startPickup.description')}
                         </Text>
                         <Alert color="indigo" icon={<IconInfoCircle size={16} />} title={t('tripDetails.manage.modals.startPickup.impactTitle')}>
-                            <Text size="sm">
-                                {t('tripDetails.manage.modals.startPickup.impactDescription')}
-                            </Text>
+                            <Stack gap="xs">
+                                <Text size="sm">
+                                    • {t('tripDetails.manage.modals.startPickup.impact1')}
+                                </Text>
+                                <Text size="sm">
+                                    • {t('tripDetails.manage.modals.startPickup.impact2')}
+                                </Text>
+                                <Text size="sm">
+                                    • {t('tripDetails.manage.modals.startPickup.impact3')}
+                                </Text>
+                                <Text size="sm">
+                                    • {t('tripDetails.manage.modals.startPickup.impact4')}
+                                </Text>
+                                <Text size="sm">
+                                    • {t('tripDetails.manage.modals.startPickup.impact5')}
+                                </Text>
+                            </Stack>
                         </Alert>
                         <Group justify="flex-end" mt="md">
                             <Button variant="default" onClick={() => setDepartModalOpen(false)}>{t('tripDetails.manage.actions.back')}</Button>
-                            <Button color="indigo" onClick={() => handleStatusUpdate('departed')} loading={statusLoading}>
+                            <Button color="red" disabled={departConfirmDisabled} onClick={() => handleStatusUpdate('departed')} loading={statusLoading}>
                                 {t('tripDetails.manage.modals.startPickup.confirm')}
                             </Button>
                         </Group>
@@ -1084,13 +1119,21 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                             {t('tripDetails.manage.modals.enableCheckIn.description')}
                         </Text>
                         <Alert color="orange" icon={<IconInfoCircle size={16} />} title={t('tripDetails.manage.modals.enableCheckIn.impactTitle')}>
-                            <Text size="sm">
-                                {t('tripDetails.manage.modals.enableCheckIn.impactDescription')}
-                            </Text>
+                            <Stack gap="xs">
+                                <Text size="sm">
+                                    • {t('tripDetails.manage.modals.enableCheckIn.impact1')}
+                                </Text>
+                                <Text size="sm">
+                                    • {t('tripDetails.manage.modals.enableCheckIn.impact2')}
+                                </Text>
+                                <Text size="sm">
+                                    • {t('tripDetails.manage.modals.enableCheckIn.impact3')}
+                                </Text>
+                            </Stack>
                         </Alert>
                         <Group justify="flex-end" mt="md">
                             <Button variant="default" onClick={() => setCheckInModalOpen(false)}>{t('tripDetails.manage.actions.back')}</Button>
-                            <Button color="orange" onClick={handleEnableCheckIn} loading={statusLoading}>
+                            <Button color="red" disabled={checkInConfirmDisabled} onClick={handleEnableCheckIn} loading={statusLoading}>
                                 {t('tripDetails.manage.modals.enableCheckIn.confirm')}
                             </Button>
                         </Group>
@@ -1149,35 +1192,44 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                 </Modal>
 
                 <Modal opened={cancelModalOpen} onClose={() => setCancelModalOpen(false)} title={t('tripDetails.manage.modals.cancelTrip.title')}>
-                    <Text size="sm" mb="md">{t('tripDetails.manage.modals.cancelTrip.description')}</Text>
-                    <Group justify="flex-end">
-                        <Button variant="default" onClick={() => setCancelModalOpen(false)}>{t('tripDetails.manage.actions.back')}</Button>
-                        <Button color="red" onClick={() => handleStatusUpdate('cancelled')} loading={statusLoading}>{t('tripDetails.manage.modals.cancelTrip.confirm')}</Button>
-                    </Group>
+                    <Stack>
+                        <Text size="sm">{t('tripDetails.manage.modals.cancelTrip.description')}</Text>
+                        <Alert color="red" icon={<IconInfoCircle size={16} />} title={t('tripDetails.manage.modals.cancelTrip.impactTitle')}>
+                            <Stack gap="xs">
+                                <Text size="sm">
+                                    • {t('tripDetails.manage.modals.cancelTrip.impact1')}
+                                </Text>
+                                <Text size="sm">
+                                    • {t('tripDetails.manage.modals.cancelTrip.impact2')}
+                                </Text>
+                                <Text size="sm">
+                                    • {t('tripDetails.manage.modals.cancelTrip.impact3')}
+                                </Text>
+                            </Stack>
+                        </Alert>
+                        <Group justify="flex-end" mt="md">
+                            <Button variant="default" onClick={() => setCancelModalOpen(false)}>{t('tripDetails.manage.actions.back')}</Button>
+                            <Button color="red" disabled={cancelConfirmDisabled} onClick={() => handleStatusUpdate('cancelled')} loading={statusLoading}>{t('tripDetails.manage.modals.cancelTrip.confirm')}</Button>
+                        </Group>
+                    </Stack>
                 </Modal>
 
                 <Modal opened={abortModalOpen} onClose={() => setAbortModalOpen(false)} title={t('tripDetails.manage.modals.abortTrip.title')}>
                     <Stack>
                         <Text size="sm">{t('tripDetails.manage.modals.abortTrip.description')}</Text>
                         <Alert color="red" icon={<IconInfoCircle size={16} />} title={t('tripDetails.manage.modals.abortTrip.impactTitle')}>
-                            <Stack gap={0}>
+                            <Stack gap="xs">
                                 <Text size="sm">
-                                    <Trans
-                                        i18nKey="tripDetails.manage.modals.abortTrip.impact1"
-                                        components={{ 1: <b />, 2: <b /> }}
-                                    />
+                                    • {t('tripDetails.manage.modals.abortTrip.impact1')}
                                 </Text>
                                 <Text size="sm">
-                                    <Trans
-                                        i18nKey="tripDetails.manage.modals.abortTrip.impact2"
-                                        components={{ 1: <b />, 2: <b /> }}
-                                    />
+                                    • {t('tripDetails.manage.modals.abortTrip.impact2')}
                                 </Text>
                             </Stack>
                         </Alert>
                         <Group justify="flex-end" mt="md">
                             <Button variant="default" onClick={() => setAbortModalOpen(false)}>{t('tripDetails.manage.actions.back')}</Button>
-                            <Button color="red" onClick={() => handleStatusUpdate('aborted')} loading={statusLoading}>{t('tripDetails.manage.modals.abortTrip.confirm')}</Button>
+                            <Button color="red" disabled={abortConfirmDisabled} onClick={() => handleStatusUpdate('aborted')} loading={statusLoading}>{t('tripDetails.manage.modals.abortTrip.confirm')}</Button>
                         </Group>
                     </Stack>
                 </Modal>
@@ -1186,7 +1238,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                     <Text size="sm" mb="md">{t('tripDetails.manage.modals.completeTrip.description')}</Text>
                     <Group justify="flex-end">
                         <Button variant="default" onClick={() => setCompleteModalOpen(false)}>{t('tripDetails.manage.actions.back')}</Button>
-                        <Button color="green" onClick={() => handleStatusUpdate('done')} loading={statusLoading}>{t('tripDetails.manage.modals.completeTrip.confirm')}</Button>
+                        <Button color="red" disabled={completeConfirmDisabled} onClick={() => handleStatusUpdate('done')} loading={statusLoading}>{t('tripDetails.manage.modals.completeTrip.confirm')}</Button>
                     </Group>
                 </Modal>
 

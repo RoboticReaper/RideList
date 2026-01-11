@@ -13,6 +13,7 @@ import {
 import Link from 'next/link';
 import { getTripStatusConfig } from '@/utils/statusUtils';
 import { useTranslation } from 'react-i18next';
+import { TFunction } from 'i18next';
 
 interface RideCardProps {
     ride: {
@@ -42,7 +43,7 @@ interface RideCardProps {
 
 
 
-const formatFlexibility = (flex: string | undefined) => {
+const formatFlexibility = (flex: string | undefined, t: TFunction) => {
     if (!flex) return null;
     try {
         const parts = flex.split(':');
@@ -50,8 +51,13 @@ const formatFlexibility = (flex: string | undefined) => {
             const h = parseInt(parts[0], 10);
             const m = parseInt(parts[1], 10);
             if (h === 0 && m === 0) return null;
-            if (h > 0) return `± ${h}h ${m > 0 ? `${m}m` : ''}`;
-            return `± ${m} mins`;
+            if (h > 0) {
+                if (m > 0) {
+                    return t('rides.card.flexibility.hoursAndMinutes', { hours: h, minutes: m });
+                }
+                return t('rides.card.flexibility.hours', { hours: h });
+            }
+            return t('rides.card.flexibility.minutes', { minutes: m });
         }
     } catch (e) {
         return null;
@@ -73,9 +79,15 @@ export function RideCard({ ride }: RideCardProps) {
     const diffMs = date.getTime() - new Date().getTime();
     const diffHrs = Math.floor(diffMs / 3600000);
     const diffMins = Math.floor((diffMs % 3600000) / 60000);
-    const relativeTime = diffHrs > 0 ? `in ${diffHrs}h ${diffMins}m` : (diffMins > 0 ? `in ${diffMins}m` : '');
 
-    const flexText = formatFlexibility(ride.departure_time_flexibility);
+    let relativeTime = '';
+    if (diffHrs > 0) {
+        relativeTime = t('rides.card.relativeTime.hoursAndMinutes', { hours: diffHrs, minutes: diffMins });
+    } else if (diffMins > 0) {
+        relativeTime = t('rides.card.relativeTime.minutes', { minutes: diffMins });
+    }
+
+    const flexText = formatFlexibility(ride.departure_time_flexibility, t);
     const statusConfig = getTripStatusConfig(ride.status);
 
     return (

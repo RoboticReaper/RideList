@@ -216,7 +216,12 @@
             "error": "Failed to create trip",
             "errorTitle": "Error",
             "templateLoaded": "Rules have been populated from template.",
-            "templateLoadedTitle": "Template Loaded"
+            "templateLoadedTitle": "Template Loaded",
+            "share": {
+                "button": "Share Trip",
+                "copied": "Copied to clipboard!",
+                "text": "Hey! I’m offering a ride:\n\n📍 From: {{- from}}\n📍 To: {{- to}}\n🕒 Departure: {{- time}}\n\nView details / Request to join here:\n{{- link}}\n\nRideList – UIUC ride sharing"
+            }
         },
         "common": {
             "startLocation": "Start Location",
@@ -253,7 +258,16 @@
             "instant": "Instant",
             "trips": "{{count}} trips",
             "autoAcceptTooltip": "Auto Accept: Booking confirmed instantly",
-            "luggageTooltip": "Luggage: {{big}} Big, {{small}} Small"
+            "luggageTooltip": "Luggage: {{big}} Big, {{small}} Small",
+            "flexibility": {
+                "hours": "± {{hours}}h",
+                "hoursAndMinutes": "± {{hours}}h {{minutes}}m",
+                "minutes": "± {{minutes}} mins"
+            },
+            "relativeTime": {
+                "hoursAndMinutes": "in {{hours}}h {{minutes}}m",
+                "minutes": "in {{minutes}}m"
+            }
         },
         "detail": {
             "alerts": {
@@ -733,61 +747,72 @@
             "modals": {
                 "removeRider": {
                     "title": "Remove Rider",
-                    "description": "Please select a reason for removing <1>{{name}}</1>.",
+                    "description": "You are about to remove <1>{{name}}</1> from this trip. Please select a reason.",
                     "reasonLabel": "Reason",
                     "reasonPlaceholder": "Select a reason",
-                    "noteLabel": "Note",
-                    "notePlaceholder": "Please provide a short explanation",
+                    "noteLabel": "Additional note (optional)",
+                    "notePlaceholder": "This note will be visible to the rider",
                     "confirm": "Remove Rider"
                 },
                 "startPickup": {
                     "title": "Start Pickup?",
-                    "description": "Are you sure you want to start pickup?",
-                    "impactTitle": "What this means",
-                    "impactDescription": "This will notify riders that you have started picking people up. Trip rules and car information for this trip will be frozen. No more riders can be added to this trip. Riders cannot modify their bookings. You cannot remove riders from this trip. People who you didn't mark as picked up will be marked as no-show.",
-                    "confirm": "Confirm Start Pickup"
+                    "description": "This marks the beginning of the pickup process for this trip.",
+                    "impactTitle": "What will happen",
+                    "impactDescription": "Once you start pickup:",
+                    "impact1": "Riders will be notified that pickup has started.",
+                    "impact2": "Trip rules and car details will be locked and cannot be changed.",
+                    "impact3": "No new riders can join this trip.",
+                    "impact4": "You will no longer be able to remove riders.",
+                    "impact5": "Riders you do not mark as picked up will be marked as no-show.",
+                    "confirm": "Start Pickup"
                 },
                 "enableCheckIn": {
                     "title": "Enable Check-in?",
-                    "description": "Are you sure you want to enable check-in?",
-                    "impactTitle": "What this means",
-                    "impactDescription": "Riders will be notified that they can mark themselves as \"Ready\" for pickup. You will be notified when they are ready or they have changed their booking information (max 5 minutes per change per rider).",
+                    "description": "This allows riders to mark themselves as ready for pickup.",
+                    "impactTitle": "What will happen",
+                    "impact1": "Riders will be notified that check-in is available.",
+                    "impact2": "You will be notified when riders mark themselves as ready.",
+                    "impact3": "Riders may update their booking details during check-in (limited to once every 5 minutes).",
                     "confirm": "Enable Check-in"
                 },
                 "lockTrip": {
                     "title": "Lock Trip",
-                    "description": "Are you sure you want to lock this trip?",
-                    "impactTitle": "What this means",
-                    "impact1": "Active bookings will remain active.",
-                    "impact2": "No new riders will be able to book this trip.",
-                    "impact3": "This trip will not show up in search results.",
-                    "confirm": "Confirm Lock"
+                    "description": "Locking this trip will prevent new bookings.",
+                    "impactTitle": "What will happen",
+                    "impact1": "Existing bookings will remain active.",
+                    "impact2": "New riders will not be able to book this trip.",
+                    "impact3": "This trip will no longer appear in search results.",
+                    "confirm": "Lock Trip"
                 },
                 "unlockTrip": {
                     "title": "Unlock Trip",
-                    "description": "Are you sure you want to unlock this trip?",
-                    "impactTitle": "What this means",
-                    "impact1": "Riders will be able to search and book this trip again (if seats are available).",
-                    "impact2": "If the trip has passed its booking cutoff time, it cannot be unlocked.",
-                    "confirm": "Confirm Unlock"
+                    "description": "Unlocking this trip will allow new bookings if seats are available.",
+                    "impactTitle": "What will happen",
+                    "impact1": "Riders will be able to search for and book this trip again.",
+                    "impact2": "Trips past their booking cutoff time cannot be unlocked.",
+                    "confirm": "Unlock Trip"
                 },
                 "cancelTrip": {
                     "title": "Cancel Trip",
-                    "description": "Are you sure you want to cancel this trip? This action cannot be undone.",
-                    "confirm": "Confirm Cancel"
+                    "description": "This will cancel the entire trip for all riders.",
+                    "impactTitle": "What will happen",
+                    "impact1": "All riders will be notified of the cancellation.",
+                    "impact2": "Active bookings will be marked as cancelled.",
+                    "impact3": "This action cannot be undone.",
+                    "confirm": "Cancel Trip"
                 },
                 "abortTrip": {
                     "title": "Abort Trip",
-                    "description": "Are you sure you want to abort this trip? This indicates something went wrong mid-trip.",
-                    "impactTitle": "Impact",
-                    "impact1": "Riders already <1>picked up</1> will be marked as <2>Completed</2>.",
-                    "impact2": "Riders <1>NOT picked up</1> will be marked as <2>Cancelled</2>.",
-                    "confirm": "Confirm Abort"
+                    "description": "Use this option if something goes wrong after the trip has started.",
+                    "impactTitle": "What will happen",
+                    "impact1": "Riders you already picked up will be marked as completed.",
+                    "impact2": "Riders not picked up will be marked as cancelled.",
+                    "confirm": "Abort Trip"
                 },
                 "completeTrip": {
                     "title": "Complete Trip",
-                    "description": "Are you sure you want to mark this trip as completed?",
-                    "confirm": "Confirm Complete"
+                    "description": "This will mark the trip as finished and close all remaining actions. Riders not picked up will be marked as no-show.",
+                    "confirm": "Complete Trip"
                 }
             },
             "phone": {
@@ -1340,9 +1365,10 @@
         "title": "How It Works",
         "toc": "Table of Contents",
         "intro": {
+            "noteTitle": "Note",
             "title": "What This Platform Is",
             "description": "This platform helps UIUC students coordinate rides in a safe, transparent, and structured way.",
-            "note": "It is not a traditional rideshare or taxi service. Drivers post trips they are already planning to take, and riders request to join those trips under clearly defined rules.",
+            "note": "This is not a traditional rideshare or taxi service. Drivers post trips they are already planning to take, and riders request to join those trips under clearly defined rules.",
             "listTitle": "The system is designed to:",
             "list": [
                 "Minimize uncertainty before meeting",
