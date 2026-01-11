@@ -23,12 +23,14 @@ export default function RootLayout({
       </head>
       <body>
         <MantineProvider>
-          <Suspense fallback={<div>Loading application...</div>}>
+          <Suspense fallback={null}>
             <AuthProvider>
               <LanguageSyncer />
               <NotificationProvider>
                 <Notifications />
-                {children}
+                <Suspense fallback={<div>Loading texts...</div>}>
+                  {children}
+                </Suspense>
               </NotificationProvider>
             </AuthProvider>
           </Suspense>

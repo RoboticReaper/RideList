@@ -1,5 +1,4 @@
 export function extractPublicArea(geocodeResult: any) {
-    console.log(geocodeResult);
     // 1. Normalization: Handle both "wrapped" API responses and "unwrapped" objects
     let result = geocodeResult;
 

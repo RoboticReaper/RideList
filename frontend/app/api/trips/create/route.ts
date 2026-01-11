@@ -162,7 +162,6 @@ export async function POST(req: Request) {
         // Get exact addresses (driver-only: from_input_text, to_input_text)
         const fromInputText = startDetails.formattedAddress || start.text;
         const toInputText = endDetails.formattedAddress || end.text;
-        console.log(endDetails.formattedAddress)
 
 
         // Use reverse geocoding to extract neighborhood names for public-facing from_text/to_text

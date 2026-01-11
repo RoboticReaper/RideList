@@ -177,14 +177,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, loading]);
 
   // 4. COMPREHENSIVE AUTH PROTECTION
-  useEffect(() => {
-    if (loading) return;
-
+  const checkProtection = () => {
     // Common variables
     const protectedRoutes = ['/dashboard', '/history', '/roleSettings'];
     const isProtectedRoute = protectedRoutes.some(route => pathname?.includes(route));
     const isCompleteProfilePage = pathname?.includes('/complete-profile');
-    const isAuthPage = pathname?.includes('/auth'); // Assuming login page is /auth
+
+    return { isProtectedRoute, isCompleteProfilePage };
+  };
+
+  const { isProtectedRoute, isCompleteProfilePage } = checkProtection();
+
+  useEffect(() => {
+    if (loading) return;
 
     const currentParams = searchParams.toString();
     const returnPath = pathname + (currentParams ? `?${currentParams}` : '');
@@ -211,15 +216,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-  }, [user, loading, checkingRegistration, isRegistered, pathname, router, params, searchParams]);
+  }, [user, loading, checkingRegistration, isRegistered, pathname, router, params, searchParams, isProtectedRoute, isCompleteProfilePage]);
+
+  // Determine if we should block rendering
+  // We block if:
+  // 1. Auth is still loading AND we are on a protected route
+  // 2. Auth is done, but we are checking registration AND we are on a protected route (to prevent content flash before redirect to complete-profile)
+  const shouldBlock = (loading && isProtectedRoute) ||
+    (user && checkingRegistration && isProtectedRoute);
 
   return (
     <AuthContext.Provider value={{ user, loading, isRegistered, checkingRegistration, handleProtectedAction }}>
-      {/* If we are loading, you might want to show a spinner 
-         so the user doesn't see a flash of protected content 
-         or the redirect happening.
+      {/* 
+         If we are on a protected route, we must wait for auth to resolve.
+         If we are on a public route, we render immediately (user will be null initially).
       */}
-      {loading ? <div>Loading...</div> : children}
+      {shouldBlock ? <div>Loading account...</div> : children}
     </AuthContext.Provider>
   );
 };

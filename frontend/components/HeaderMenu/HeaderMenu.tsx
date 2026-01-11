@@ -38,6 +38,7 @@ import {
   UnstyledButton,
   useMantineTheme,
 } from '@mantine/core';
+import { useState, useEffect } from 'react';
 import { useDisclosure } from '@mantine/hooks';
 import classes from './HeaderMenu.module.css';
 import { LocalizedLink } from '../LocalizedLink';
@@ -58,6 +59,13 @@ export function HeaderMenu() {
   const { user, loading } = useAuth();
   const router = useRouter()
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+
 
   return (
     <Box>
@@ -122,74 +130,82 @@ export function HeaderMenu() {
               </Menu.Dropdown>
             </Menu>
 
-            <Notifications />
 
-            {loading ? "Loading" : null}
-            {!loading && !user ? (
-              <LocalizedLink href="/auth" passHref>
-                <Button>{t('headerMenu.login')}</Button>
-              </LocalizedLink>
-            ) : (
 
-              <Menu shadow="md" width={200}>
-                <Menu.Target>
-                  <UnstyledButton visibleFrom="sm">
-                    <Avatar src={user?.photoURL} radius="xl" />
-                  </UnstyledButton>
-                </Menu.Target>
+            <Group>
+              {(!mounted || loading) ? (
+                <Group>
+                  <Text size="sm" c="dimmed">{t('common.loadingAccount', 'Loading account...')}</Text>
+                </Group>
+              ) : (
+                <Group>
+                  <Notifications />
+                  {!user ? (
+                    <LocalizedLink href="/auth" passHref>
+                      <Button>{t('headerMenu.login')}</Button>
+                    </LocalizedLink>
+                  ) : (
+                    <Menu shadow="md" width={200}>
+                      <Menu.Target>
+                        <UnstyledButton visibleFrom="sm">
+                          <Avatar src={user?.photoURL} radius="xl" />
+                        </UnstyledButton>
+                      </Menu.Target>
 
-                <Menu.Dropdown>
-                  <Menu.Label>{t('headerMenu.account')}</Menu.Label>
-                  <Text size="sm" truncate px="sm">
-                    {user?.email}
-                  </Text>
-                  <Menu.Divider />
-                  <Menu.Item
-                    component={LocalizedLink}
-                    href="/dashboard"
-                    leftSection={<IconLayoutDashboard size={14} />}
-                  >
-                    {t('headerMenu.dashboard')}
-                  </Menu.Item>
-                  <Menu.Item
-                    component={LocalizedLink}
-                    href={"/profile/" + user?.uid}
-                    leftSection={<IconUser size={14} />}
-                  >
-                    {t('headerMenu.profile')}
-                  </Menu.Item>
-                  <Menu.Item
-                    component={LocalizedLink}
-                    href="/history"
-                    leftSection={<IconHistory size={14} />}
-                  >
-                    {t('headerMenu.history')}
-                  </Menu.Item>
-                  <Menu.Item
-                    component={LocalizedLink}
-                    href="/settings"
-                    leftSection={<IconSettings size={14} />}
-                  >
-                    {t('headerMenu.settings')}
-                  </Menu.Item>
-                  <Menu.Divider />
-                  <Menu.Item
-                    color="red"
-                    leftSection={<IconLogout size={14} />}
-                    onClick={() => {
-                      signOut(getAuth(app));
-                    }}
-                  >
-                    {t('headerMenu.logout')}
-                  </Menu.Item>
-                </Menu.Dropdown>
-              </Menu>
-            )}
+                      <Menu.Dropdown>
+                        <Menu.Label>{t('headerMenu.account')}</Menu.Label>
+                        <Text size="sm" truncate px="sm">
+                          {user?.email}
+                        </Text>
+                        <Menu.Divider />
+                        <Menu.Item
+                          component={LocalizedLink}
+                          href="/dashboard"
+                          leftSection={<IconLayoutDashboard size={14} />}
+                        >
+                          {t('headerMenu.dashboard')}
+                        </Menu.Item>
+                        <Menu.Item
+                          component={LocalizedLink}
+                          href={"/profile/" + user?.uid}
+                          leftSection={<IconUser size={14} />}
+                        >
+                          {t('headerMenu.profile')}
+                        </Menu.Item>
+                        <Menu.Item
+                          component={LocalizedLink}
+                          href="/history"
+                          leftSection={<IconHistory size={14} />}
+                        >
+                          {t('headerMenu.history')}
+                        </Menu.Item>
+                        <Menu.Item
+                          component={LocalizedLink}
+                          href="/settings"
+                          leftSection={<IconSettings size={14} />}
+                        >
+                          {t('headerMenu.settings')}
+                        </Menu.Item>
+                        <Menu.Divider />
+                        <Menu.Item
+                          color="red"
+                          leftSection={<IconLogout size={14} />}
+                          onClick={() => {
+                            signOut(getAuth(app));
+                          }}
+                        >
+                          {t('headerMenu.logout')}
+                        </Menu.Item>
+                      </Menu.Dropdown>
+                    </Menu>
+                  )}
+                </Group>
+              )}
+              <Burger opened={drawerOpened} onClick={toggleDrawer} hiddenFrom="sm" />
+            </Group>
 
-            <Burger opened={drawerOpened} onClick={toggleDrawer} hiddenFrom="sm" />
+
           </Group>
-
-
         </Group>
       </header>
 

@@ -482,8 +482,8 @@
                 "autoStartCheckIn": "Auto Start Check-in",
                 "autoStartCheckInDesc": "Automatically ask passengers to check-in before the trip starts. Upon departure, check-in will begin automatically.",
                 "startCheckInHrs": "Start Check-in (Hours before departure)",
-                "enableCutoff": "Enable Booking Cutoff",
-                "enableCutoffDesc": "Stop accepting bookings X hours before departure",
+                "enableCutoff": "Auto Booking Cutoff",
+                "enableCutoffDesc": "Automatically stop accepting bookings X hours before departure",
                 "hoursBefore": "Hours before departure",
                 "hoursBeforeDesc": "e.g. 1.5 for 1 hour 30 mins",
                 "payWindow": "Pay Window (Minutes)",
@@ -1323,6 +1323,12 @@
                 "empty": "No notifications",
                 "loadMore": "Load More"
             }
+        },
+        "install": {
+            "title": "Install App",
+            "description": "Install our app for the best experience",
+            "button": "Install App",
+            "iosInstructions": "Tap the Share button and select 'Add to Home Screen'"
         }
     },
     "about": {

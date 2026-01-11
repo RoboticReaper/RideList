@@ -3,7 +3,7 @@
 import { useDashboard } from '@/app/[lang]/(private)/DashboardContext';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { useState, useEffect } from 'react';
-import { Container, Title, Paper, Text, Stack, Switch, Button, Group, LoadingOverlay, Anchor, Badge, ThemeIcon } from '@mantine/core';
+import { Container, Title, Paper, Text, Stack, Switch, Button, Group, LoadingOverlay, Anchor, Badge, ThemeIcon, Divider } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconCheck, IconX, IconDeviceMobile, IconDownload, IconBell } from '@tabler/icons-react';
 import { LocalizedLink } from '@/components/LocalizedLink';
@@ -16,7 +16,13 @@ export default function RoleSettingsPage() {
     const { role, setRole } = useDashboard();
     const { user } = useAuth();
     const { pushPermission, showPrompt } = useNotifications();
-    const { isIOS, isAndroid, isStandalone } = usePWAInstall();
+    const { isIOS, isAndroid, isStandalone, canInstall, activePrompt } = usePWAInstall();
+
+    const installPwa = () => {
+        if (activePrompt) {
+            activePrompt.prompt();
+        }
+    };
 
     const DRIVER_NOTIFICATIONS = [
         { key: 'trip_full', label: t('roleSettings.preferences.tripFull'), description: t('roleSettings.preferences.tripFullDesc') },
@@ -201,6 +207,29 @@ export default function RoleSettingsPage() {
                             </div>
                             <PushEnableButton />
                         </Group>
+
+                        {!isStandalone && (isIOS || canInstall) && (
+                            <>
+                                <Divider />
+                                <Group justify="space-between">
+                                    <div>
+                                        <Text fw={500}>{t('roleSettings.install.title')}</Text>
+                                        <Text size="xs" c="dimmed">{t('roleSettings.install.description')}</Text>
+                                    </div>
+                                    {isIOS ? (
+                                        <Text size="xs" c="dimmed" style={{ maxWidth: '200px', textAlign: 'right' }}>
+                                            {t('roleSettings.install.iosInstructions')}
+                                        </Text>
+                                    ) : (
+                                        canInstall && (
+                                            <Button size="xs" onClick={installPwa} leftSection={<IconDownload size={16} />}>
+                                                {t('roleSettings.install.button')}
+                                            </Button>
+                                        )
+                                    )}
+                                </Group>
+                            </>
+                        )}
                     </Stack>
                 </Paper>
 

@@ -105,7 +105,7 @@ export function RideCard({ ride }: RideCardProps) {
                                     ({flexText})
                                 </Text>
                             )}
-                            {relativeTime && <Text span size="xs" ml={6}>· {relativeTime}</Text>}
+                            {relativeTime && <Text span size="xs" ml={6} suppressHydrationWarning>· {relativeTime}</Text>}
                         </Text>
                     </Group>
                 </Stack>

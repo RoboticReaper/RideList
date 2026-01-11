@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../firebase/AuthContext';
 import { Menu, ActionIcon, Text, ScrollArea, Button, Group, Indicator, Loader, Box, Stack } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
@@ -17,8 +17,8 @@ export default function Notifications() {
     const [opened, setOpened] = useState(false);
     const { notifications, unreadCount, isLoading, hasMore, fetchMore, markAsRead } = useNotifications();
     const isMobile = useMediaQuery('(max-width: 450px)');
+    const [mounted, setMounted] = useState(false);
 
-    if (!user) return null;
 
     const handleNotificationClick = async (n: NotificationItem) => {
         if (!n.read) {
