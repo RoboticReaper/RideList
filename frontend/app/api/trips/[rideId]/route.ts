@@ -402,7 +402,10 @@ export async function PATCH(
         await client.query('BEGIN');
 
         // Lazy Check-in Start
-        await checkAndProcessCheckInStart(client, rideId);
+        // SKIP if we are about to depart (manual departure handles check-in start + logging)
+        if (body.status !== 'departed') {
+            await checkAndProcessCheckInStart(client, rideId);
+        }
 
         // Lazy Trip Cutoff Check
         await checkAndProcessTripCutoff(client, rideId);
@@ -611,6 +614,13 @@ export async function PATCH(
 
                     updates.push(`actual_departure_time = $${idx++}`);
                     values.push("NOW()");
+
+                    // Auto-start check-in
+                    if (body.start_check_in === undefined) {
+                        body.start_check_in = true;
+                        updates.push(`start_check_in = $${idx++}`);
+                        values.push(true);
+                    }
                 }
 
                 if (body.status === 'bookable') {
@@ -851,13 +861,19 @@ export async function PATCH(
 
             let eventId: string | undefined;
             if (newStatus !== 'done') {
+                const changesPayload: any = { trip: { status: { old: oldTripState.status, new: newStatus } } };
+
+                if (newStatus === 'departed' && !oldTripState.start_check_in && body.start_check_in) {
+                    changesPayload.trip.start_check_in = { old: false, new: true };
+                }
+
                 eventId = await logTripEvent({
                     client,
                     tripId: rideId,
                     actorId: user.uid,
                     eventType,
                     affectedEntities: ['trips'],
-                    changes: { trip: { status: { old: oldTripState.status, new: newStatus } } }
+                    changes: changesPayload
                 });
             }
 

@@ -97,7 +97,7 @@ export async function POST(req: Request) {
                     -- A. Check-in Start Candidate
                     (
                         t.start_check_in = false
-                        AND t.status NOT IN ('cancelled', 'aborted', 'completed', 'done')
+                        AND t.status NOT IN ('cancelled', 'aborted', 'done', 'departed')
                         AND EXISTS (
                             SELECT 1
                             FROM trip_rules tr

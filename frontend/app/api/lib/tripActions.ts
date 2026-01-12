@@ -118,7 +118,7 @@ export async function markTripAsDone(client: PoolClient, rideId: string, actorId
 export async function markTripAsDeparted(client: PoolClient, rideId: string, actorId: string | null) {
     // 1. Fetch current status
     const oldRes = await client.query(`
-        SELECT t.status, t.driver, t.car, t.departure_time
+        SELECT t.status, t.driver, t.car, t.departure_time, t.start_check_in
         FROM trips t
         WHERE t.id = $1 
         FOR UPDATE
@@ -137,6 +137,7 @@ export async function markTripAsDeparted(client: PoolClient, rideId: string, act
         UPDATE trips 
         SET status = 'departed', 
             actual_departure_time = NOW(), 
+            start_check_in = true,
             modified_at = NOW() 
         WHERE id = $1
     `, [rideId]);
@@ -155,13 +156,20 @@ export async function markTripAsDeparted(client: PoolClient, rideId: string, act
     }
 
     // 4. Log Event
+    // 4. Log Event
+    const changesPayload: any = { trip: { status: { old: oldTripState.status, new: 'departed' } } };
+
+    if (!oldTripState.start_check_in) {
+        changesPayload.trip.start_check_in = { old: false, new: true };
+    }
+
     await logTripEvent({
         client,
         tripId: rideId,
         actorId,
         eventType: 'trip_departed',
         affectedEntities: ['trips'],
-        changes: { trip: { status: { old: oldTripState.status, new: 'departed' } } }
+        changes: changesPayload
     });
 
     // 5. Notify Riders
