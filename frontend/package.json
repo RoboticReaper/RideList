@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev_both": "/Users/baorenliu/Documents/Programming/google-cloud-sdk/cloud-sql-proxy --port 5432 --credentials-file=app/api/lib/ridelist-db-service-account.json ridelist-e9048:us-central1:free-trial-ridelist & next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@google-cloud/cloud-sql-connector": "^1.8.5",
     "@googlemaps/js-api-loader": "^2.0.2",
     "@mantine/charts": "^8.3.10",
     "@mantine/core": "^8.3.10",
@@ -25,6 +25,7 @@
     "dayjs": "^1.11.19",
     "firebase": "^12.7.0",
     "firebase-admin": "^13.6.0",
+    "google-auth-library": "^10.5.0",
     "i18next": "^25.7.3",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-resources-to-backend": "^1.2.1",

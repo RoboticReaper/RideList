@@ -151,12 +151,12 @@
             "description": "管理你的账户设置和偏好。"
         },
         "dashboard": {
-            "title": "控制台",
+            "title": "我的行程",
             "description": "查看即将到来的行程和你的驾驶记录。"
         },
         "roleSettings": {
             "title": "通知设置",
-            "description": "管理通知偏好和角色相关设置。"
+            "description": "管理通知和相关设置。"
         },
         "history": {
             "title": "历史记录",
@@ -185,6 +185,14 @@
         "ride": {
             "title": "{{from}} → {{to}}",
             "description": "在 RideList 上加入从 {{from}} 到 {{to}} 的拼车行程。"
+        },
+        "rideDetails": {
+            "title": "行程详情",
+            "description": "在 RideList 上查看行程详情。"
+        },
+        "tripDashboardGeneric": {
+            "title": "行程管理",
+            "description": "在 RideList 上管理你的行程。"
         },
         "tripDashboard": {
             "title": "{{from}} → {{to}}",

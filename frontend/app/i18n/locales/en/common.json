@@ -186,6 +186,14 @@
             "title": "{{from}} → {{to}}",
             "description": "Join this ride from {{from}} to {{to}} on RideList."
         },
+        "rideDetails": {
+            "title": "Ride Details",
+            "description": "View ride details on RideList."
+        },
+        "tripDashboardGeneric": {
+            "title": "Trip Dashboard",
+            "description": "Manage your trip on RideList."
+        },
         "tripDashboard": {
             "title": "{{from}} → {{to}}",
             "description": "Manage ride details for {{from}} to {{to}}."
