@@ -86,7 +86,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // 1. Handle Redirect Result (Runs once on mount)
     getRedirectResult(auth).then((result) => {
       if (result && mounted) {
-        // Optional: Call your API here if needed
+        setUser(result.user);
+        setLoading(false);
       }
     }).catch((error) => {
       console.error("Redirect Error:", error);

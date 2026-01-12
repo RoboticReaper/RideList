@@ -7,6 +7,7 @@ import { LanguageSyncer } from '@/components/LanguageSyncer';
 import { NotificationProvider } from '@/components/Notifications/NotificationContext';
 import { TitleNotificationUpdater } from '@/components/Notifications/TitleNotificationUpdater';
 import { Notifications } from '@mantine/notifications';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import '@mantine/dates/styles.css';
 import '@mantine/notifications/styles.css';
 
@@ -25,11 +26,12 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="167x167" href="/icon-ios-167.png" />
         <link rel="apple-touch-icon" sizes="120x120" href="/icon-ios-120.png" />
         <link rel="icon" href="/icon-android-192.png" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="RideList" />
       </head>
       <body>
+        <SpeedInsights />
         <MantineProvider>
           <Suspense fallback={null}>
             <AuthProvider>

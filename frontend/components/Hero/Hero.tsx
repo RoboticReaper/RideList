@@ -40,7 +40,7 @@ export async function Hero({ lang }: Props) {
             <Group mt={40}>
               <Button
                 component={LocalizedLink}
-                href="/rides"
+                href="/search"
                 variant="gradient"
                 gradient={{ from: 'pink', to: 'yellow' }}
                 size="xl"
