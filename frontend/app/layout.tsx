@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import { AuthProvider } from '@/components/firebase/AuthContext';
 import { LanguageSyncer } from '@/components/LanguageSyncer';
 import { NotificationProvider } from '@/components/Notifications/NotificationContext';
+import { TitleNotificationUpdater } from '@/components/Notifications/TitleNotificationUpdater';
 import { Notifications } from '@mantine/notifications';
 import '@mantine/dates/styles.css';
 import '@mantine/notifications/styles.css';
@@ -27,6 +28,7 @@ export default function RootLayout({
             <AuthProvider>
               <LanguageSyncer />
               <NotificationProvider>
+                <TitleNotificationUpdater />
                 <Notifications />
                 <Suspense fallback={<div>Loading texts...</div>}>
                   {children}

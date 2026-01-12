@@ -112,7 +112,91 @@
     },
     "metadata": {
         "title": "RideList",
-        "description": "A tool for organizing peer-to-peer ride sharing information near UIUC and Chicago."
+        "description": "A tool for organizing peer-to-peer ride sharing information near UIUC and Chicago.",
+        "search": {
+            "title": "Search",
+            "description": "Search available rides on RideList by location, date, and price."
+        },
+        "newRide": {
+            "title": "New Ride",
+            "description": "Post a new ride to share with the UIUC community."
+        },
+        "how": {
+            "title": "How It Works",
+            "description": "Learn how RideList works for riders and drivers - specifically designed for UIUC students."
+        },
+        "trust": {
+            "title": "Trust & Safety",
+            "description": "Read about our trust and safety policies and how we keep the community safe."
+        },
+        "privacy": {
+            "title": "Privacy Policy",
+            "description": "Read our privacy policy regarding how we handle your data."
+        },
+        "tos": {
+            "title": "Terms of Service",
+            "description": "Read our terms of service for using the RideList platform."
+        },
+        "auth": {
+            "title": "Login",
+            "description": "Login to RideList to access your account."
+        },
+        "settings": {
+            "title": "Settings",
+            "description": "Manage your account settings and preferences."
+        },
+        "dashboard": {
+            "title": "Dashboard",
+            "description": "View your upcoming rides and driving impact."
+        },
+        "roleSettings": {
+            "title": "Notification Settings",
+            "description": "Manage your notifications and role-specific preferences."
+        },
+        "history": {
+            "title": "History",
+            "description": "View your past rides and driving history."
+        },
+        "cars": {
+            "title": "My Vehicles",
+            "description": "Manage your vehicles for driving."
+        },
+        "completeProfile": {
+            "title": "Complete Profile",
+            "description": "Complete your profile to start using RideList."
+        },
+        "ruleTemplates": {
+            "title": "Rule Templates",
+            "description": "Manage your reusable trip rule templates."
+        },
+        "tripTemplates": {
+            "title": "Trip Templates",
+            "description": "Manage your reusable trip templates."
+        },
+        "profile": {
+            "title": "Profile",
+            "description": "View user profile on RideList."
+        },
+        "ride": {
+            "title": "{{from}} → {{to}}",
+            "description": "Join this ride from {{from}} to {{to}} on RideList."
+        },
+        "tripDashboard": {
+            "title": "{{from}} → {{to}}",
+            "description": "Manage ride details for {{from}} to {{to}}."
+        },
+        "editCar": {
+            "title": "Edit Vehicle",
+            "description": "Edit your vehicle details."
+        },
+        "editRuleTemplate": {
+            "title": "Edit Rule Template",
+            "description": "Edit your rule template."
+        },
+        "editTripTemplate": {
+            "title": "Edit Trip Template",
+            "description": "Edit your trip template."
+        }
     },
     "riderSteps": {
         "title": "Find Your Ride in 3 Simple Steps",
@@ -2080,6 +2164,7 @@
         }
     },
     "profile": {
+        "name": "Name",
         "changePhoto": "Change Photo",
         "removePhoto": "Remove Photo",
         "verifiedStudent": "Verified Student",

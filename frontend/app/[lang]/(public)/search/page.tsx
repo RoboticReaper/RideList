@@ -3,6 +3,17 @@ import { RideCard } from '@/components/Rides/RideCard';
 import { Title, Container, Box, Text, Stack } from '@mantine/core';
 import { useServerTranslation } from '@/app/i18n/server';
 
+import { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+    const { lang } = await params;
+    const { t } = await useServerTranslation(lang, 'common');
+    return {
+        title: t('metadata.search.title'),
+        description: t('metadata.search.description'),
+    };
+}
+
 async function getRides(searchParams: any) {
     const params = new URLSearchParams();
     if (searchParams) {

@@ -112,7 +112,91 @@
     },
     "metadata": {
         "title": "RideList",
-        "description": "用于整理 UIUC 与芝加哥附近学生之间拼车行程信息的工具。"
+        "description": "一个用于整理和协调 UIUC 与芝加哥周边学生拼车信息的平台。",
+        "search": {
+            "title": "搜索行程",
+            "description": "按地点、时间和价格搜索 RideList 上的可用行程。"
+        },
+        "newRide": {
+            "title": "发布行程",
+            "description": "发布新的拼车行程，与 UIUC 社区共享。"
+        },
+        "how": {
+            "title": "运作方式",
+            "description": "了解 RideList 如何为乘客和司机服务，专为 UIUC 学生设计。"
+        },
+        "trust": {
+            "title": "信任与安全",
+            "description": "了解我们的信任与安全机制，以及如何维护社区秩序。"
+        },
+        "privacy": {
+            "title": "隐私政策",
+            "description": "查看我们如何收集、使用和保护你的数据。"
+        },
+        "tos": {
+            "title": "服务条款",
+            "description": "查看使用 RideList 平台的相关条款。"
+        },
+        "auth": {
+            "title": "登录",
+            "description": "登录 RideList 以访问你的账户。"
+        },
+        "settings": {
+            "title": "设置",
+            "description": "管理你的账户设置和偏好。"
+        },
+        "dashboard": {
+            "title": "控制台",
+            "description": "查看即将到来的行程和你的驾驶记录。"
+        },
+        "roleSettings": {
+            "title": "通知设置",
+            "description": "管理通知偏好和角色相关设置。"
+        },
+        "history": {
+            "title": "历史记录",
+            "description": "查看你过去的乘车和驾驶记录。"
+        },
+        "cars": {
+            "title": "我的车辆",
+            "description": "管理你用于发布行程的车辆信息。"
+        },
+        "completeProfile": {
+            "title": "完善个人资料",
+            "description": "完善你的个人资料以开始使用 RideList。"
+        },
+        "ruleTemplates": {
+            "title": "规则模板",
+            "description": "管理可重复使用的行程规则模板。"
+        },
+        "tripTemplates": {
+            "title": "行程模板",
+            "description": "管理可重复使用的行程模板。"
+        },
+        "profile": {
+            "title": "个人资料",
+            "description": "查看 RideList 上的用户资料。"
+        },
+        "ride": {
+            "title": "{{from}} → {{to}}",
+            "description": "在 RideList 上加入从 {{from}} 到 {{to}} 的拼车行程。"
+        },
+        "tripDashboard": {
+            "title": "{{from}} → {{to}}",
+            "description": "管理从 {{from}} 到 {{to}} 的行程详情。"
+        },
+        "editCar": {
+            "title": "编辑车辆",
+            "description": "修改你的车辆信息。"
+        },
+        "editRuleTemplate": {
+            "title": "编辑规则模板",
+            "description": "修改你的规则模板。"
+        },
+        "editTripTemplate": {
+            "title": "编辑行程模板",
+            "description": "修改你的行程模板。"
+        }
     },
     "riderSteps": {
         "title": "三步找到合适的拼车",
@@ -2080,6 +2164,7 @@
         }
     },
     "profile": {
+        "name": "姓名",
         "changePhoto": "更换头像",
         "removePhoto": "移除照片",
         "verifiedStudent": "已认证学生",

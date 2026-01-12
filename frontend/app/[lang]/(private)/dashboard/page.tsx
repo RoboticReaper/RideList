@@ -1,23 +1,20 @@
-'use client';
+import { useServerTranslation } from '@/app/i18n/server';
+import { Metadata } from 'next';
+import DashboardContent from './DashboardContent';
 
-import { useDashboard } from '@/app/[lang]/(private)/DashboardContext';
-import { DriverDashboard } from './components/DriverDashboard';
-import { RiderDashboard } from './components/RiderDashboard';
-import { Container, Title } from '@mantine/core';
-import { useTranslation } from 'react-i18next';
+type Props = {
+    params: Promise<{ lang: string }>;
+};
 
-export default function DashboardPage() {
-    const { t } = useTranslation('common');
-    const { role } = useDashboard();
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { lang } = await params;
+    const { t } = await useServerTranslation(lang, 'common');
+    return {
+        title: t('metadata.dashboard.title'),
+        description: t('metadata.dashboard.description'),
+    };
+}
 
-    return (
-        <Container size="xl" pb="xl" pt="sm">
-            <Title order={2} mb="lg">{role === 'driver' ? t('headerMenu.roles.driver') : t('headerMenu.roles.rider')} {t('headerMenu.dashboard')}</Title>
-            {role === 'driver' ? (
-                <DriverDashboard />
-            ) : (
-                <RiderDashboard />
-            )}
-        </Container>
-    );
+export default async function DashboardPage() {
+    return <DashboardContent />;
 }

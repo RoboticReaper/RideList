@@ -1,10 +1,20 @@
-import { CompleteProfileForm } from "@/components/CompleteProfileForm/CompleteProfileForm";
-import { Center } from "@mantine/core";
+import { useServerTranslation } from '@/app/i18n/server';
+import { Metadata } from 'next';
+import CompleteProfileContent from './CompleteProfileContent';
 
-export default function CompleteProfilePage() {
-    return (
-        <Center style={{ flex: 1, height: '100vh' }}>
-            <CompleteProfileForm />
-        </Center>
-    );
+type Props = {
+    params: Promise<{ lang: string }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { lang } = await params;
+    const { t } = await useServerTranslation(lang, 'common');
+    return {
+        title: t('metadata.completeProfile.title'),
+        description: t('metadata.completeProfile.description'),
+    };
+}
+
+export default async function CompleteProfilePage() {
+    return <CompleteProfileContent />;
 }

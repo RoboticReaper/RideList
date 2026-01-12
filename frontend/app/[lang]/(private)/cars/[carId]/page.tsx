@@ -1,54 +1,21 @@
-'use client';
+import { useServerTranslation } from '@/app/i18n/server';
+import { Metadata } from 'next';
+import CarEditContent from './CarEditContent';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '@/components/firebase/AuthContext';
-import { Container, Loader, Alert } from '@mantine/core';
-import CarForm from '@/components/CarForm/CarForm';
+type Props = {
+    params: Promise<{ lang: string; carId: string }>;
+};
 
-import { useTranslation } from 'react-i18next';
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { lang } = await params;
+    const { t } = await useServerTranslation(lang, 'common');
 
-export default function CarEditorPage() {
-    const { t } = useTranslation('common');
-    const params = useParams();
-    const router = useRouter();
-    const carId = params.carId as string;
-    const { user } = useAuth();
-    const [loading, setLoading] = useState(carId !== 'new');
-    const [initialData, setInitialData] = useState<any>(null);
-    const [error, setError] = useState<string | null>(null);
+    return {
+        title: `${t('metadata.editCar.title')}`,
+        description: t('metadata.editCar.description')
+    };
+}
 
-    useEffect(() => {
-        if (!user || carId === 'new') return;
-
-        const fetchData = async () => {
-            try {
-                const token = await user.getIdToken();
-                const res = await fetch(`/api/user/cars/${carId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!res.ok) throw new Error(t('cars.errors.fetchDetailsFailed'));
-                const data = await res.json();
-                setInitialData(data.car);
-            } catch (err: any) {
-                console.error(err);
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [user, carId]);
-
-    if (loading) return <Container py="xl"><Loader /></Container>;
-    if (error) return <Container py="xl"><Alert color="red">{error}</Alert></Container>;
-
-    return (
-        <CarForm
-            initialData={initialData}
-            isEditing={carId !== 'new'}
-            carId={carId}
-        />
-    );
+export default async function CarEditPage() {
+    return <CarEditContent />;
 }

@@ -1,96 +1,20 @@
-'use client';
+import { useServerTranslation } from '@/app/i18n/server';
+import { Metadata } from 'next';
+import CarsContent from './CarsContent';
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/components/firebase/AuthContext';
-import { Container, Title, Button, Group, Paper, Text, Stack, Loader, Alert, ThemeIcon, Badge, Grid } from '@mantine/core';
-import { IconPlus, IconCar, IconAlertCircle } from '@tabler/icons-react';
-import { LocalizedLink } from '@/components/LocalizedLink';
-import { useTranslation } from 'react-i18next';
+type Props = {
+    params: Promise<{ lang: string }>;
+};
 
-export default function CarsPage() {
-    const { t } = useTranslation('common');
-    const { user } = useAuth();
-    const [cars, setCars] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { lang } = await params;
+    const { t } = await useServerTranslation(lang, 'common');
+    return {
+        title: t('metadata.cars.title'),
+        description: t('metadata.cars.description'),
+    };
+}
 
-    useEffect(() => {
-        if (!user) return;
-
-        const fetchCars = async () => {
-            try {
-                const token = await user.getIdToken();
-                const res = await fetch('/api/user/cars', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!res.ok) throw new Error(t('cars.errors.fetchFailed'));
-                const data = await res.json();
-                setCars(data.cars || []);
-            } catch (err: any) {
-                console.error(err);
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchCars();
-    }, [user, t]);
-
-    if (loading) return <Container py="xl"><Loader /></Container>;
-    if (error) return <Container py="xl"><Alert color="red" icon={<IconAlertCircle />}>{error}</Alert></Container>;
-
-    return (
-        <Container size="md" py="xl">
-            <Group justify="space-between" mb="lg">
-                <Title order={2}>{t('cars.title')}</Title>
-                <Button component={LocalizedLink} href="/cars/new" leftSection={<IconPlus size={16} />}>
-                    {t('cars.addCar')}
-                </Button>
-            </Group>
-
-            {cars.length === 0 ? (
-                <Paper withBorder p="xl" ta="center">
-                    <ThemeIcon size={64} radius="xl" color="gray" variant="light" mb="md">
-                        <IconCar size={32} />
-                    </ThemeIcon>
-                    <Title order={3} mb="sm">{t('cars.noVehicles')}</Title>
-                    <Text c="dimmed" mb="lg">{t('cars.noVehiclesDesc')}</Text>
-                    <Button component={LocalizedLink} href="/cars/new" variant="outline">
-                        {t('cars.addCarShort')}
-                    </Button>
-                </Paper>
-            ) : (
-                <Stack>
-                    {cars.map((car) => (
-                        <Paper
-                            key={car.id}
-                            withBorder
-                            p="md"
-                            component={LocalizedLink}
-                            href={`/cars/${car.id}`}
-                            style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer', transition: 'box-shadow 0.2s' }}
-                            // @ts-ignore
-                            sx={{ '&:hover': { boxShadow: 'var(--mantine-shadow-xs)' } }}
-                        >
-                            <Group justify="space-between" align="center">
-                                <Group gap="md">
-                                    <ThemeIcon size="xl" radius="md" variant="light" color="blue">
-                                        <IconCar size={24} />
-                                    </ThemeIcon>
-                                    <div>
-                                        <Text fw={600} size="lg">{car.year} {car.make} {car.model}</Text>
-                                        <Group gap="xs">
-                                            <Badge color="gray" variant="outline" size="sm">{car.color}</Badge>
-                                            <Text size="sm" c="dimmed">{car.plate}</Text>
-                                        </Group>
-                                    </div>
-                                </Group>
-                            </Group>
-                        </Paper>
-                    ))}
-                </Stack>
-            )}
-        </Container>
-    );
+export default async function CarsPage() {
+    return <CarsContent />;
 }

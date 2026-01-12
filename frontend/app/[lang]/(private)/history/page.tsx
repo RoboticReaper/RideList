@@ -1,23 +1,20 @@
-'use client';
+import { useServerTranslation } from '@/app/i18n/server';
+import { Metadata } from 'next';
+import HistoryContent from './HistoryContent';
 
-import { useDashboard } from '@/app/[lang]/(private)/DashboardContext';
-import { DriverHistory } from './components/DriverHistory';
-import { RiderHistory } from './components/RiderHistory';
-import { Container, Title } from '@mantine/core';
-import { useTranslation } from 'react-i18next';
+type Props = {
+    params: Promise<{ lang: string }>;
+};
 
-export default function HistoryPage() {
-    const { t } = useTranslation('common');
-    const { role } = useDashboard();
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { lang } = await params;
+    const { t } = await useServerTranslation(lang, 'common');
+    return {
+        title: t('metadata.history.title'),
+        description: t('metadata.history.description'),
+    };
+}
 
-    return (
-        <Container size="xl" pb="xl" pt="sm">
-            <Title order={2} mb="lg">{role === 'driver' ? t('history.driver.title') : t('history.rider.title')}</Title>
-            {role === 'driver' ? (
-                <DriverHistory />
-            ) : (
-                <RiderHistory />
-            )}
-        </Container>
-    );
+export default async function HistoryPage() {
+    return <HistoryContent />;
 }
