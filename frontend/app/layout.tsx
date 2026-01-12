@@ -21,6 +21,13 @@ export default function RootLayout({
     <html lang="en" {...mantineHtmlProps}>
       <head>
         <ColorSchemeScript />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icon-ios-180.png" />
+        <link rel="apple-touch-icon" sizes="167x167" href="/icon-ios-167.png" />
+        <link rel="apple-touch-icon" sizes="120x120" href="/icon-ios-120.png" />
+        <link rel="icon" href="/icon-android-192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="RideList" />
       </head>
       <body>
         <MantineProvider>

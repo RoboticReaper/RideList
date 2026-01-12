@@ -26,7 +26,7 @@ messaging.onBackgroundMessage((payload) => {
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
-        icon: '/logo_small.png', // Assuming this exists
+        icon: '/logo_small.svg',
         data: payload.data // Pass data through
     };
 
