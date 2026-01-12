@@ -44,6 +44,9 @@ const getPool = async () => {
 
         // 1. Parse the credentials directly from the environment variable
         const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+        if (credentials.private_key) {
+            credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
+        }
 
         // 2. Create a GoogleAuth instance in memory
         const auth = new GoogleAuth({
