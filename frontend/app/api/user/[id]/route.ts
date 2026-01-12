@@ -249,25 +249,27 @@ export async function PATCH(
                         let contentType = matches[1];
                         let imageBuffer: any = Buffer.from(matches[2], 'base64');
 
-                        // Compression Logic for large files (> 5MB)
-                        if (imageBuffer.byteLength > 5 * 1024 * 1024) {
-                            console.log(`Compressing image (Original: ${(imageBuffer.byteLength / 1024 / 1024).toFixed(2)}MB)`);
-                            try {
-                                imageBuffer = await sharp(imageBuffer)
-                                    .resize({
-                                        width: 1920,
-                                        height: 1920,
-                                        fit: 'inside',
-                                        withoutEnlargement: true
-                                    })
-                                    .jpeg({ quality: 80 })
-                                    .toBuffer();
-                                contentType = 'image/jpeg';
-                                console.log(`Compression complete (New: ${(imageBuffer.byteLength / 1024 / 1024).toFixed(2)}MB)`);
-                            } catch (compErr) {
-                                console.error("Compression failed, proceeding with original:", compErr);
-                                // If compression fails, we try to proceed with original or could throw
-                            }
+                        // Always process with Sharp to sanitize, resize, and remove HDR
+                        console.log(`Processing image (Original: ${(imageBuffer.byteLength / 1024 / 1024).toFixed(2)}MB)`);
+                        try {
+                            imageBuffer = await sharp(imageBuffer)
+                                .rotate()
+                                .resize({
+                                    width: 576,
+                                    height: 576,
+                                    fit: 'cover',
+                                    position: 'center'
+                                })
+                                .flatten({ background: '#ffffff' }) // Handle transparency (PNGs turn black otherwise)
+                                .toColorspace('srgb')
+                                .jpeg({ quality: 80 })
+                                .toBuffer();
+                            contentType = 'image/jpeg';
+                            console.log(`Processing complete (New: ${(imageBuffer.byteLength / 1024 / 1024).toFixed(2)}MB)`);
+                        } catch (compErr) {
+                            console.error("Image processing failed:", compErr);
+                            // If processing fails, we should probably fail the request rather than saving a potentially bad/huge/HDR file
+                            return NextResponse.json({ error: t('api.errors.imageUploadFailed') }, { status: 500 });
                         }
 
                         const filename = `profile_photos/${targetUserId}/${Date.now()}.jpg`; // Force jpg extension or derive? keeping simple for now
