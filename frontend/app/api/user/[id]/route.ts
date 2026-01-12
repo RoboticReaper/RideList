@@ -252,7 +252,9 @@ export async function PATCH(
                         // Always process with Sharp to sanitize, resize, and remove HDR
                         console.log(`Processing image (Original: ${(imageBuffer.byteLength / 1024 / 1024).toFixed(2)}MB)`);
                         try {
-                            imageBuffer = await sharp(imageBuffer)
+                            // Security: failOnError catches truncated/malformed files that might exploit decoders
+                            // limitInputPixels (default ~268MP) prevents Decompression Bombs (DoS)
+                            imageBuffer = await sharp(imageBuffer, { failOnError: true, limitInputPixels: 50 * 1000 * 1000 })
                                 .rotate()
                                 .resize({
                                     width: 576,
