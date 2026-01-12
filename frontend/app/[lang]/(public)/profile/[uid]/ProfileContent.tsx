@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Container, Paper, Avatar, Text, Group, Stack, Badge, Loader, Center, Title, Button, TextInput, ActionIcon, Box, Tabs, NumberInput, Divider } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
+import { updateProfile } from "firebase/auth";
 import { useTranslation } from 'react-i18next';
 import { IconCheck, IconPhone, IconCalendar, IconPencil, IconX, IconDeviceFloppy, IconCar, IconSteeringWheel, IconCamera } from '@tabler/icons-react';
 
@@ -33,7 +34,7 @@ export default function ProfilePage() {
     const uid = params.uid as string;
     const searchParams = useSearchParams();
 
-    const { user } = useAuth();
+    const { user, refreshUser } = useAuth();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -124,7 +125,20 @@ export default function ProfilePage() {
             if (!res.ok) throw new Error("Failed to update profile");
 
             const updatedProfile = await res.json();
+
             setProfile(updatedProfile);
+
+            if (user) {
+                try {
+                    await updateProfile(user, { photoURL: updatedProfile.photo_url });
+                    await refreshUser();
+                } catch (err) {
+                    console.error("Failed to update firebase profile", err);
+                }
+            }
+
+            setPendingPhoto(null);
+            setRemovePhoto(false);
             setIsEditing(false);
         } catch (e) {
             console.error(e);

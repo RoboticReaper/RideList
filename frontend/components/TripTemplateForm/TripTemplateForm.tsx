@@ -8,6 +8,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { LocalizedLink } from '@/components/LocalizedLink';
 import { useTranslation, Trans } from 'react-i18next';
+import { DEFAULT_AUTOCOMPLETE_LOCATIONS } from '@/utils/defaultLocations';
 
 interface TripTemplateFormProps {
     templateId?: string; // 'new' or uuid
@@ -60,6 +61,12 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
 
     const [opened, { open, close }] = useDisclosure(false);
     const [loading, setLoading] = useState(false);
+
+    // Autocomplete selection state
+    const [isStartSelected, setIsStartSelected] = useState(false);
+    const [isEndSelected, setIsEndSelected] = useState(false);
+    const startLastSelection = useRef<string>('');
+    const endLastSelection = useRef<string>('');
 
 
     // Fetch Cars and Rules
@@ -120,17 +127,8 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
         }, 300);
     };
 
-    const handleStartChange = (val: string) => {
-        setStartLocation(val);
-        debounceFetch(val, setStartSuggestions, setLoadingStart, startSessionToken.current);
-    };
-    const handleEndChange = (val: string) => {
-        setEndLocation(val);
-        debounceFetch(val, setEndSuggestions, setLoadingEnd, endSessionToken.current);
-    };
-
     // Geocoding Helper
-    const geocode = async (placeId: string, sessionToken: string): Promise<{ lat: number, lng: number } | null> => {
+    const fetchPlaceDetails = async (placeId: string, setCoords: (c: { lat: number, lng: number } | null) => void, sessionToken: string): Promise<void> => {
         try {
             const apiKey = process.env.NEXT_PUBLIC_PLACES_AUTOCOMPLETE!;
             const response = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
@@ -142,10 +140,35 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
             });
             const data = await response.json();
             if (data.location) {
-                return { lat: data.location.latitude, lng: data.location.longitude };
+                setCoords({ lat: data.location.latitude, lng: data.location.longitude });
+            } else {
+                setCoords(null);
             }
-        } catch (e) { console.error(e); }
-        return null; // Should handle this better
+        } catch (e) {
+            console.error("Error fetching place details:", e);
+            setCoords(null);
+        }
+    };
+
+    const fetchPlaceIdFromQuery = async (query: string, sessionToken: string): Promise<string | null> => {
+        try {
+            const apiKey = process.env.NEXT_PUBLIC_PLACES_AUTOCOMPLETE!;
+            const response = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': apiKey,
+                },
+                body: JSON.stringify({ input: query, sessionToken }),
+            });
+            const data = await response.json();
+            if (data.suggestions && data.suggestions.length > 0) {
+                return data.suggestions[0].placePrediction.placeId;
+            }
+        } catch (e) {
+            console.error("Error fetching place ID from query:", e);
+        }
+        return null;
     };
 
     // On Submit
@@ -157,35 +180,23 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
 
         setLoading(true);
         try {
+            let finalStartId = startPlaceId;
+            let finalEndId = endPlaceId;
             let sCoords = startCoords;
             let eCoords = endCoords;
 
-            // Determine Start Place ID
-            let finalStartId = predictionsMap.current.get(startLocation);
-            // If user didn't change location (text matches initial), keep initial ID. If text changed but not in map (e.g. slight edit), lose ID?
-            // Safer: if predictionsMap has it, use it. Else if text == initial text, use initial ID. Else null.
-            if (!finalStartId && startLocation === initialData?.from_text) {
-                finalStartId = startPlaceId || undefined;
-            }
-
-            if (finalStartId) {
-                // If we have a new ID (from map), re-geocode to be safe/sure
-                if (predictionsMap.current.has(startLocation)) {
-                    const c = await geocode(finalStartId, startSessionToken.current);
-                    if (c) sCoords = c;
+            // If start location was typed but not selected from autocomplete, try to get place ID and coords
+            if (!isStartSelected && startLocation && !finalStartId) {
+                finalStartId = await fetchPlaceIdFromQuery(startLocation, startSessionToken.current);
+                if (finalStartId) {
+                    const c = await fetchPlaceDetails(finalStartId, (coords) => { sCoords = coords; }, startSessionToken.current);
                 }
             }
-
-            // Determine End Place ID
-            let finalEndId = predictionsMap.current.get(endLocation);
-            if (!finalEndId && endLocation === initialData?.to_text) {
-                finalEndId = endPlaceId || undefined;
-            }
-
-            if (finalEndId) {
-                if (predictionsMap.current.has(endLocation)) {
-                    const c = await geocode(finalEndId, endSessionToken.current);
-                    if (c) eCoords = c;
+            // If end location was typed but not selected from autocomplete, try to get place ID and coords
+            if (!isEndSelected && endLocation && !finalEndId) {
+                finalEndId = await fetchPlaceIdFromQuery(endLocation, endSessionToken.current);
+                if (finalEndId) {
+                    const c = await fetchPlaceDetails(finalEndId, (coords) => { eCoords = coords; }, endSessionToken.current);
                 }
             }
 
@@ -283,17 +294,80 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
                         label={t('templates.trips.form.from')}
                         placeholder={t('templates.trips.form.fromPlaceholder')}
                         data={startSuggestions}
+
                         value={startLocation}
-                        onChange={handleStartChange}
-                        rightSection={loadingStart ? <Loader size="xs" /> : (startLocation && <ActionIcon variant="subtle" onClick={() => setStartLocation('')}><IconX size={14} /></ActionIcon>)}
+                        onChange={(val) => {
+                            setStartLocation(val);
+                            if (val !== startLastSelection.current) {
+                                setIsStartSelected(false);
+                                startLastSelection.current = '';
+                                setStartPlaceId(null);
+                            }
+
+                            if (val === '') {
+                                setStartSuggestions(DEFAULT_AUTOCOMPLETE_LOCATIONS);
+                                if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+                            } else {
+                                debounceFetch(val, setStartSuggestions, setLoadingStart, startSessionToken.current);
+                            }
+                        }}
+                        onFocus={() => {
+
+                            if (!startLocation) setStartSuggestions(DEFAULT_AUTOCOMPLETE_LOCATIONS);
+                        }}
+                        onOptionSubmit={async (val) => {
+                            setIsStartSelected(true);
+                            startLastSelection.current = val;
+
+                            let pid = predictionsMap.current.get(val) || null;
+                            if (!pid && DEFAULT_AUTOCOMPLETE_LOCATIONS.includes(val)) {
+                                if (!startSessionToken.current) startSessionToken.current = crypto.randomUUID();
+                                pid = await fetchPlaceIdFromQuery(val, startSessionToken.current);
+                            }
+
+                            setStartPlaceId(pid);
+                            if (pid) fetchPlaceDetails(pid, setStartCoords, startSessionToken.current);
+                        }}
+                        rightSection={loadingStart ? <Loader size="xs" /> : (startLocation ? <ActionIcon variant="subtle" onClick={() => { setStartLocation(''); setStartPlaceId(null); setStartCoords(null); }}><IconX size={16} /></ActionIcon> : null)}
                     />
                     <Autocomplete
                         label={t('templates.trips.form.to')}
                         placeholder={t('templates.trips.form.toPlaceholder')}
                         data={endSuggestions}
                         value={endLocation}
-                        onChange={handleEndChange}
-                        rightSection={loadingEnd ? <Loader size="xs" /> : (endLocation && <ActionIcon variant="subtle" onClick={() => setEndLocation('')}><IconX size={14} /></ActionIcon>)}
+                        onChange={(val) => {
+                            setEndLocation(val);
+                            if (val !== endLastSelection.current) {
+                                setIsEndSelected(false);
+                                endLastSelection.current = '';
+                                setEndPlaceId(null);
+                            }
+
+                            if (val === '') {
+                                setEndSuggestions(DEFAULT_AUTOCOMPLETE_LOCATIONS);
+                                if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+                            } else {
+                                debounceFetch(val, setEndSuggestions, setLoadingEnd, endSessionToken.current);
+                            }
+                        }}
+                        onFocus={() => {
+
+                            if (!endLocation) setEndSuggestions(DEFAULT_AUTOCOMPLETE_LOCATIONS);
+                        }}
+                        onOptionSubmit={async (val) => {
+                            setIsEndSelected(true);
+                            endLastSelection.current = val;
+
+                            let pid = predictionsMap.current.get(val) || null;
+                            if (!pid && DEFAULT_AUTOCOMPLETE_LOCATIONS.includes(val)) {
+                                if (!endSessionToken.current) endSessionToken.current = crypto.randomUUID();
+                                pid = await fetchPlaceIdFromQuery(val, endSessionToken.current);
+                            }
+
+                            setEndPlaceId(pid);
+                            if (pid) fetchPlaceDetails(pid, setEndCoords, endSessionToken.current);
+                        }}
+                        rightSection={loadingEnd ? <Loader size="xs" /> : (endLocation ? <ActionIcon variant="subtle" onClick={() => { setEndLocation(''); setEndPlaceId(null); setEndCoords(null); }}><IconX size={16} /></ActionIcon> : null)}
                     />
 
                     <Group grow>

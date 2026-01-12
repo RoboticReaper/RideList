@@ -262,7 +262,7 @@ export async function PATCH(
                                     fit: 'cover',
                                     position: 'center'
                                 })
-                                .flatten({ background: '#ffffff' }) // Handle transparency (PNGs turn black otherwise)
+                                .flatten({ background: '#ffffff' })
                                 .toColorspace('srgb')
                                 .jpeg({ quality: 80 })
                                 .toBuffer();

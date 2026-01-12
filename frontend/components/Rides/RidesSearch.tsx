@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { DEFAULT_AUTOCOMPLETE_LOCATIONS } from '@/utils/defaultLocations';
 import {
     Paper,
     Button,
@@ -266,6 +267,33 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
         }
     };
 
+    // Helper to fetch Place ID from text query (used for default options)
+    const fetchPlaceIdFromQuery = async (query: string, sessionToken: string): Promise<string | null> => {
+        try {
+            const apiKey = process.env.NEXT_PUBLIC_PLACES_AUTOCOMPLETE!;
+            const response = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': apiKey,
+                },
+                body: JSON.stringify({
+                    input: query,
+                    sessionToken: sessionToken
+                }),
+            });
+            if (!response.ok) return null;
+            const data = await response.json();
+            if (data.suggestions && data.suggestions.length > 0) {
+                return data.suggestions[0].placePrediction.placeId;
+            }
+        } catch (e) {
+            console.error("Failed to fetch place ID for default option", e);
+        }
+        return null;
+    };
+
+
     const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
     const debounceFetch = (query: string, setSuggestions: (data: string[]) => void, setLoading: (l: boolean) => void, sessionToken: string) => {
         if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
@@ -305,8 +333,14 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
             setStartPlaceId(null);
             setStartCoords(null);
         }
-        if (!startSessionToken.current) startSessionToken.current = crypto.randomUUID();
-        debounceFetch(val, setStartSuggestions, setLoadingStart, startSessionToken.current);
+
+        if (val === '') {
+            setStartSuggestions(DEFAULT_AUTOCOMPLETE_LOCATIONS);
+            if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+        } else {
+            if (!startSessionToken.current) startSessionToken.current = crypto.randomUUID();
+            debounceFetch(val, setStartSuggestions, setLoadingStart, startSessionToken.current);
+        }
     };
 
     const handleEndChange = (val: string) => {
@@ -318,8 +352,14 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
             setEndPlaceId(null);
             setEndCoords(null);
         }
-        if (!endSessionToken.current) endSessionToken.current = crypto.randomUUID();
-        debounceFetch(val, setEndSuggestions, setLoadingEnd, endSessionToken.current);
+
+        if (val === '') {
+            setEndSuggestions(DEFAULT_AUTOCOMPLETE_LOCATIONS);
+            if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+        } else {
+            if (!endSessionToken.current) endSessionToken.current = crypto.randomUUID();
+            debounceFetch(val, setEndSuggestions, setLoadingEnd, endSessionToken.current);
+        }
     };
 
     const clearStart = () => {
@@ -425,10 +465,21 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
                             data={startSuggestions}
                             value={startLocation}
                             onChange={handleStartChange}
-                            onOptionSubmit={(val) => {
+                            onFocus={() => {
+                                if (!startLocation) setStartSuggestions(DEFAULT_AUTOCOMPLETE_LOCATIONS);
+                            }}
+                            onOptionSubmit={async (val) => {
                                 setIsStartSelected(true);
                                 startLastSelection.current = val;
-                                const pid = predictionsMap.current.get(val) || null;
+                                let pid = predictionsMap.current.get(val) || null;
+
+                                // If selected a default option that wasn't in our prediction map yet
+                                if (!pid && DEFAULT_AUTOCOMPLETE_LOCATIONS.includes(val)) {
+                                    // We need to fetch the ID separately effectively doing a 1-result search
+                                    if (!startSessionToken.current) startSessionToken.current = crypto.randomUUID();
+                                    pid = await fetchPlaceIdFromQuery(val, startSessionToken.current);
+                                }
+
                                 setStartPlaceId(pid);
                                 if (pid) fetchPlaceDetails(pid, setStartCoords);
                             }}
@@ -436,6 +487,7 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
                             rightSection={renderRightSection(loadingStart, startLocation, clearStart)}
                             error={startError}
                         />
+
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 3 }}>
                         <Autocomplete
@@ -444,10 +496,19 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
                             data={endSuggestions}
                             value={endLocation}
                             onChange={handleEndChange}
-                            onOptionSubmit={(val) => {
+                            onFocus={() => {
+                                if (!endLocation) setEndSuggestions(DEFAULT_AUTOCOMPLETE_LOCATIONS);
+                            }}
+                            onOptionSubmit={async (val) => {
                                 setIsEndSelected(true);
                                 endLastSelection.current = val;
-                                const pid = predictionsMap.current.get(val) || null;
+                                let pid = predictionsMap.current.get(val) || null;
+
+                                if (!pid && DEFAULT_AUTOCOMPLETE_LOCATIONS.includes(val)) {
+                                    if (!endSessionToken.current) endSessionToken.current = crypto.randomUUID();
+                                    pid = await fetchPlaceIdFromQuery(val, endSessionToken.current);
+                                }
+
                                 setEndPlaceId(pid);
                                 if (pid) fetchPlaceDetails(pid, setEndCoords);
                             }}
@@ -455,6 +516,7 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
                             rightSection={renderRightSection(loadingEnd, endLocation, clearEnd)}
                             error={endError}
                         />
+
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 3 }}>
                         <DateTimePicker

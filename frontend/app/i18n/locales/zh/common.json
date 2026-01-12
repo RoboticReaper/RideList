@@ -122,6 +122,7 @@
     },
     "metadata": {
         "title": "RideList",
+        "siteName": "RideList",
         "description": "一个用于整理和协调 UIUC 与芝加哥周边学生拼车信息的平台。",
         "search": {
             "title": "搜索行程",
@@ -674,7 +675,7 @@
                 "optional": "选填",
                 "preferredPickupLocation": "期望上车地点",
                 "preferredPickupLocationDesc": "选填——你希望在哪里上车？司机将会看到精准位置。",
-                "pickupLocationPlaceholder": "例如：Illini Union、Green St.",
+                "pickupLocationPlaceholder": "例如：Illini Union",
                 "invalidPickupLocation": "请从建议中选择有效地点",
                 "riderNote": "上车备注",
                 "riderNoteDesc": "选填——给司机的补充说明",

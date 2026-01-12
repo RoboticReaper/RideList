@@ -122,6 +122,7 @@
     },
     "metadata": {
         "title": "RideList",
+        "siteName": "RideList",
         "description": "A tool for organizing peer-to-peer ride sharing information near UIUC and Chicago.",
         "search": {
             "title": "Search",
@@ -674,7 +675,7 @@
                 "optional": "Optional",
                 "preferredPickupLocation": "Preferred Pickup Location",
                 "preferredPickupLocationDesc": "Optional – where would you like to be picked up? Driver will see the exact address.",
-                "pickupLocationPlaceholder": "e.g. Illini Union, Green St.",
+                "pickupLocationPlaceholder": "e.g. Illini Union",
                 "invalidPickupLocation": "Please select a valid location from the suggestions",
                 "riderNote": "Pickup Notes",
                 "riderNoteDesc": "Optional – any notes for the driver about your pickup",

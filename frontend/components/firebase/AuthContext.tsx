@@ -28,6 +28,7 @@ interface AuthContextType {
   isRegistered: boolean;
   checkingRegistration: boolean;
   handleProtectedAction: (action?: () => void) => boolean;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -36,6 +37,7 @@ const AuthContext = createContext<AuthContextType>({
   isRegistered: false,
   checkingRegistration: false,
   handleProtectedAction: () => false,
+  refreshUser: async () => { },
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -43,6 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isRegistered, setIsRegistered] = useState(false);
   const [checkingRegistration, setCheckingRegistration] = useState(true);
+  const [profileVersion, setProfileVersion] = useState(0);
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
@@ -182,6 +185,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const { isProtectedRoute, isCompleteProfilePage } = checkProtection();
 
+  const refreshUser = async () => {
+    if (user) {
+      await user.reload();
+      setProfileVersion(prev => prev + 1);
+    }
+  };
+
   useEffect(() => {
     if (loading) return;
 
@@ -220,7 +230,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     (user && checkingRegistration && isProtectedRoute);
 
   return (
-    <AuthContext.Provider value={{ user, loading, isRegistered, checkingRegistration, handleProtectedAction }}>
+    <AuthContext.Provider value={{ user, loading, isRegistered, checkingRegistration, handleProtectedAction, refreshUser }}>
       {/* 
          If we are on a protected route, we must wait for auth to resolve.
          If we are on a public route, we render immediately (user will be null initially).

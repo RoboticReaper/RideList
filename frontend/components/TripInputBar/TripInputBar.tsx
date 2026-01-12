@@ -15,6 +15,8 @@ import { useAuth } from '../firebase/AuthContext';
 import { getLocalizedHref } from '../LocalizedLink';
 import { parseFlexibility, parsePayWindow, parseCutoffTimeNullable, parseStartCheckInNullable } from '@/utils/intervalParsers';
 import { RadiusMap } from '../Rides/RadiusMap';
+import { DEFAULT_AUTOCOMPLETE_LOCATIONS } from '@/utils/defaultLocations';
+
 
 // Type for Place Prediction from New API
 interface PlacePrediction {
@@ -138,8 +140,8 @@ export function TripInputBar() {
     // --- Step 5: Rules State ---
     const [autoAccept, setAutoAccept] = useState(true);
     const [flexibility, setFlexibility] = useState<number | ''>(0.25);
-    const [pickupRadius, setPickupRadius] = useState<number | ''>(5000);
-    const [dropoffRadius, setDropoffRadius] = useState<number | ''>(5000);
+    const [pickupRadius, setPickupRadius] = useState<number | ''>(10000);
+    const [dropoffRadius, setDropoffRadius] = useState<number | ''>(10000);
     const [pickupRules, setPickupRules] = useState('');
     const [cancellationPolicy, setCancellationPolicy] = useState('');
     const [cutoffEnabled, setCutoffEnabled] = useState(true);
@@ -369,8 +371,8 @@ export function TripInputBar() {
                     (draft.smallLuggage !== 0 && draft.smallLuggage !== '' && draft.smallLuggage !== undefined) ||
                     (draft.autoAccept === false) || // Default is true
                     (draft.flexibility !== 0.25 && !!draft.flexibility) ||
-                    (draft.pickupRadius !== 5000 && draft.pickupRadius !== '' && draft.pickupRadius !== undefined) ||
-                    (draft.dropoffRadius !== 5000 && draft.dropoffRadius !== '' && draft.dropoffRadius !== undefined) ||
+                    (draft.pickupRadius !== 10000 && draft.pickupRadius !== '' && draft.pickupRadius !== undefined) ||
+                    (draft.dropoffRadius !== 10000 && draft.dropoffRadius !== '' && draft.dropoffRadius !== undefined) ||
                     (!!draft.pickupRules) ||
                     (!!draft.cancellationPolicy) ||
                     (draft.cutoffEnabled !== true) ||
@@ -426,8 +428,8 @@ export function TripInputBar() {
         setSmallLuggage(0);
         setAutoAccept(true);
         setFlexibility(0.25);
-        setPickupRadius(5000);
-        setDropoffRadius(5000);
+        setPickupRadius(10000);
+        setDropoffRadius(10000);
         setPickupRules('');
         setCancellationPolicy('');
         setCutoffEnabled(true);
@@ -594,6 +596,33 @@ export function TripInputBar() {
         }
     };
 
+    // Helper to fetch Place ID from text query
+    const fetchPlaceIdFromQuery = async (query: string, sessionToken: string): Promise<string | null> => {
+        try {
+            const apiKey = process.env.NEXT_PUBLIC_PLACES_AUTOCOMPLETE!;
+            const response = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': apiKey,
+                },
+                body: JSON.stringify({
+                    input: query,
+                    sessionToken: sessionToken
+                }),
+            });
+            if (!response.ok) return null;
+            const data = await response.json();
+            if (data.suggestions && data.suggestions.length > 0) {
+                return data.suggestions[0].placePrediction.placeId;
+            }
+        } catch (e) {
+            console.error("Failed to fetch place ID for default option", e);
+        }
+        return null;
+    };
+
+
     const fetchPlaceDetails = async (placeId: string, setCoords: (c: { lat: number, lng: number } | null) => void, sessionToken: string) => {
         try {
             const apiKey = process.env.NEXT_PUBLIC_PLACES_AUTOCOMPLETE!;
@@ -622,8 +651,14 @@ export function TripInputBar() {
             startLastSelection.current = '';
             setStartPlaceId(null);
         }
-        if (!startSessionToken.current) startSessionToken.current = crypto.randomUUID();
-        debounceFetch(val, setStartSuggestions, setLoadingStart, startSessionToken.current);
+
+        if (val === '') {
+            setStartSuggestions(DEFAULT_AUTOCOMPLETE_LOCATIONS);
+            if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+        } else {
+            if (!startSessionToken.current) startSessionToken.current = crypto.randomUUID();
+            debounceFetch(val, setStartSuggestions, setLoadingStart, startSessionToken.current);
+        }
     };
 
     const handleEndChange = (val: string) => {
@@ -633,8 +668,14 @@ export function TripInputBar() {
             endLastSelection.current = '';
             setEndPlaceId(null);
         }
-        if (!endSessionToken.current) endSessionToken.current = crypto.randomUUID();
-        debounceFetch(val, setEndSuggestions, setLoadingEnd, endSessionToken.current);
+
+        if (val === '') {
+            setEndSuggestions(DEFAULT_AUTOCOMPLETE_LOCATIONS);
+            if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+        } else {
+            if (!endSessionToken.current) endSessionToken.current = crypto.randomUUID();
+            debounceFetch(val, setEndSuggestions, setLoadingEnd, endSessionToken.current);
+        }
     };
 
     const clearStart = () => {
@@ -1019,8 +1060,8 @@ export function TripInputBar() {
                                                 setPaymentHandle(r.payment_handle || '');
                                                 setAutoAccept(r.auto_accept);
                                                 setFlexibility(r.departure_time_flexibility ? parseFlexibility(r.departure_time_flexibility) : 0.25);
-                                                setPickupRadius(r.pickup_radius_meters || 5000);
-                                                setDropoffRadius(r.drop_off_radius_meters || 5000);
+                                                setPickupRadius(r.pickup_radius_meters || 10000);
+                                                setDropoffRadius(r.drop_off_radius_meters || 10000);
                                                 setPickupRules(r.pickup_rules || '');
                                                 setCancellationPolicy(r.cancellation_policy || '');
                                                 const ch = parseCutoffTimeNullable(r.cutoff_time);
@@ -1067,15 +1108,32 @@ export function TripInputBar() {
                                 handleStartChange(val);
                                 setFieldSourceManual(['startLocation']);
                             }}
-                            onOptionSubmit={(val) => {
-                                setStartLocation(val);
-                                setIsStartSelected(true);
-                                startLastSelection.current = val;
-                                const pid = predictionsMap.current.get(val);
-                                if (pid) {
+                            onFocus={() => {
+                                if (!startLocation) setStartSuggestions(DEFAULT_AUTOCOMPLETE_LOCATIONS);
+                            }}
+                            onOptionSubmit={async (val) => {
+                                // Auto-Select
+                                setLoadingStart(true);
+                                try {
+                                    setIsStartSelected(true);
+                                    startLastSelection.current = val;
+
+                                    let pid = predictionsMap.current.get(val) || null;
+                                    if (!pid && DEFAULT_AUTOCOMPLETE_LOCATIONS.includes(val)) {
+                                        if (!startSessionToken.current) startSessionToken.current = crypto.randomUUID();
+                                        pid = await fetchPlaceIdFromQuery(val, startSessionToken.current);
+                                    }
+
                                     setStartPlaceId(pid);
-                                    if (!startSessionToken.current) startSessionToken.current = crypto.randomUUID();
-                                    fetchPlaceDetails(pid, setStartCoords, startSessionToken.current);
+                                    if (pid) {
+                                        if (!startSessionToken.current) startSessionToken.current = crypto.randomUUID();
+                                        await fetchPlaceDetails(pid, setStartCoords, startSessionToken.current);
+                                    }
+
+                                    // Auto-Check Trip Templates if applicable - Logic remains same
+                                    // ...
+                                } finally {
+                                    setLoadingStart(false);
                                 }
                             }}
                             rightSection={renderRightSection(loadingStart, startLocation, clearStart)}
@@ -1089,19 +1147,36 @@ export function TripInputBar() {
                             data={endSuggestions}
                             value={endLocation}
                             required
+                            onFocus={() => {
+                                if (!endLocation) setEndSuggestions(DEFAULT_AUTOCOMPLETE_LOCATIONS);
+                            }}
                             onChange={(val) => {
                                 handleEndChange(val);
                                 setFieldSourceManual(['endLocation']);
                             }}
-                            onOptionSubmit={(val) => {
-                                setEndLocation(val);
-                                setIsEndSelected(true);
-                                endLastSelection.current = val;
-                                const pid = predictionsMap.current.get(val);
-                                if (pid) {
+                            onOptionSubmit={async (val) => {
+                                // Auto-Select
+                                setLoadingEnd(true);
+                                try {
+                                    setIsEndSelected(true);
+                                    endLastSelection.current = val;
+
+                                    let pid = predictionsMap.current.get(val) || null;
+                                    if (!pid && DEFAULT_AUTOCOMPLETE_LOCATIONS.includes(val)) {
+                                        if (!endSessionToken.current) endSessionToken.current = crypto.randomUUID();
+                                        pid = await fetchPlaceIdFromQuery(val, endSessionToken.current);
+                                    }
+
                                     setEndPlaceId(pid);
-                                    if (!endSessionToken.current) endSessionToken.current = crypto.randomUUID();
-                                    fetchPlaceDetails(pid, setEndCoords, endSessionToken.current);
+                                    if (pid) {
+                                        if (!endSessionToken.current) endSessionToken.current = crypto.randomUUID();
+                                        await fetchPlaceDetails(pid, setEndCoords, endSessionToken.current);
+                                    }
+
+                                    // Auto-Check Trip Templates if applicable - Logic remains same
+                                    // ...
+                                } finally {
+                                    setLoadingEnd(false);
                                 }
                             }}
                             rightSection={renderRightSection(loadingEnd, endLocation, clearEnd)}
@@ -1485,7 +1560,7 @@ export function TripInputBar() {
                                     <RadiusMap
                                         lat={startCoords.lat}
                                         lng={startCoords.lng}
-                                        radiusMeters={Number(pickupRadius) || 5000}
+                                        radiusMeters={Number(pickupRadius) || 10000}
                                         type="pickup"
                                     />
                                 )}
@@ -1495,7 +1570,7 @@ export function TripInputBar() {
                                     <RadiusMap
                                         lat={endCoords.lat}
                                         lng={endCoords.lng}
-                                        radiusMeters={Number(dropoffRadius) || 5000}
+                                        radiusMeters={Number(dropoffRadius) || 10000}
                                         type="dropoff"
                                     />
                                 )}

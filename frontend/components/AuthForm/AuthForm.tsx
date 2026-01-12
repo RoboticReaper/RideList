@@ -75,6 +75,59 @@ export function AuthForm(props: PaperProps) {
         <MicrosoftButton radius="xl" onClick={msLogin}>Microsoft</MicrosoftButton>
       </Group>
 
+      {process.env.NODE_ENV === 'development' &&
+        <>
+          <Button
+            radius="xl"
+            onClick={() => {
+              signInWithEmailAndPassword(auth, "liubaoren2006@gmail.com", "asdfasdf").then((success) => {
+                if (success) {
+                  if (returnUrl) {
+                    router.push(getLocalizedHref(params, returnUrl));
+                  } else {
+                    router.push(getLocalizedHref(params, "/dashboard"));
+                  }
+                }
+              })
+            }}
+          >
+            {t('auth.testerLogin')} 1
+          </Button>
+          <Button
+            radius="xl"
+            onClick={() => {
+              signInWithEmailAndPassword(auth, "baowenliu2019@gmail.com", "asdfasdf").then((success) => {
+                if (success) {
+                  if (returnUrl) {
+                    router.push(getLocalizedHref(params, returnUrl));
+                  } else {
+                    router.push(getLocalizedHref(params, "/dashboard"));
+                  }
+                }
+              })
+            }}
+          >
+            {t('auth.testerLogin')} 2
+          </Button>
+          <Button
+            radius="xl"
+            onClick={() => {
+              signInWithEmailAndPassword(auth, "liubaoren2006.2@gmail.com", "asdfasdf").then((success) => {
+                if (success) {
+                  if (returnUrl) {
+                    router.push(getLocalizedHref(params, returnUrl));
+                  } else {
+                    router.push(getLocalizedHref(params, "/dashboard"));
+                  }
+                }
+              })
+            }}
+          >
+            {t('auth.testerLogin')} 3
+          </Button>
+        </>
+      }
+
       <Text size="xs" mb="md">
         {t('auth.uiucOnly')}
       </Text>

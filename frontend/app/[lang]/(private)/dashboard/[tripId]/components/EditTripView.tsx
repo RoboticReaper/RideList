@@ -9,6 +9,7 @@ import { parseFlexibility, parsePayWindow, parseCutoffTimeNullable, parseStartCh
 import { LocalizedLink } from '@/components/LocalizedLink';
 import { RadiusMap } from '@/components/Rides/RadiusMap';
 import { useTranslation, Trans } from 'react-i18next';
+import { DEFAULT_AUTOCOMPLETE_LOCATIONS } from '@/utils/defaultLocations';
 
 interface EditTripViewProps {
     trip: any; // Using any for simplicity as Trip type is large
@@ -234,6 +235,33 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
         }, 300);
     };
 
+    // Helper to fetch Place ID from text query
+    const fetchPlaceIdFromQuery = async (query: string, sessionToken: string): Promise<string | null> => {
+        try {
+            const apiKey = process.env.NEXT_PUBLIC_PLACES_AUTOCOMPLETE!;
+            const response = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': apiKey,
+                },
+                body: JSON.stringify({
+                    input: query,
+                    sessionToken: sessionToken
+                }),
+            });
+
+            if (!response.ok) return null;
+            const data = await response.json();
+            if (data.suggestions && data.suggestions.length > 0) {
+                return data.suggestions[0].placePrediction.placeId;
+            }
+        } catch (e) {
+            console.error("Failed to fetch place ID for default option", e);
+        }
+        return null;
+    };
+
     const handleStartChange = (val: string) => {
         form.setFieldValue('from_input_text', val);
 
@@ -244,8 +272,14 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
             fetchPlaceGeometry(knownId, setOriginCoords);
         } else {
             setStartPlaceId(null);
-            if (!startSessionToken.current) startSessionToken.current = crypto.randomUUID();
-            debounceFetch(val, setStartSuggestions, setLoadingStart, startSessionToken.current);
+
+            if (val === '') {
+                setStartSuggestions(DEFAULT_AUTOCOMPLETE_LOCATIONS);
+                if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+            } else {
+                if (!startSessionToken.current) startSessionToken.current = crypto.randomUUID();
+                debounceFetch(val, setStartSuggestions, setLoadingStart, startSessionToken.current);
+            }
         }
     };
 
@@ -258,8 +292,14 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
             fetchPlaceGeometry(knownId, setDestCoords);
         } else {
             setEndPlaceId(null);
-            if (!endSessionToken.current) endSessionToken.current = crypto.randomUUID();
-            debounceFetch(val, setEndSuggestions, setLoadingEnd, endSessionToken.current);
+
+            if (val === '') {
+                setEndSuggestions(DEFAULT_AUTOCOMPLETE_LOCATIONS);
+                if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+            } else {
+                if (!endSessionToken.current) endSessionToken.current = crypto.randomUUID();
+                debounceFetch(val, setEndSuggestions, setLoadingEnd, endSessionToken.current);
+            }
         }
     };
 
@@ -541,9 +581,17 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                                 data={startSuggestions}
                                 value={form.values.from_input_text}
                                 onChange={handleStartChange}
-                                onOptionSubmit={(val) => {
+                                onFocus={() => {
+                                    if (!form.values.from_input_text) setStartSuggestions(DEFAULT_AUTOCOMPLETE_LOCATIONS);
+                                }}
+                                onOptionSubmit={async (val) => {
                                     form.setFieldValue('from_input_text', val);
-                                    const pid = predictionsMap.current.get(val);
+                                    let pid = predictionsMap.current.get(val) || null;
+                                    if (!pid && DEFAULT_AUTOCOMPLETE_LOCATIONS.includes(val)) {
+                                        if (!startSessionToken.current) startSessionToken.current = crypto.randomUUID();
+                                        pid = await fetchPlaceIdFromQuery(val, startSessionToken.current);
+                                    }
+
                                     if (pid) {
                                         setStartPlaceId(pid);
                                         fetchPlaceGeometry(pid, setOriginCoords);
@@ -558,9 +606,17 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                                 data={endSuggestions}
                                 value={form.values.to_input_text}
                                 onChange={handleEndChange}
-                                onOptionSubmit={(val) => {
+                                onFocus={() => {
+                                    if (!form.values.to_input_text) setEndSuggestions(DEFAULT_AUTOCOMPLETE_LOCATIONS);
+                                }}
+                                onOptionSubmit={async (val) => {
                                     form.setFieldValue('to_input_text', val);
-                                    const pid = predictionsMap.current.get(val);
+                                    let pid = predictionsMap.current.get(val) || null;
+                                    if (!pid && DEFAULT_AUTOCOMPLETE_LOCATIONS.includes(val)) {
+                                        if (!endSessionToken.current) endSessionToken.current = crypto.randomUUID();
+                                        pid = await fetchPlaceIdFromQuery(val, endSessionToken.current);
+                                    }
+
                                     if (pid) {
                                         setEndPlaceId(pid);
                                         fetchPlaceGeometry(pid, setDestCoords);

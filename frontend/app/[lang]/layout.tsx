@@ -30,6 +30,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     icons: {
       icon: '/logo_small.svg'
     },
+    openGraph: {
+      title: t('metadata.title'),
+      description: t('metadata.description'),
+      url: `${baseUrl}/${lang}`,
+      siteName: t('metadata.siteName'),
+      images: [
+        {
+          url: '/og-image.jpg',
+          width: 1200,
+          height: 630,
+        }
+      ],
+      locale: lang,
+      type: 'website',
+    },
 
     alternates: {
       canonical: `${baseUrl}/${lang}`,

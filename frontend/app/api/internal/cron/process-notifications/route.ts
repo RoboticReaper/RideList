@@ -70,7 +70,7 @@ export async function POST(req: Request) {
                 END
               )
             LIMIT 50
-            FOR UPDATE SKIP LOCKED
+            FOR UPDATE OF t SKIP LOCKED
         `);
 
         for (const row of cutoffCandidates.rows) {
