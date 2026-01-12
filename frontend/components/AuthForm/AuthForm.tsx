@@ -79,55 +79,6 @@ export function AuthForm(props: PaperProps) {
         {t('auth.uiucOnly')}
       </Text>
 
-      <Button
-        radius="xl"
-        onClick={() => {
-          signInWithEmailAndPassword(auth, "liubaoren2006@gmail.com", "asdfasdf").then((success) => {
-            if (success) {
-              if (returnUrl) {
-                router.push(getLocalizedHref(params, returnUrl));
-              } else {
-                router.push(getLocalizedHref(params, "/dashboard"));
-              }
-            }
-          })
-        }}
-      >
-        {t('auth.testerLogin')} 1
-      </Button>
-      <Button
-        radius="xl"
-        onClick={() => {
-          signInWithEmailAndPassword(auth, "baowenliu2019@gmail.com", "asdfasdf").then((success) => {
-            if (success) {
-              if (returnUrl) {
-                router.push(getLocalizedHref(params, returnUrl));
-              } else {
-                router.push(getLocalizedHref(params, "/dashboard"));
-              }
-            }
-          })
-        }}
-      >
-        {t('auth.testerLogin')} 2
-      </Button>
-      <Button
-        radius="xl"
-        onClick={() => {
-          signInWithEmailAndPassword(auth, "liubaoren2006.2@gmail.com", "asdfasdf").then((success) => {
-            if (success) {
-              if (returnUrl) {
-                router.push(getLocalizedHref(params, returnUrl));
-              } else {
-                router.push(getLocalizedHref(params, "/dashboard"));
-              }
-            }
-          })
-        }}
-      >
-        {t('auth.testerLogin')} 3
-      </Button>
-
       <Input.Wrapper label={t('auth.agreementsLabel')} withAsterisk error={error}>
         <Checkbox
           label={
