@@ -255,7 +255,8 @@
         "privacy": "Privacy Policy",
         "tos": "Terms of Service",
         "blog": "Blog",
-        "careers": "Careers"
+        "careers": "Careers",
+        "copyright": "© {{year}} RideList. All rights reserved."
     },
     "feedback": {
         "modalTitle": "Contact support",

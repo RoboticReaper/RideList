@@ -20,8 +20,7 @@ export async function Hero({ lang }: Props) {
               <Text
                 component="span"
                 inherit
-                variant="gradient"
-                gradient={{ from: 'pink', to: 'yellow' }}
+                className={classes.titleAccent}
               >
                 {t('hero.titleColored')}
               </Text>
@@ -32,7 +31,7 @@ export async function Hero({ lang }: Props) {
               {t('hero.description')}
             </Text>
 
-            <List className={classes.description} mt={20}>
+            <List className={classes.list} mt={20}>
               <ListItem>{t('hero.list1')}</ListItem>
               <ListItem>{t('hero.list2')}</ListItem>
               <ListItem>{t('hero.list3')}</ListItem>

@@ -44,13 +44,13 @@ const getPool = async () => {
 
         // 1. Parse the credentials directly from the environment variable
         const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
-        if (credentials.private_key) {
-            credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
-        }
 
-        // 2. Create a GoogleAuth instance in memory
         const auth = new GoogleAuth({
-            credentials
+            credentials,
+            // REQUIRED: The connector needs this specific scope to find your DB IP
+            scopes: ['https://www.googleapis.com/auth/sqlservice.admin'],
+            // REQUIRED: Explicitly pass the project ID from the JSON
+            projectId: credentials.project_id,
         });
 
         // 3. Pass the auth instance to the Connector

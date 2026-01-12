@@ -93,7 +93,13 @@ export function Footer() {
         <LocalizedLink href="/">
           <Image src="/logo.svg" fit="contain" className={classes.logo} />
         </LocalizedLink>
-        <Group className={classes.links}>{items}</Group>
+        <Group className={classes.links} style={{ justifyContent: 'center' }}>{items}</Group>
+      </Container>
+
+      <Container className={classes.inner} style={{ paddingTop: 0, paddingBottom: 20, justifyContent: 'flex-end' }}>
+        <Text c="dimmed" size="sm">
+          {t('footer.copyright', { year: new Date().getFullYear() })}
+        </Text>
       </Container>
 
       <Modal opened={opened} onClose={close} title={t('feedback.modalTitle')} centered>

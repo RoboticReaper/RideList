@@ -1,10 +1,12 @@
 .root {
-  background-color: #11284b;
+  background-color: #0b1d36;
   background-size: cover;
   background-position: center;
   background-image:
-    linear-gradient(250deg, rgba(130, 201, 30, 0) 0%, #062343 70%),
-    url(https://images.unsplash.com/photo-1451187580459-43490279c0fa?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8&auto=format&fit=crop&w=1080&q=80);
+    linear-gradient(rgba(6, 18, 38, 0.65),
+      rgba(6, 18, 38, 0.75)),
+    url('/hero-uiuc.jpg');
+
   padding-top: calc(var(--mantine-spacing-xl) * 3);
   padding-bottom: calc(var(--mantine-spacing-xl) * 3);
 }
@@ -25,6 +27,13 @@
 }
 
 .content {
+  background: linear-gradient(to right,
+      rgba(11, 29, 54, 0.65),
+      rgba(11, 29, 54, 0.35),
+      rgba(11, 29, 54, 0));
+  padding-right: calc(var(--mantine-spacing-xl) * 2);
+  padding-left: calc(var(--mantine-spacing-xl) * 2);
+  border-radius: 12px;
   padding-top: calc(var(--mantine-spacing-xl) * 2);
   padding-bottom: calc(var(--mantine-spacing-xl) * 2);
   margin-right: calc(var(--mantine-spacing-xl) * 3);
@@ -37,10 +46,11 @@
 .title {
   color: var(--mantine-color-white);
   font-family: Outfit, var(--mantine-font-family);
-  font-weight: 500;
-  line-height: 1.05;
-  max-width: 500px;
+  font-weight: 600;
+  line-height: 1.08;
+  max-width: 520px;
   font-size: 48px;
+  letter-spacing: -0.02em;
 
   @media (max-width: $mantine-breakpoint-md) {
     max-width: 100%;
@@ -49,21 +59,36 @@
   }
 }
 
+.titleAccent {
+  color: #ff9f43;
+  /* matches CTA tone, solid for readability */
+}
+
 .description {
-  color: var(--mantine-color-white);
-  opacity: 0.75;
+  color: rgba(255, 255, 255, 0.85);
   max-width: 500px;
+  font-size: 16px;
+  line-height: 1.6;
 
   @media (max-width: $mantine-breakpoint-md) {
     max-width: 100%;
   }
 }
 
+.list {
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 500px;
+  font-size: 15px;
+  line-height: 1.6;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
 .control {
-  padding-left: 50px;
-  padding-right: 50px;
+  padding-left: 48px;
+  padding-right: 48px;
   font-family: Outfit, var(--mantine-font-family);
-  font-size: 22px;
+  font-size: 20px;
+  font-weight: 600;
 
   @media (max-width: $mantine-breakpoint-md) {
     width: 100%;
@@ -71,19 +96,22 @@
 }
 
 .secondaryControl {
-  padding-left: 50px;
-  padding-right: 50px;
+  padding-left: 48px;
+  padding-right: 48px;
   font-family: Outfit, var(--mantine-font-family);
-  font-size: 22px;
+  font-size: 20px;
+  font-weight: 500;
+
+  color: var(--mantine-color-white);
+  background-color: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+
+  @mixin hover {
+    background-color: rgba(255, 255, 255, 0.25);
+  }
 
   @media (max-width: $mantine-breakpoint-md) {
     width: 100%;
-  }
-
-  color: var(--mantine-color-white);
-  background-color: rgba(255, 255, 255, 0.4);
-
-  @mixin hover {
-    background-color: rgba(255, 255, 255, 0.45);
   }
 }
