@@ -16,7 +16,7 @@ export default function Notifications() {
     const { t } = useTranslation('common');
     const { user } = useAuth();
     const [opened, setOpened] = useState(false);
-    const { notifications, unreadCount, isLoading, hasMore, fetchMore, markAsRead } = useNotifications();
+    const { notifications, unreadCount, isLoading, hasMore, fetchMore, markAsRead, markAllAsRead } = useNotifications();
     const isMobile = useMediaQuery('(max-width: 450px)');
     const [mounted, setMounted] = useState(false);
 
@@ -28,9 +28,8 @@ export default function Notifications() {
     };
 
     const handleMarkAllRead = async () => {
-        const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
-        if (unreadIds.length > 0) {
-            await markAsRead(unreadIds);
+        if (unreadCount > 0) {
+            await markAllAsRead();
         }
     };
 

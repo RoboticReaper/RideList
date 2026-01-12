@@ -24,6 +24,7 @@ interface NotificationContextType {
     hasMore: boolean;
     fetchMore: () => Promise<void>;
     markAsRead: (ids: string[]) => Promise<void>;
+    markAllAsRead: () => Promise<void>;
     refresh: () => Promise<void>;
 
     // Push Permissions
@@ -346,6 +347,25 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         }
     };
 
+    const markAllAsRead = async () => {
+        if (!user) return;
+        try {
+            // Optimistic update
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+            setUnreadCount(0);
+
+            const token = await user.getIdToken();
+            await fetch('/api/notifications', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ markAll: true })
+            });
+        } catch (error) {
+            console.error("Failed to mark all as read", error);
+            fetchNotifications(true);
+        }
+    };
+
 
 
     return (
@@ -356,6 +376,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             hasMore,
             fetchMore,
             markAsRead,
+            markAllAsRead,
             refresh: () => fetchNotifications(true),
             pushPermission,
             requestPermission,

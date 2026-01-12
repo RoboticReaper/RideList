@@ -75,21 +75,32 @@ export async function PATCH(req: NextRequest) {
         const userId = user.uid;
 
         const body = await req.json();
-        const notificationIds = body.notificationIds; // Expecting an array of strings
+        const { notificationIds, markAll } = body;
 
-        if (!notificationIds || !Array.isArray(notificationIds) || notificationIds.length === 0) {
-            return NextResponse.json({ error: "Invalid notificationIds" }, { status: 400 });
+        if (markAll) {
+            await client.query(
+                `
+                UPDATE notifications
+                SET read = true
+                WHERE user_id = $1 AND read = false
+                `,
+                [userId]
+            );
+        } else {
+            if (!notificationIds || !Array.isArray(notificationIds) || notificationIds.length === 0) {
+                return NextResponse.json({ error: "Invalid notificationIds" }, { status: 400 });
+            }
+
+            // Use ANY to match any id in the array and ensure it belongs to the user
+            await client.query(
+                `
+                UPDATE notifications
+                SET read = true
+                WHERE id = ANY($1) AND user_id = $2
+                `,
+                [notificationIds, userId]
+            );
         }
-
-        // Use ANY to match any id in the array and ensure it belongs to the user
-        await client.query(
-            `
-            UPDATE notifications
-            SET read = true
-            WHERE id = ANY($1) AND user_id = $2
-            `,
-            [notificationIds, userId]
-        );
 
         return NextResponse.json({ success: true });
 
