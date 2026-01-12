@@ -27,6 +27,11 @@
             }
         }
     },
+    "globalError": {
+        "title": "Something went wrong",
+        "description": "We encountered an unexpected error. Please try again later if the problem persists.",
+        "backToHome": "Back to Home"
+    },
     "notFound": {
         "title": "Nothing to see here",
         "description": "Page you are trying to open does not exist. You may have mistyped the address, or the page has been moved to another URL. If you think this is an error contact support.",

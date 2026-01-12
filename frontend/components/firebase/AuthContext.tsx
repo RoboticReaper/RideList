@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { onAuthStateChanged, User, getAuth, signInWithRedirect, getRedirectResult, signInWithPopup, OAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { onAuthStateChanged, User, getAuth, signInWithPopup, OAuthProvider } from "firebase/auth";
 import { app } from "./firebase";
 import { useRouter, useParams, usePathname, useSearchParams } from "next/navigation";
 import { getLocalizedHref } from "../LocalizedLink";
@@ -13,14 +13,7 @@ export const signInWithUIUC = async () => {
   const auth = getAuth(app);
 
   try {
-    // Recommendation: Use Popup for localhost to avoid redirect issues
-    // Use Redirect for production/mobile
-    // Localhost: Enable Popup to bypass auth handler redirect failures (init.json 404 / 3rd party cookies)
-    if (window.location.hostname === "localhost") {
-      await signInWithPopup(auth, provider);
-    } else {
-      await signInWithRedirect(auth, provider);
-    }
+    await signInWithPopup(auth, provider);
     return true;
   } catch (error) {
     console.error("Login Error:", error);
@@ -83,16 +76,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const auth = getAuth(app);
     let mounted = true;
 
-    // 1. Handle Redirect Result (Runs once on mount)
-    getRedirectResult(auth).then((result) => {
-      if (result && mounted) {
-        setUser(result.user);
-        setLoading(false);
-      }
-    }).catch((error) => {
-      console.error("Redirect Error:", error);
-    });
-
     // 2. Listen for Auth Changes
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (mounted) {
@@ -140,14 +123,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             };
 
             let created = await createAccount();
-            while (!created) {
+            let retries = 0;
+            while (!created && retries < 3) {
+              retries++;
               // Wait 5 seconds before retrying
-              console.log("Account creation failed, retrying in 5s...");
+              console.log(`Account creation failed, retrying in 5s... (Attempt ${retries}/3)`);
               await new Promise(resolve => setTimeout(resolve, 5000));
               created = await createAccount();
             }
             // Once created, we treat it as existing
-            isAccountExists = true;
+            if (created) {
+              isAccountExists = true;
+            } else {
+              console.error("Critical: Failed to create account after 3 retries.");
+              // Ensure we don't proceed pretending it exists
+              isAccountExists = false;
+              router.push(getLocalizedHref(params, '/error'));
+              return; // Stop execution
+            }
           }
 
           // NOW CHECK PROFILE
