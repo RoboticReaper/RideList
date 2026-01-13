@@ -35,7 +35,8 @@ export function PushPermissionModal() {
             await requestPermission();
 
             // Check result immediately after promise resolves
-            if (Notification.permission === 'granted' && !isStandalone) {
+            const perm = 'Notification' in window ? Notification.permission : 'default';
+            if (perm === 'granted' && !isStandalone) {
                 setShowAndroidInstallUpsell(true);
                 showPrompt({ force: true });
             }
@@ -81,7 +82,7 @@ export function PushPermissionModal() {
                 title={t('pwa.blockedTitle')}
                 centered
                 size="sm"
-                zIndex={300}
+                zIndex={20000}
             >
                 <Stack align="center" gap="md" py="xs">
                     <ThemeIcon size={64} radius="xl" variant="light" color="red">
@@ -114,7 +115,7 @@ export function PushPermissionModal() {
                 title={t('pwa.installRequiredTitle')}
                 centered
                 size="sm"
-                zIndex={300}
+                zIndex={20000}
             >
                 <Stack align="center" gap="md" py="xs">
                     <ThemeIcon size={64} radius="xl" variant="light" color="blue">
@@ -148,7 +149,7 @@ export function PushPermissionModal() {
                 title={t('pwa.installTitle')}
                 centered
                 size="sm"
-                zIndex={300}
+                zIndex={20000}
             >
                 <Stack align="center" gap="md" py="xs">
                     <ThemeIcon size={64} radius="xl" variant="light" color="green">
@@ -188,7 +189,7 @@ export function PushPermissionModal() {
             title={t('pwa.getUpdatesTitle')}
             centered
             size="sm"
-            zIndex={300}
+            zIndex={20000}
         >
             <Stack align="center" gap="md" py="xs">
                 <ThemeIcon size={64} radius="xl" variant="light" color="blue">

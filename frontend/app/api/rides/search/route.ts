@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
+import { redactName } from '@/app/api/lib/redactName';
 
 // NOTE: Public endpoint (no auth). Do NOT include sensitive fields here (phone, payment_handle, plates, etc.)
 export async function GET(request: NextRequest) {
@@ -11,29 +12,22 @@ export async function GET(request: NextRequest) {
     const endLngStr = searchParams.get('end_lng');
     const dateStr = searchParams.get('date');
 
-    // Required params
-    if (!startLatStr || !startLngStr || !endLatStr || !endLngStr || !dateStr) {
-        return NextResponse.json({ rides: [] });
-    }
+    const startLat = startLatStr ? Number(startLatStr) : null;
+    const startLng = startLngStr ? Number(startLngStr) : null;
+    const endLat = endLatStr ? Number(endLatStr) : null;
+    const endLng = endLngStr ? Number(endLngStr) : null;
 
-    const startLat = Number(startLatStr);
-    const startLng = Number(startLngStr);
-    const endLat = Number(endLatStr);
-    const endLng = Number(endLngStr);
+    // Check for start/end location presence independently
+    const hasStart = startLat !== null && Number.isFinite(startLat) && startLng !== null && Number.isFinite(startLng);
+    const hasEnd = endLat !== null && Number.isFinite(endLat) && endLng !== null && Number.isFinite(endLng);
 
-    if (
-        !Number.isFinite(startLat) ||
-        !Number.isFinite(startLng) ||
-        !Number.isFinite(endLat) ||
-        !Number.isFinite(endLng)
-    ) {
-        return NextResponse.json({ rides: [] });
-    }
-
-    // Validate date
-    const reqDate = new Date(dateStr);
-    if (Number.isNaN(reqDate.getTime())) {
-        return NextResponse.json({ rides: [] });
+    // Validate date if provided
+    let reqDate: Date | null = null;
+    if (dateStr) {
+        const d = new Date(dateStr);
+        if (!Number.isNaN(d.getTime())) {
+            reqDate = d;
+        }
     }
 
     // Pagination guards
@@ -52,23 +46,49 @@ export async function GET(request: NextRequest) {
 
     const client = await pool.connect();
     try {
-        // Base params:
-        // 1 startLng, 2 startLat, 3 endLng, 4 endLat, 5 reqDate, 6 limit, 7 offset
-        const queryParams: any[] = [startLng, startLat, endLng, endLat, reqDate, limit, offset];
+        const queryParams: (string | number | Date | string[] | null | undefined)[] = [];
+        let paramCounter = 1;
 
-        let paramCounter = 8;
-
-        // Important:
-        // - include full trips too (viewable but not bookable)
-        // - enforce seats availability to avoid stale "bookable" records showing as bookable
-        // - constrain results to within 7 calendar day as reqDate
+        // Base condition: always show only future trips (from NOW)
+        // status must be bookable or full
         let whereConditions = `
-      t.status IN ('bookable', 'full')
-      AND t.departure_time >= date_trunc('day', $5)
-      AND t.departure_time <  date_trunc('day', $5) + interval '7 days'
-      AND ST_DWithin(t.origin_geog, ST_SetSRID(ST_MakePoint($1, $2), 4326), tr.pickup_radius_meters)
-      AND ST_DWithin(t.destination_geog, ST_SetSRID(ST_MakePoint($3, $4), 4326), tr.drop_off_radius_meters)
-    `;
+            t.status IN ('bookable', 'full')
+            AND t.departure_time >= NOW()
+        `;
+
+        // Date Filter Logic
+        let dateParamIdx: number | null = null;
+        if (reqDate) {
+            whereConditions += `
+                AND t.departure_time >= ($${paramCounter}::timestamptz - interval '3 days')
+                AND t.departure_time <= ($${paramCounter}::timestamptz + interval '3 days')
+            `;
+            queryParams.push(reqDate);
+            dateParamIdx = paramCounter;
+            paramCounter++;
+        }
+
+        // Start Location Logic
+        let startLocIdx: number | null = null;
+        if (hasStart) {
+            whereConditions += `
+                AND ST_DWithin(t.origin_geog, ST_SetSRID(ST_MakePoint($${paramCounter}, $${paramCounter + 1}), 4326), tr.pickup_radius_meters)
+            `;
+            queryParams.push(startLng, startLat);
+            startLocIdx = paramCounter;
+            paramCounter += 2;
+        }
+
+        // End Location Logic
+        let endLocIdx: number | null = null;
+        if (hasEnd) {
+            whereConditions += `
+                AND ST_DWithin(t.destination_geog, ST_SetSRID(ST_MakePoint($${paramCounter}, $${paramCounter + 1}), 4326), tr.drop_off_radius_meters)
+            `;
+            queryParams.push(endLng, endLat);
+            endLocIdx = paramCounter;
+            paramCounter += 2;
+        }
 
         // Optional filters
         if (bigLuggageStr !== null) {
@@ -103,7 +123,6 @@ export async function GET(request: NextRequest) {
         }
 
         if (paymentMethodsStr) {
-            // Semantics: "trip accepts ANY of these"
             const methods = paymentMethodsStr
                 .split(',')
                 .map(s => s.trim())
@@ -116,17 +135,37 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        // If you want to enforce "bookable" only when seats available:
-        // - keep full trips in results, but make sure "bookable" implies seats available
-        // This prevents stale states from letting users see "bookable" trips with 0 seats.
+        // Fix stale bookable records
         whereConditions += `
-      AND NOT (t.status = 'bookable' AND t.seats_taken >= t.total_seats)
-    `;
+            AND NOT (t.status = 'bookable' AND t.seats_taken >= t.total_seats)
+        `;
 
-        // Ranking:
-        // - After the date filter, "closest to requested time" is reasonable
+        // Ranking / Scoring
+        const timeDiffExpr = dateParamIdx
+            ? `ABS(EXTRACT(EPOCH FROM (t.departure_time - $${dateParamIdx}::timestamptz)))`
+            : `ABS(EXTRACT(EPOCH FROM (t.departure_time - NOW())))`;
+
+        const startDistExpr = startLocIdx
+            ? `LEAST(ST_Distance(t.origin_geog, ST_SetSRID(ST_MakePoint($${startLocIdx}, $${startLocIdx + 1}), 4326)), 3000) / 400`
+            : `0`;
+
+        const endDistExpr = endLocIdx
+            ? `LEAST(ST_Distance(t.destination_geog, ST_SetSRID(ST_MakePoint($${endLocIdx}, $${endLocIdx + 1}), 4326)), 8000) / 1500`
+            : `0`;
+
+        const scoreCalculation = `
+            ${timeDiffExpr} / 60
+            + ${startDistExpr}
+            + ${endDistExpr}
+        `;
+        const orderBy = 'score ASC';
+
+        // Add limit/offset to params
+        queryParams.push(limit, offset);
+        const limitIdx = paramCounter;
+        const offsetIdx = paramCounter + 1;
+
         const query = `
-            WITH candidates AS (
             SELECT
                 t.id,
                 t.from_text,
@@ -144,45 +183,31 @@ export async function GET(request: NextRequest) {
                 tr.departure_time_flexibility::text,
 
                 pg.name AS driver_name,
-                pg.photo_url AS driver_photo_url,
+                -- pg.photo_url AS driver_photo_url, -- OMITTED for privacy
                 pd.rating_cached AS driver_rating,
                 pd.completed_trips AS driver_completed_trips,
-
-                ABS(EXTRACT(EPOCH FROM (t.departure_time - $5))) / 60
-                AS time_diff_minutes,
-
-                ST_Distance(
-                t.origin_geog,
-                ST_SetSRID(ST_MakePoint($1, $2), 4326)
-                ) AS pickup_distance_m,
-
-                ST_Distance(
-                t.destination_geog,
-                ST_SetSRID(ST_MakePoint($3, $4), 4326)
-                ) AS dropoff_distance_m
+                (${scoreCalculation}) AS score
 
             FROM trips t
             JOIN trip_rules tr ON t.id = tr.id
             LEFT JOIN profile_global pg ON t.driver = pg.id
             LEFT JOIN profile_driver pd ON t.driver = pd.id
             WHERE ${whereConditions}
-            )
+            ORDER BY ${orderBy}
+            LIMIT $${limitIdx} OFFSET $${offsetIdx}
+        `;
 
-            SELECT *,
-            (
-                time_diff_minutes
-                + LEAST(pickup_distance_m, 3000) / 400
-                + LEAST(dropoff_distance_m, 8000) / 1500
-            ) AS score
-            FROM candidates
-            ORDER BY score ASC
-            LIMIT $6 OFFSET $7;
-
-    `;
 
         const result = await client.query(query, queryParams);
 
-        return NextResponse.json({ rides: result.rows, page, limit });
+        // Post-processing: Redact names
+        const rows = result.rows.map(row => ({
+            ...row,
+            driver_name: redactName(row.driver_name),
+            driver_photo_url: null // Explicitly nullify even if we didn't select it, to match interface if needed
+        }));
+
+        return NextResponse.json({ rides: rows, page, limit });
     } catch (error) {
         console.error('Search error', error);
         return NextResponse.json({ rides: [] }, { status: 500 });

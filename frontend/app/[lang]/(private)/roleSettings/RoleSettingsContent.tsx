@@ -10,6 +10,7 @@ import { LocalizedLink } from '@/components/LocalizedLink';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useNotifications } from '@/components/Notifications/NotificationContext';
 import { useTranslation, Trans } from 'react-i18next';
+import { useRouter } from 'next/navigation';
 
 export default function RoleSettingsPage() {
     const { t } = useTranslation('common');
@@ -17,6 +18,7 @@ export default function RoleSettingsPage() {
     const { user } = useAuth();
     const { pushPermission, showPrompt } = useNotifications();
     const { isIOS, isAndroid, isStandalone, canInstall, activePrompt } = usePWAInstall();
+    const router = useRouter();
 
     const installPwa = () => {
         if (activePrompt) {
@@ -43,7 +45,7 @@ export default function RoleSettingsPage() {
     const PushEnableButton = () => {
         // iOS Browser: Must Install First
         if (isIOS && !isStandalone) {
-            return <Button size="xs" onClick={() => showPrompt({ force: true })} leftSection={<IconDeviceMobile size={16} />}>{t('roleSettings.push.installApp')}</Button>;
+            return <Button size="xs" onClick={() => router.push('/?pwa_ios_install=true')} leftSection={<IconDeviceMobile size={16} />}>{t('roleSettings.push.installApp')}</Button>;
         }
 
         // Android: If Granted but not installed, suggest install
@@ -217,9 +219,13 @@ export default function RoleSettingsPage() {
                                         <Text size="xs" c="dimmed">{t('roleSettings.install.description')}</Text>
                                     </div>
                                     {isIOS ? (
-                                        <Text size="xs" c="dimmed" style={{ maxWidth: '200px', textAlign: 'right' }}>
-                                            {t('roleSettings.install.iosInstructions')}
-                                        </Text>
+                                        <Button size="xs" onClick={() => {
+                                            // Redirect to root with param to trigger Global Install Modal
+                                            // This ensures the "Add to Home Screen" uses the root URL
+                                            router.push('/?pwa_ios_install=true');
+                                        }} leftSection={<IconDownload size={16} />}>
+                                            {t('roleSettings.install.howToInstall')}
+                                        </Button>
                                     ) : (
                                         canInstall && (
                                             <Button size="xs" onClick={installPwa} leftSection={<IconDownload size={16} />}>

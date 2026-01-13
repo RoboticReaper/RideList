@@ -20,7 +20,7 @@ export function usePWAInstall(): PWAInstallStatus {
     useEffect(() => {
         // Detect Platform
         const ua = window.navigator.userAgent;
-        const isIOS = /iPhone|iPad|iPod/.test(ua);
+        const isIOS = /iPhone|iPad|iPod/.test(ua) || window.navigator.maxTouchPoints > 1;
         const isAndroid = /Android/.test(ua);
 
         // Detect Standalone (PWA) Mode

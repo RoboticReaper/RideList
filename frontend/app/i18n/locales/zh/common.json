@@ -539,6 +539,7 @@
         },
         "search": {
             "title": "查找行程",
+            "dateLabel": "日期（+/- 3 天）",
             "noResults": "未找到符合条件的行程。",
             "startPlaceholder": "从哪里出发？",
             "endPlaceholder": "前往哪里？",
@@ -549,7 +550,8 @@
             "advancedFilters": "高级筛选",
             "maxPrice": "最高价格",
             "autoAcceptOnly": "仅显示自动接受",
-            "paymentPlaceholder": "选择相关支付方式"
+            "paymentPlaceholder": "选择相关支付方式",
+            "loadMore": "加载更多"
         },
         "card": {
             "today": "今天",
@@ -1669,9 +1671,10 @@
         },
         "install": {
             "title": "安装应用",
-            "description": "安装应用以获得最佳使用体验",
+            "description": "在您的设备上安装 RideList 以获得更好的体验。",
             "button": "安装应用",
-            "iosInstructions": "点击分享按钮并选择“添加到主屏幕”"
+            "iosInstructions": "点击浏览器菜单中的“分享”按钮，然后选择“添加到主屏幕”。",
+            "howToInstall": "如何安装"
         }
     },
     "about": {

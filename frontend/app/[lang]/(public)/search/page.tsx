@@ -1,7 +1,7 @@
 import { RidesSearch } from '@/components/Rides/RidesSearch';
-import { RideCard } from '@/components/Rides/RideCard';
-import { Title, Container, Box, Text, Stack } from '@mantine/core';
+import { Title, Container, Box } from '@mantine/core';
 import { useServerTranslation } from '@/app/i18n/server';
+import { RideList } from '@/components/Rides/RideList';
 
 import { Metadata } from 'next';
 
@@ -63,15 +63,10 @@ export default async function RidesPage({
             </Box>
 
             <Box>
-                {rides.length === 0 ? (
-                    <Text c="dimmed" fs="italic">{t('rides.search.noResults')}</Text>
-                ) : (
-                    <Stack>
-                        {rides.map((ride: any) => (
-                            <RideCard key={ride.id} ride={ride} />
-                        ))}
-                    </Stack>
-                )}
+                <RideList
+                    initialRides={rides}
+                    searchParams={resolvedSearchParams || {}}
+                />
             </Box>
         </Container>
     );

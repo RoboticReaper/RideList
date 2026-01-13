@@ -520,7 +520,7 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 3 }}>
                         <DateTimePicker
-                            label={t('rides.common.date')}
+                            label={t('rides.search.dateLabel')}
                             placeholder={t('rides.search.datePlaceholder')}
                             value={startTime}
                             valueFormat="MM/DD/YYYY HH:mm"
@@ -533,6 +533,7 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
                             }}
                             leftSection={<IconCalendar size={16} />}
                             minDate={new Date()}
+                            clearable
                         />
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 3 }}>

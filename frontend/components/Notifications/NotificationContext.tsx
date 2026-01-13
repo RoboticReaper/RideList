@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '../firebase/AuthContext';
 import { syncFcmToken, onMessageListener, deleteFcmToken } from '../../lib/fcm';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export interface NotificationItem {
     id: string;
@@ -54,6 +55,11 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    const searchParams = useSearchParams();
+    const router = useRouter();
+
+
+
     // 1. Device ID Helper
     const getDeviceId = useCallback(() => {
         if (typeof window === 'undefined') return '';
@@ -95,14 +101,16 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 });
 
                 // Sync if already granted
-                if (Notification.permission === 'granted') {
+                const isSupported = typeof window !== 'undefined' && 'Notification' in window;
+                if (isSupported && Notification.permission === 'granted') {
                     await syncFcmToken(user, deviceId);
                     setPushPermission('granted');
                 }
 
                 // Heartbeat (24h)
                 heartbeatInterval = setInterval(() => {
-                    if (Notification.permission === 'granted') {
+                    // Re-check support inside interval just in case
+                    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
                         syncFcmToken(user, deviceId);
                     }
                 }, 24 * 60 * 60 * 1000);
@@ -188,18 +196,37 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             }
         }
 
-        if (Notification.permission === 'granted') {
+        // Safe check for Notification
+        const currentPermission = (typeof window !== 'undefined' && 'Notification' in window)
+            ? Notification.permission
+            : 'default';
+
+        if (currentPermission === 'granted' && !force) {
             // Already granted, just ensure sync
             if (user) syncFcmToken(user, getDeviceId());
             return;
         }
 
-        if (Notification.permission === 'denied' && !force) {
+        if (currentPermission === 'denied' && !force) {
             return; // Don't annoy if denied unless forced (though modal logic usually handles 'denied' UI)
         }
 
         setIsModalOpen(true);
     }, [user, getDeviceId]);
+
+    // 0. Check for iOS Install Param (Moved here to be after showPrompt declaration)
+    useEffect(() => {
+        if (searchParams?.get('pwa_ios_install') === 'true') {
+            // Wait a tick for mount
+            setTimeout(() => {
+                showPrompt({ force: true });
+                // Clean URL
+                const newUrl = new URL(window.location.href);
+                newUrl.searchParams.delete('pwa_ios_install');
+                router.replace(newUrl.toString());
+            }, 500);
+        }
+    }, [searchParams, showPrompt]);
 
     const closePrompt = useCallback(() => {
         setIsModalOpen(false);

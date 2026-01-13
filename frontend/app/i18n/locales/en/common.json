@@ -539,6 +539,7 @@
         },
         "search": {
             "title": "Find a Ride",
+            "dateLabel": "Date (+/- 3 days)",
             "noResults": "No rides found matching your criteria.",
             "startPlaceholder": "Where from?",
             "endPlaceholder": "Where to?",
@@ -549,7 +550,8 @@
             "advancedFilters": "Advanced Filters",
             "maxPrice": "Max Price",
             "autoAcceptOnly": "Auto Accept Only",
-            "paymentPlaceholder": "Select relevant methods"
+            "paymentPlaceholder": "Select relevant methods",
+            "loadMore": "Load More"
         },
         "card": {
             "today": "Today",
@@ -1669,9 +1671,10 @@
         },
         "install": {
             "title": "Install App",
-            "description": "Install our app for the best experience",
+            "description": "Install RideList on your device for a better experience.",
             "button": "Install App",
-            "iosInstructions": "Tap the Share button and select 'Add to Home Screen'"
+            "iosInstructions": "Tap the 'Share' button in your browser menu, then select 'Add to Home Screen'.",
+            "howToInstall": "How to install"
         }
     },
     "about": {
