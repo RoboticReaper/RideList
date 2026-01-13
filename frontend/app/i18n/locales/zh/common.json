@@ -857,7 +857,7 @@
                 "redirecting": "{{countdown}} 秒后跳转至行程页面...",
                 "startNewDraft": "开始新草稿",
                 "viewPost": "查看行程",
-                "enableInBrowser": "请在浏览器设置中开启推送通知，以接收行程更新。",
+                "enableInBrowser": "请在浏览器设置中开启推送通知，以接收预约更新。",
                 "enablePushLink": "开启推送通知",
                 "enablePushSuffix": "以获取行程更新。"
             },

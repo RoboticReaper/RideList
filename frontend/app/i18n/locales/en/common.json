@@ -857,7 +857,7 @@
                 "redirecting": "Redirecting to your post in {{countdown}}s...",
                 "startNewDraft": "Start New Draft",
                 "viewPost": "View Post",
-                "enableInBrowser": "Please enable push notifications in your browser settings to receive trip updates.",
+                "enableInBrowser": "Please enable push notifications in your browser settings to receive booking updates.",
                 "enablePushLink": "Enable Push Notifications",
                 "enablePushSuffix": "for trip updates."
             },
