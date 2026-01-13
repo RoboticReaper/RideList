@@ -8,10 +8,16 @@ import { NotificationProvider } from '@/components/Notifications/NotificationCon
 import { TitleNotificationUpdater } from '@/components/Notifications/TitleNotificationUpdater';
 import { Notifications } from '@mantine/notifications';
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Viewport } from 'next';
 import '@mantine/dates/styles.css';
 import '@mantine/notifications/styles.css';
 
-
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 export default function RootLayout({
   children,

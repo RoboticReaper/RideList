@@ -18,6 +18,8 @@ import { FuzzyRadiusMap } from '@/components/Rides/FuzzyRadiusMap';
 import dayjs, { toChicagoISO, fromChicagoISO, getChicagoNow, CHICAGO_TZ } from '@/utils/dateUtils';
 import { getBookingStatusConfig, getTripStatusConfig } from '@/utils/statusUtils';
 import { useTranslation } from 'react-i18next';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { useNotifications } from '@/components/Notifications/NotificationContext';
 
 
 interface RideDetails {
@@ -95,6 +97,8 @@ export default function RidePage() {
     const rideId = params.rideId as string;
     const { user, handleProtectedAction } = useAuth();
     const { t } = useTranslation('common');
+    const { isIOS, isStandalone } = usePWAInstall();
+    const { pushPermission } = useNotifications();
     const [ride, setRide] = useState<RideDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

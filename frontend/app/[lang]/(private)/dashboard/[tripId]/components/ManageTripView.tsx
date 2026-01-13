@@ -213,7 +213,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
         luggage: 80,
         payment: 100,
         createdAt: 100,
-        actions: 150
+        actions: 100
     });
 
     const handleResizeStart = (e: React.PointerEvent<HTMLDivElement>, column: keyof typeof columnWidths) => {
@@ -717,7 +717,8 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                         <div style={{ width: '1px', height: '100%', backgroundColor: 'var(--mantine-color-gray-4)' }} />
                     </div>
                 </Table.Th>
-                <Table.Th style={{ width: columnWidths.actions, position: 'sticky', right: 0, zIndex: 2, backgroundColor: 'var(--mantine-color-body)', whiteSpace: 'normal', overflowWrap: 'break-word', boxShadow: '-2px 0 4px rgba(0,0,0,0.1)' }}>
+                <Table.Th style={{ width: columnWidths.actions, position: 'sticky', right: 0, zIndex: 3, backgroundColor: 'var(--mantine-color-body)', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '1px', backgroundColor: 'var(--mantine-color-gray-4)' }} />
                     {t('tripDetails.manage.table.actions')}
                     <div
                         style={{

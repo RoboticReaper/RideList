@@ -18,6 +18,7 @@ import { getLocalizedHref } from '../LocalizedLink';
 import { parseFlexibility, parsePayWindow, parseCutoffTimeNullable, parseStartCheckInNullable } from '@/utils/intervalParsers';
 import { RadiusMap } from '../Rides/RadiusMap';
 import { DEFAULT_AUTOCOMPLETE_LOCATIONS } from '@/utils/defaultLocations';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 
 // Type for Place Prediction from New API
@@ -52,6 +53,7 @@ export function TripInputBar() {
     const { showPrompt, pushPermission } = useNotifications();
     const router = useRouter();
     const params = useParams();
+    const { isIOS, isStandalone } = usePWAInstall();
     // Stepper State
     const [active, setActive] = useState(0);
 
@@ -1730,7 +1732,14 @@ export function TripInputBar() {
                         )}
                         {pushPermission === 'default' && (
                             <Text size="sm">
-                                <Anchor component="button" onClick={() => showPrompt({ force: true })}>
+                                <Anchor component="button" onClick={() => {
+                                    // iOS Safari: Redirect to root for PWA install
+                                    if (isIOS && !isStandalone) {
+                                        router.push('/?pwa_ios_install=true');
+                                    } else {
+                                        showPrompt({ force: true });
+                                    }
+                                }}>
                                     {t('rides.create.completion.enablePushLink')}
                                 </Anchor>
                                 {' '}{t('rides.create.completion.enablePushSuffix')}

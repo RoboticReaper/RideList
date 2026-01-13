@@ -1,4 +1,4 @@
-self.__FIREBASE_SW_VERSION__ = 'v0.0.1';
+self.__FIREBASE_SW_VERSION__ = 'v0.0.2';
 
 // Scripts for firebase-messaging-sw.js
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
@@ -19,13 +19,24 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// Force new service worker to activate immediately when version changes
+self.addEventListener('install', (event) => {
+    console.log('[firebase-messaging-sw.js] Installing new version:', self.__FIREBASE_SW_VERSION__);
+    self.skipWaiting();
+});
+
+// Take control of all clients immediately
+self.addEventListener('activate', (event) => {
+    console.log('[firebase-messaging-sw.js] Activating new version:', self.__FIREBASE_SW_VERSION__);
+    event.waitUntil(clients.claim());
+});
 
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
-    // Customize notification here if needed
-    const notificationTitle = payload.notification.title;
+    // Data-only message: notification content is in payload.data
+    const notificationTitle = payload.data?.title || 'New Notification';
     const notificationOptions = {
-        body: payload.notification.body,
+        body: payload.data?.body || '',
         icon: '/logo_small.svg',
         data: payload.data // Pass data through
     };

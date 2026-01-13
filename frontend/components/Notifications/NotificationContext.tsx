@@ -139,7 +139,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             if ('serviceWorker' in navigator) {
                 // Wrap in try-catch for Incognito SW restrictions
                 try {
-                    navigator.serviceWorker.register('/firebase-messaging-sw.js?v=0.0.1');
+                    navigator.serviceWorker.register('/firebase-messaging-sw.js?v=0.0.2');
                 } catch (e) {
                     console.warn("Service Worker registration failed", e);
                 }
@@ -165,10 +165,10 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                     const newNotification: NotificationItem = {
                         id: payload.data?.id || crypto.randomUUID(),
                         type: payload.data?.type || 'general',
-                        title: payload.notification?.title || 'New Notification',
-                        body: payload.notification?.body || '',
-                        entity_type: payload.data?.entity_type,
-                        entity_id: payload.data?.entity_id,
+                        title: payload.data?.title || 'New Notification',
+                        body: payload.data?.body || '',
+                        entity_type: payload.data?.entityType,
+                        entity_id: payload.data?.entityId,
                         open_link: payload.data?.open_link,
                         read: false,
                         created_at: new Date().toISOString()

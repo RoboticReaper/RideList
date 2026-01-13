@@ -48,6 +48,8 @@ export function PushPermissionModal() {
         // Context handles closing the prompt, but we can call it explicitly to be safe or if we removed that from context
     };
 
+
+
     const handleAndroidInstall = async () => {
         if (activePrompt) {
             activePrompt.prompt();
@@ -107,6 +109,7 @@ export function PushPermissionModal() {
 
     // iOS Browser Flow (Blocker)
     // If open and on iOS and NOT standalone, we show instructions.
+    // The modal itself shows the install guide - no redirect needed here.
     if (isModalOpen && isIOS && !isStandalone) {
         return (
             <Modal
@@ -132,7 +135,7 @@ export function PushPermissionModal() {
                     </List>
 
                     <Button variant="default" fullWidth onClick={dismissPrompt}>
-                        {t('pwa.laterBtn')}
+                        {t('pwa.closeBtn')}
                     </Button>
                 </Stack>
             </Modal>

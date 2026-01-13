@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { useNotifications } from '@/components/Notifications/NotificationContext';
 import { useState } from 'react';
 import { parsePayWindow } from '@/utils/intervalParsers';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { useRouter } from 'next/navigation';
 
 interface BookingSuccessModalProps {
     opened: boolean;
@@ -17,10 +19,21 @@ interface BookingSuccessModalProps {
 export function BookingSuccessModal({ opened, onClose, status, payWindow }: BookingSuccessModalProps) {
     const { t } = useTranslation('common');
     const { pushPermission, showPrompt } = useNotifications();
+    const { isIOS, isStandalone } = usePWAInstall();
+    const router = useRouter();
     const [loadingPermission, setLoadingPermission] = useState(false);
 
     const handleEnablePush = async () => {
         setLoadingPermission(true);
+
+        // iOS Safari: Redirect to PWA install first
+        // User must install PWA before they can receive push notifications on iOS
+        if (isIOS && !isStandalone) {
+            onClose(); // Close the modal before redirecting
+            router.push('/?pwa_ios_install=true');
+            return;
+        }
+
         // We use showPrompt({ force: true }) to trigger the global PushPermissionModal
         // This handles iOS install guides, Android upsells, and blocked state recovery
         showPrompt({ force: true });

@@ -223,19 +223,16 @@ export async function createNotification({
         // We use sendEachForMulticast for batch sending
         // Note: tokens list can be up to 500. If > 500, need chunking. 
         // Assuming < 500 active devices per user is safe.
+        // Using data-only message to prevent FCM from auto-showing notification
+        // The Service Worker's onBackgroundMessage handler will show the notification manually
+        // This prevents duplicate notifications (FCM auto + SW manual)
         const pushResponse = await adminMessaging.sendEachForMulticast({
             tokens: tokens,
-            notification: {
+            data: {
+                // Notification content for SW to display
                 title: finalTitle,
                 body: finalMessage,
-            },
-            webpush: {
-                fcmOptions: {
-                    link: openLink
-                }
-            },
-            data: {
-                // Minimal data for client handling if needed
+                // Metadata for client handling
                 type: type,
                 entityId: entityId,
                 entityType: entityType,
