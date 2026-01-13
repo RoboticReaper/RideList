@@ -1762,7 +1762,7 @@
             "title": "Vehicles & Driver Requirements",
             "registering": {
                 "title": "Registering a vehicle",
-                "p1": "Drivers must register vehicles before using them for trips.",
+                "p1": "Drivers must input vehicle information before using them for trips.",
                 "p2": "Each vehicle includes:",
                 "list": [
                     "Make, model, color, year",
@@ -1771,7 +1771,7 @@
                 ]
             },
             "requirements": {
-                "title": "Why vehicles are required",
+                "title": "Why vehicle information is required",
                 "p1": "Vehicle information is essential for:",
                 "list": [
                     "Safety",
