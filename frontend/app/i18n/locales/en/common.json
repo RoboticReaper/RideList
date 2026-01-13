@@ -773,7 +773,7 @@
                 "logistics": "Logistics",
                 "loadSavedTemplate": "Load Saved Template",
                 "paymentMethods": "Payment Methods",
-                "paymentMethodsPlaceholder": "Select or type accepted methods. Leaving empty = None accepted.",
+                "paymentMethodsPlaceholder": "Enter to add more. Empty = None accepted",
                 "paymentHandle": "Payment Handle / ID",
                 "paymentHandleDesc": "Who should riders pay? (e.g. @username)",
                 "pickupRules": "Pickup Rules",

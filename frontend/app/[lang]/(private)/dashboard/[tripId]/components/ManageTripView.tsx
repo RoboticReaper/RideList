@@ -867,19 +867,33 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                         </Text>
                     </Stack>
                 </Table.Td>
-                <Table.Td style={{ position: 'sticky', right: 0, backgroundColor: 'var(--mantine-color-body)', zIndex: 1, boxShadow: '-2px 0 4px rgba(0,0,0,0.1)' }}>
+                <Table.Td style={{ position: 'sticky', right: 0, backgroundColor: 'var(--mantine-color-body)', zIndex: 1 }}>
                     {isActive ? (
-                        <Stack gap={4} align="flex-end">
+                        <div
+                            style={{
+                                maxWidth: columnWidths.actions - 16,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 4,
+                                alignItems: 'flex-end',
+                            }}
+                        >
                             {b.status === 'waiting_approval' && !isReadOnly && (
-                                <Group gap={4} wrap="nowrap">
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, justifyContent: 'flex-end', width: '100%' }}>
                                     <Button
                                         size="xs"
                                         color="green"
                                         variant="light"
                                         loading={isActionLoading}
                                         onClick={() => handleAction(b.id, 'accept')}
-                                        leftSection={<IconCheck size={14} />}
+                                        styles={{
+                                            root: { minWidth: 0, height: 'auto', padding: '4px 8px' },
+                                            inner: { flexDirection: 'column', gap: 2 },
+                                            section: { margin: 0 },
+                                            label: { whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2 },
+                                        }}
                                     >
+                                        <IconCheck size={14} />
                                         {t('tripDetails.manage.actions.accept')}
                                     </Button>
                                     <Button
@@ -888,11 +902,17 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                                         variant="subtle"
                                         loading={isActionLoading}
                                         onClick={() => handleAction(b.id, 'reject')}
-                                        leftSection={<IconX size={14} />}
+                                        styles={{
+                                            root: { minWidth: 0, height: 'auto', padding: '4px 8px' },
+                                            inner: { flexDirection: 'column', gap: 2 },
+                                            section: { margin: 0 },
+                                            label: { whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2 },
+                                        }}
                                     >
+                                        <IconX size={14} />
                                         {t('tripDetails.manage.actions.reject')}
                                     </Button>
-                                </Group>
+                                </div>
                             )}
 
                             {b.status === 'joined_with_pay_window' && !isReadOnly && (
@@ -902,22 +922,34 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                                     variant="subtle"
                                     loading={isActionLoading}
                                     onClick={() => setRiderToRemove(b)}
-                                    leftSection={<IconTrash size={14} />}
+                                    styles={{
+                                        root: { minWidth: 0, height: 'auto', padding: '4px 8px' },
+                                        inner: { flexDirection: 'column', gap: 2 },
+                                        section: { margin: 0 },
+                                        label: { whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2 },
+                                    }}
                                 >
+                                    <IconTrash size={14} />
                                     {t('tripDetails.manage.actions.remove')}
                                 </Button>
                             )}
 
                             {b.status === 'pending_pay_confirmation_from_driver' && !isReadOnly && (
-                                <Stack gap={4}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', alignItems: 'flex-end' }}>
                                     <Button
                                         size="xs"
                                         color="blue"
                                         variant="light"
                                         loading={isActionLoading}
                                         onClick={() => handleAction(b.id, 'confirm_payment')}
-                                        leftSection={<IconCurrencyDollar size={14} />}
+                                        styles={{
+                                            root: { minWidth: 0, height: 'auto', padding: '4px 8px' },
+                                            inner: { flexDirection: 'column', gap: 2 },
+                                            section: { margin: 0 },
+                                            label: { whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2 },
+                                        }}
                                     >
+                                        <IconCurrencyDollar size={14} />
                                         {t('tripDetails.manage.actions.confirmPaid')}
                                     </Button>
                                     <Button
@@ -926,15 +958,21 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                                         variant="subtle"
                                         loading={isActionLoading}
                                         onClick={() => setRiderToRemove(b)}
-                                        leftSection={<IconTrash size={14} />}
+                                        styles={{
+                                            root: { minWidth: 0, height: 'auto', padding: '4px 8px' },
+                                            inner: { flexDirection: 'column', gap: 2 },
+                                            section: { margin: 0 },
+                                            label: { whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2 },
+                                        }}
                                     >
+                                        <IconTrash size={14} />
                                         {t('tripDetails.manage.actions.remove')}
                                     </Button>
-                                </Stack>
+                                </div>
                             )}
 
                             {(b.status === 'confirmed') && (
-                                <Stack gap={4}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', alignItems: 'flex-end' }}>
                                     {!b.picked_up && tripStatus === 'departed' && (
                                         <Button
                                             size="xs"
@@ -942,8 +980,14 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                                             variant="light"
                                             loading={isActionLoading}
                                             onClick={() => handleAction(b.id, 'mark_picked_up')}
-                                            leftSection={<IconUserCheck size={14} />}
+                                            styles={{
+                                                root: { minWidth: 0, height: 'auto', padding: '4px 8px' },
+                                                inner: { flexDirection: 'column', gap: 2 },
+                                                section: { margin: 0 },
+                                                label: { whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2 },
+                                            }}
                                         >
+                                            <IconUserCheck size={14} />
                                             {t('tripDetails.manage.actions.markPickedUp')}
                                         </Button>
                                     )}
@@ -954,14 +998,20 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                                             variant="subtle"
                                             loading={isActionLoading}
                                             onClick={() => setRiderToRemove(b)}
-                                            leftSection={<IconTrash size={14} />}
+                                            styles={{
+                                                root: { minWidth: 0, height: 'auto', padding: '4px 8px' },
+                                                inner: { flexDirection: 'column', gap: 2 },
+                                                section: { margin: 0 },
+                                                label: { whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.2 },
+                                            }}
                                         >
+                                            <IconTrash size={14} />
                                             {t('tripDetails.manage.actions.removeEllipsis')}
                                         </Button>
                                     )}
-                                </Stack>
+                                </div>
                             )}
-                        </Stack>
+                        </div>
                     ) : (
                         null
                     )}

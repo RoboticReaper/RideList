@@ -167,7 +167,7 @@ export default function RidePage() {
         }
     };
 
-    const interval = useInterval(fetchRide, 120000);
+    const interval = useInterval(fetchRide, 30000); // 30 seconds
 
     // Revalidate on focus (for PWA / Tab switching)
     useWindowEvent('focus', () => {

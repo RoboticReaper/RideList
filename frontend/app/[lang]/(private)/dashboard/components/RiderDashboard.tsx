@@ -81,7 +81,7 @@ export function RiderDashboard() {
     useEffect(() => {
         const interval = setInterval(() => {
             fetchTrips();
-        }, 120000); // 2 minutes
+        }, 30000); // 30 seconds - more responsive updates
 
         return () => clearInterval(interval);
     }, [fetchTrips]);

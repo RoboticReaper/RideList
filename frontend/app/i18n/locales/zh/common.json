@@ -773,7 +773,7 @@
                 "logistics": "行程安排",
                 "loadSavedTemplate": "加载已保存模板",
                 "paymentMethods": "支付方式",
-                "paymentMethodsPlaceholder": "选择或输入接受的支付方式，留空表示不接受任何方式。",
+                "paymentMethodsPlaceholder": "回车添加更多。空白=不接受任何方式",
                 "paymentHandle": "收款账号 / 联系方式",
                 "paymentHandleDesc": "乘客应向谁付款？（例如：@username）",
                 "pickupRules": "上车规则",

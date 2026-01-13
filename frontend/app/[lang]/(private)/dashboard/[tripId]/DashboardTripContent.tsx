@@ -67,7 +67,7 @@ function TripManagementContent({ params }: { params: Promise<{ tripId: string }>
 
         const interval = setInterval(() => {
             fetchTrip();
-        }, 120000); // 2 minutes
+        }, 30000); // 30 seconds - more responsive for action button updates
 
         return () => clearInterval(interval);
     }, [fetchTrip]);
