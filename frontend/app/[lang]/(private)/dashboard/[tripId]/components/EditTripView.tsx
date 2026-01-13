@@ -6,6 +6,7 @@ import { DateTimePicker } from '@mantine/dates';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { IconCheck, IconAlertTriangle, IconCalendar, IconCar, IconMapPin, IconCurrencyDollar, IconScript, IconX, IconLock } from '@tabler/icons-react';
 import { parseFlexibility, parsePayWindow, parseCutoffTimeNullable, parseStartCheckInNullable, parseFlexibilityNullable, parseCutoffTime } from '@/utils/intervalParsers';
+import { toChicagoISO, fromChicagoISO, getChicagoNow } from '@/utils/dateUtils';
 import { LocalizedLink } from '@/components/LocalizedLink';
 import { RadiusMap } from '@/components/Rides/RadiusMap';
 import { useTranslation, Trans } from 'react-i18next';
@@ -94,7 +95,7 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
         // Trip Details
         from_input_text: t.from_input_text || '',
         to_input_text: t.to_input_text || '',
-        departure_time: t.departure_time ? new Date(t.departure_time) : null,
+        departure_time: t.departure_time ? fromChicagoISO(t.departure_time) : null,
         price: Number(t.price),
         total_seats: Number(t.seats.total),
         car: t.car?.id || 'none', // 'none' means no car/walking
@@ -373,8 +374,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
             return;
         }
 
-        if (values.departure_time < new Date()) {
-            const originalTime = trip.departure_time ? new Date(trip.departure_time).getTime() : 0;
+        if (values.departure_time < getChicagoNow()) {
+            const originalTime = trip.departure_time ? fromChicagoISO(trip.departure_time).getTime() : 0;
             const newTime = values.departure_time.getTime();
 
             if (newTime !== originalTime) {
@@ -462,6 +463,9 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
 
         try {
             const payload: any = { ...values };
+            if (values.departure_time) {
+                payload.departure_time = toChicagoISO(values.departure_time);
+            }
 
             // Attach Place IDs and Session Tokens if changed/available
             if (startPlaceId) {
@@ -670,7 +674,7 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                             placeholder={t('tripDetails.edit.placeholders.pickDate')}
                             leftSection={<IconCalendar size={16} />}
                             valueFormat="MM/DD/YYYY HH:mm"
-                            minDate={new Date()}
+                            minDate={getChicagoNow()}
                             {...form.getInputProps('departure_time')}
                         />
 

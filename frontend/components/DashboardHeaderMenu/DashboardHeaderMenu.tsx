@@ -14,6 +14,7 @@ import {
     IconHistory,
     IconUser,
     IconSettings,
+    IconHome,
 } from '@tabler/icons-react';
 import {
     ActionIcon,
@@ -174,6 +175,13 @@ export function DashboardHeaderMenu({ role, onRoleChange, drawerOpened, toggleDr
                                         leftSection={<IconHistory size={14} />}
                                     >
                                         {t('headerMenu.history')}
+                                    </Menu.Item>
+                                    <Menu.Item
+                                        component={LocalizedLink}
+                                        href="/"
+                                        leftSection={<IconHome size={14} />}
+                                    >
+                                        {t('headerMenu.home')}
                                     </Menu.Item>
                                     <Menu.Item
                                         component={LocalizedLink}

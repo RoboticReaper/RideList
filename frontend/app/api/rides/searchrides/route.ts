@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { redactName } from '@/app/api/lib/redactName';
+import dayjs, { CHICAGO_TZ } from '@/utils/dateUtils';
 
 // NOTE: Public endpoint (no auth). Do NOT include sensitive fields here (phone, payment_handle, plates, etc.)
 export async function GET(request: NextRequest) {
@@ -24,9 +25,10 @@ export async function GET(request: NextRequest) {
     // Validate date if provided
     let reqDate: Date | null = null;
     if (dateStr) {
-        const d = new Date(dateStr);
-        if (!Number.isNaN(d.getTime())) {
-            reqDate = d;
+        // Parse input date (YYYY-MM-DD) as Chicago Midnight
+        const d = dayjs.tz(dateStr, CHICAGO_TZ);
+        if (d.isValid()) {
+            reqDate = d.toDate();
         }
     }
 

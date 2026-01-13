@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useAuth } from './firebase/AuthContext';
 import { usePathname, useRouter } from 'next/navigation';
 import { languages, cookieName } from '@/app/i18n/settings';
-import dayjs from 'dayjs';
+import dayjs from '@/utils/dateUtils';
 import 'dayjs/locale/zh';
 import 'dayjs/locale/en';
 

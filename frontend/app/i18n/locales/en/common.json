@@ -1,5 +1,6 @@
 {
     "headerMenu": {
+        "home": "Main Page",
         "findRide": "Find Ride",
         "postRide": "Post Ride",
         "how": "How It Works",
@@ -520,13 +521,13 @@
             "share": {
                 "button": "Share Trip",
                 "copied": "Copied to clipboard!",
-                "text": "Hey! I’m offering a ride:\n\n📍 From: {{- from}}\n📍 To: {{- to}}\n🕒 Departure: {{- time}}\n\nView details / Request to join here:\n{{- link}}\n\nRideList – UIUC ride sharing"
+                "text": "Hey! I’m offering a ride:\n\n📍 From: {{- from}}\n📍 To: {{- to}}\n🕒 Departure: {{- time}} Chicago time. \n\nView details / Request to join here:\n{{- link}}\n\nRideList – UIUC ride sharing"
             }
         },
         "common": {
             "startLocation": "Start Location",
             "endLocation": "End Location",
-            "date": "Date & Time",
+            "date": "Date & Time (Chicago Time)",
             "price": "Price",
             "seats": "Seats",
             "bigLuggage": "Big Luggage",
@@ -539,11 +540,11 @@
         },
         "search": {
             "title": "Find a Ride",
-            "dateLabel": "Date (+/- 3 days)",
+            "dateLabel": "Date (+/- 3 days) (Chicago Time)",
             "noResults": "No rides found matching your criteria.",
             "startPlaceholder": "Where from?",
             "endPlaceholder": "Where to?",
-            "datePlaceholder": "Pick date",
+            "datePlaceholder": "Pick date (Chicago Time)",
             "searchBtn": "Search",
             "more": "More",
             "hide": "Hide",
@@ -670,7 +671,7 @@
                 "intendedPayment": "Intended Payment Method",
                 "selectPayment": "Select how you plan to pay",
                 "noPaymentMethods": "No specific payment methods listed by driver",
-                "preferredPickup": "Preferred Pickup Time",
+                "preferredPickup": "Preferred Pickup Time (Chicago Time)",
                 "resetToDeparture": "Reset to Departure",
                 "exactTimeOnly": "Exact time only",
                 "flexibilityLabel": "Flexibility: +/- {{time}}",
@@ -744,7 +745,7 @@
                 "startingLoc": "Starting Location",
                 "dest": "Destination",
                 "departure": "Departure",
-                "pickDateTime": "Pick date & time",
+                "pickDateTime": "Pick date & time (Chicago Time)",
                 "nextDetails": "Next: Trip Details",
                 "tripDetails": "Trip Details",
                 "pricePerPerson": "Price per Person ($)",
@@ -1189,7 +1190,7 @@
                 "to": "To",
                 "pickupRadius": "Pickup Radius (m)",
                 "dropoffRadius": "Dropoff Radius (m)",
-                "departureTime": "Departure Time",
+                "departureTime": "Departure Time (Chicago Time)",
                 "price": "Price ($)",
                 "totalSeats": "Total Seats",
                 "vehicle": "Vehicle",
@@ -1212,7 +1213,7 @@
                 "from": "Start Location",
                 "to": "Destination",
                 "selectCar": "Select a car",
-                "pickDate": "Pick date & time",
+                "pickDate": "Pick date & time (Chicago Time)",
                 "tripNotes": "Any specific instructions?",
                 "paymentMethods": "Select or type methods",
                 "paymentHandle": "e.g. @username",
@@ -1314,7 +1315,7 @@
                 "pickedUpAt": "Picked Up At",
                 "readyForPickup": "Ready For Pickup",
                 "preferredPickup": "Preferred Pickup",
-                "departure": "Departure",
+                "departure": "Departure (Chicago Time)",
                 "tripStatus": "Trip Status",
                 "cancellationPolicy": "Cancellation Policy",
                 "pickupInstructions": "Pickup Instructions",
@@ -1331,7 +1332,7 @@
                 "unpaid": "Unpaid",
                 "ready": "Ready",
                 "notReady": "Not marked ready",
-                "checkInBegins": "Check-in begins {{time}}",
+                "checkInBegins": "Check-in begins {{time}} (Chicago Time)",
                 "standard": "Not provided",
                 "noneProvided": "None provided",
                 "contactHidden": "Contact hidden until approved",
@@ -1408,7 +1409,7 @@
             },
             "ready": "Ready",
             "notReady": "Not marked ready",
-            "departureTime": "Departure Time",
+            "departureTime": "Departure Time (Chicago Time)",
             "editBooking": {
                 "editButton": "Edit Booking",
                 "saveButton": "Save Changes",
@@ -1787,7 +1788,7 @@
                 "p1": "When posting a trip, drivers provide:",
                 "list": [
                     "From / To locations (public-safe text)",
-                    "Departure time",
+                    "Departure time (Chigago time)",
                     "Price",
                     "Available seats",
                     "Optional notes"
@@ -2302,7 +2303,7 @@
             },
             "trip_late_warning": {
                 "title": "Trip Late",
-                "message": "Your trip is late. Auto-departure scheduled for {{time}}."
+                "message": "Your trip is late. Auto-departure scheduled for {{time}} (Chicago Time)."
             },
             "pay_timeout": {
                 "title": "Payment Timeout",
@@ -2477,7 +2478,7 @@
         }
     },
     "tripFields": {
-        "departure_time": "Departure time",
+        "departure_time": "Departure time (Chicago Time)",
         "car": "Car",
         "from_text": "Pickup location",
         "to_text": "Dropoff location",

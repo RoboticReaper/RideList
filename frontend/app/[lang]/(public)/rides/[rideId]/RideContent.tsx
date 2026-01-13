@@ -15,12 +15,9 @@ import {
 import { LocalizedLink } from '@/components/LocalizedLink';
 import { BookingSuccessModal } from '@/components/BookingSuccessModal';
 import { FuzzyRadiusMap } from '@/components/Rides/FuzzyRadiusMap';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
+import dayjs, { toChicagoISO, fromChicagoISO, getChicagoNow, CHICAGO_TZ } from '@/utils/dateUtils';
 import { getBookingStatusConfig, getTripStatusConfig } from '@/utils/statusUtils';
 import { useTranslation } from 'react-i18next';
-
-dayjs.extend(relativeTime);
 
 
 interface RideDetails {
@@ -179,7 +176,7 @@ export default function RidePage() {
         return interval.stop;
     }, [rideId, user]); // Refetch if user changes (auth loads)
 
-    const memberSinceYear = ride ? dayjs(ride.driver.member_since).format('YYYY') : '';
+    const memberSinceYear = ride ? dayjs(ride.driver.member_since).tz(CHICAGO_TZ).format('YYYY') : '';
 
     const isDriver = user && ride?.driver?.id === user.uid;
 
@@ -211,7 +208,7 @@ export default function RidePage() {
                     ...prev,
                     bigLuggage: Math.min(profileDefaults.default_big_luggage || 0, maxBig),
                     smallLuggage: Math.min(profileDefaults.default_small_luggage || 0, maxSmall),
-                    pickupTime: new Date(ride.departure_time),
+                    pickupTime: fromChicagoISO(ride.departure_time),
                     intendedPaymentMethod: (ride.rules.payment.methods && ride.rules.payment.methods.length > 0) ? '' : 'None'
                 }));
                 prefilledRef.current = true;
@@ -355,7 +352,7 @@ export default function RidePage() {
             // Construct preferred pickup time date object if time is set
             let preferredIso = null;
             if (bookingData.pickupTime) {
-                preferredIso = bookingData.pickupTime.toISOString();
+                preferredIso = toChicagoISO(bookingData.pickupTime);
             }
 
             const token = await user.getIdToken();
@@ -475,12 +472,12 @@ export default function RidePage() {
                     <Group mt="xs" gap="lg">
                         <Group gap={6}>
                             <IconCalendar size={18} color="gray" />
-                            <Text fw={500}>{dayjs(ride.departure_time).format('dddd, MMMM D, YYYY')}</Text>
+                            <Text fw={500}>{dayjs(ride.departure_time).tz(CHICAGO_TZ).format('dddd, MMMM D, YYYY')}</Text>
                         </Group>
                         <Group gap={6}>
                             <IconClock size={18} color="gray" />
                             <Text fw={500}>
-                                {dayjs(ride.departure_time).format('h:mm A')}
+                                {dayjs(ride.departure_time).tz(CHICAGO_TZ).format('h:mm A')}
                                 {ride.rules.flexibility && (
                                     <Text span size="sm" c="dimmed" ml={4}>
                                         {(() => {
@@ -589,7 +586,7 @@ export default function RidePage() {
                                                 const shareText = t('rides.errors.share.text', {
                                                     from: ride.from_text,
                                                     to: ride.to_text,
-                                                    time: dayjs(ride.departure_time).format('MMM D, YYYY h:mm A'),
+                                                    time: dayjs(ride.departure_time).tz(CHICAGO_TZ).format('MMM D, YYYY h:mm A'),
                                                     link: `${window.location.origin}/rides/${ride.id}`
                                                 });
                                                 navigator.clipboard.writeText(shareText);
@@ -870,7 +867,7 @@ export default function RidePage() {
                                                 const shareText = t('rides.errors.share.text', {
                                                     from: ride.from_text,
                                                     to: ride.to_text,
-                                                    time: dayjs(ride.departure_time).format('MMM D, YYYY h:mm A'),
+                                                    time: dayjs(ride.departure_time).tz(CHICAGO_TZ).format('MMM D, YYYY h:mm A'),
                                                     link: `${window.location.origin}/rides/${ride.id}`
                                                 });
                                                 navigator.clipboard.writeText(shareText);
@@ -1035,7 +1032,7 @@ export default function RidePage() {
                                 variant="transparent"
                                 size="compact-xs"
                                 style={{ fontSize: 11, height: 'auto' }}
-                                onClick={() => setBookingData(prev => ({ ...prev, pickupTime: new Date(ride.departure_time) }))}
+                                onClick={() => setBookingData(prev => ({ ...prev, pickupTime: fromChicagoISO(ride.departure_time) }))}
                             >
                                 {t('rides.detail.booking.resetToDeparture')}
                             </Button>
@@ -1059,7 +1056,7 @@ export default function RidePage() {
                             leftSection={<IconClock size={16} />}
                             value={bookingData.pickupTime}
                             valueFormat="MM/DD/YYYY HH:mm"
-                            minDate={new Date()}
+                            minDate={getChicagoNow()}
                             onChange={(date: any) => {
                                 const d = (typeof date === 'string' && date) ? new Date(date) : date;
                                 setBookingData({ ...bookingData, pickupTime: d });

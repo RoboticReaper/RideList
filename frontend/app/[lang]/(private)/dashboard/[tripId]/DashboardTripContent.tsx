@@ -3,7 +3,7 @@ import { useEffect, useState, use, useCallback } from 'react';
 import { Container, Title, Tabs, Loader, Alert, Button, Group, Badge, Text, Stack } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { IconUsers, IconEdit, IconArrowLeft, IconExternalLink, IconRefresh, IconCalendar } from '@tabler/icons-react';
-import dayjs from 'dayjs';
+import dayjs, { CHICAGO_TZ } from '@/utils/dateUtils';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { ManageTripView } from './components/ManageTripView';
@@ -178,7 +178,7 @@ function TripManagementContent({ params }: { params: Promise<{ tripId: string }>
                         <Group gap="xs">
                             <IconCalendar size={18} style={{ opacity: 0.7 }} />
                             <Text size="lg" fw={500}>
-                                {dayjs(trip.departure_time).format('MMM D, h:mm A')}
+                                {dayjs(trip.departure_time).tz(CHICAGO_TZ).format('MMM D, h:mm A')}
                             </Text>
                         </Group>
                         <Badge

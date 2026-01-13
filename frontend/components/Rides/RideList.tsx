@@ -42,7 +42,7 @@ export function RideList({ initialRides, searchParams }: RideListProps) {
         params.set('page', nextPage.toString());
 
         try {
-            const res = await fetch(`/api/rides/search?${params.toString()}`);
+            const res = await fetch(`/api/rides/searchrides?${params.toString()}`);
             if (!res.ok) throw new Error('Failed to fetch');
             const data = await res.json();
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
+import dayjs, { CHICAGO_TZ } from '@/utils/dateUtils';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessPayWindowTimeout } from '@/app/api/lib/payWindow';
 import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
@@ -518,13 +519,13 @@ export async function PATCH(
                 values.push(body.car);
             }
             if (body.departure_time !== undefined) {
-                const newDepartureTime = new Date(body.departure_time);
-                // oldTripState is fetched above at line 438
-                const oldDepartureTime = new Date(oldTripState.departure_time);
+                const departureDate = dayjs.tz(body.departure_time, CHICAGO_TZ);
+                const oldDepartureDate = dayjs.tz(oldTripState.departure_time, CHICAGO_TZ);
+                const nowChicago = dayjs().tz(CHICAGO_TZ);
 
-                if (newDepartureTime < new Date()) {
+                if (departureDate.isBefore(nowChicago)) {
                     // Only error if the time is actually changing
-                    if (newDepartureTime.getTime() !== oldDepartureTime.getTime()) {
+                    if (!departureDate.isSame(oldDepartureDate)) {
                         await client.query('ROLLBACK');
                         return NextResponse.json({ error: t('api.errors.departureTimePast') }, { status: 400 });
                     }

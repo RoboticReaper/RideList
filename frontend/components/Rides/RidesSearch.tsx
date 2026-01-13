@@ -1,5 +1,7 @@
 'use client';
 
+import dayjs, { toChicagoISO, fromChicagoISO, getChicagoNow } from '@/utils/dateUtils';
+
 import { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DEFAULT_AUTOCOMPLETE_LOCATIONS } from '@/utils/defaultLocations';
@@ -132,7 +134,7 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
             }
 
             if (dateStr) {
-                setStartTime(new Date(dateStr));
+                setStartTime(fromChicagoISO(dateStr));
             }
 
             if (bigLug) setBigLuggage(Number(bigLug));
@@ -165,7 +167,7 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
                     }
                     if (parsed.endCoords) setEndCoords(parsed.endCoords);
 
-                    if (parsed.startTime) setStartTime(new Date(parsed.startTime));
+                    if (parsed.startTime) setStartTime(dayjs(parsed.startTime).toDate());
 
                     if (parsed.bigLuggage !== undefined) setBigLuggage(parsed.bigLuggage);
                     if (parsed.smallLuggage !== undefined) setSmallLuggage(parsed.smallLuggage);
@@ -180,7 +182,7 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
                         const query = new URLSearchParams();
                         if (parsed.startLocation) query.append('start_location', parsed.startLocation);
                         if (parsed.endLocation) query.append('end_location', parsed.endLocation);
-                        if (parsed.startTime) query.append('date', parsed.startTime); // saved as ISO string likely
+                        if (parsed.startTime) query.append('date', toChicagoISO(new Date(parsed.startTime)));
                         if (parsed.bigLuggage !== '' && parsed.bigLuggage !== undefined) query.append('big_luggage', parsed.bigLuggage.toString());
                         if (parsed.smallLuggage !== '' && parsed.smallLuggage !== undefined) query.append('small_luggage', parsed.smallLuggage.toString());
                         if (parsed.priceMax !== '' && parsed.priceMax !== undefined) query.append('price_max', parsed.priceMax.toString());
@@ -413,7 +415,7 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
         const query = new URLSearchParams();
         if (startLocation) query.append('start_location', startLocation);
         if (endLocation) query.append('end_location', endLocation);
-        if (startTime) query.append('date', startTime.toISOString());
+        if (startTime) query.append('date', toChicagoISO(startTime));
         if (bigLuggage !== '') query.append('big_luggage', bigLuggage.toString());
         if (smallLuggage !== '') query.append('small_luggage', smallLuggage.toString());
         if (priceMax !== '') query.append('price_max', priceMax.toString());
@@ -437,7 +439,7 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
                 startCoords,
                 endLocation,
                 endCoords,
-                startTime: startTime ? startTime.toISOString() : null,
+                startTime: startTime ? dayjs(startTime).format('YYYY-MM-DDTHH:mm:ss') : null,
                 bigLuggage,
                 smallLuggage,
                 priceMax,
@@ -533,7 +535,7 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
                                 }
                             }}
                             leftSection={<IconCalendar size={16} />}
-                            minDate={new Date()}
+                            minDate={getChicagoNow()}
                             clearable
                         />
                     </Grid.Col>

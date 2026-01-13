@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/firebase/AuthContext';
+import { getChicagoNow } from '@/utils/dateUtils';
 import {
     TextInput, NumberInput, Button, Group, Stack, Container, Title, Paper, LoadingOverlay, ColorInput, SimpleGrid, Text, Modal
 } from '@mantine/core';
@@ -144,8 +145,7 @@ export default function CarForm({ initialData, isEditing = false, carId }: CarFo
                             placeholder="2020"
                             value={year}
                             onChange={(v) => setYear(v === '' ? '' : Number(v))}
-                            min={1990}
-                            max={new Date().getFullYear() + 1}
+                            max={getChicagoNow().getFullYear() + 1}
                         />
                     </SimpleGrid>
 

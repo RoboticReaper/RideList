@@ -1,5 +1,6 @@
 {
     "headerMenu": {
+        "home": "主页",
         "findRide": "查找行程",
         "postRide": "发布行程",
         "how": "使用说明",
@@ -520,13 +521,13 @@
             "share": {
                 "button": "分享行程",
                 "copied": "已复制到剪贴板！",
-                "text": "嗨！我这里有一个拼车行程：\n\n📍 上车地点：{{- from}}\n📍 下车地点：{{- to}}\n🕒 出发时间：{{- time}}\n\n查看详情 / 申请加入：\n{{- link}}\n\nRideList｜UIUC 校内拼车"
+                "text": "嗨！我这里有一个拼车行程：\n\n📍 上车地点：{{- from}}\n📍 下车地点：{{- to}}\n🕒 出发时间：{{- time}}芝加哥时间\n\n查看详情 / 申请加入：\n{{- link}}\n\nRideList｜UIUC 校内拼车"
             }
         },
         "common": {
             "startLocation": "出发地点",
             "endLocation": "目的地",
-            "date": "日期与时间",
+            "date": "日期与时间（芝加哥时间）",
             "price": "价格",
             "seats": "座位数",
             "bigLuggage": "大件行李",
@@ -539,11 +540,11 @@
         },
         "search": {
             "title": "查找行程",
-            "dateLabel": "日期（+/- 3 天）",
+            "dateLabel": "日期（+/- 3 天）（芝加哥时间）",
             "noResults": "未找到符合条件的行程。",
             "startPlaceholder": "从哪里出发？",
             "endPlaceholder": "前往哪里？",
-            "datePlaceholder": "选择日期",
+            "datePlaceholder": "选择日期（芝加哥时间）",
             "searchBtn": "搜索",
             "more": "更多",
             "hide": "收起",
@@ -670,7 +671,7 @@
                 "intendedPayment": "计划使用的支付方式",
                 "selectPayment": "选择你的支付方式",
                 "noPaymentMethods": "司机未指定支付方式",
-                "preferredPickup": "期望上车时间",
+                "preferredPickup": "期望上车时间（芝加哥时间）",
                 "resetToDeparture": "重置为出发时间",
                 "exactTimeOnly": "仅限固定时间",
                 "flexibilityLabel": "时间浮动：± {{time}}",
@@ -744,7 +745,7 @@
                 "startingLoc": "出发位置",
                 "dest": "到达位置",
                 "departure": "出发时间",
-                "pickDateTime": "选择日期和时间",
+                "pickDateTime": "选择日期和时间（芝加哥时间）",
                 "nextDetails": "下一步：行程详情",
                 "tripDetails": "行程详情",
                 "pricePerPerson": "每人价格（美元）",
@@ -1189,7 +1190,7 @@
                 "to": "目的地",
                 "pickupRadius": "接送半径（米）",
                 "dropoffRadius": "下车半径（米）",
-                "departureTime": "出发时间",
+                "departureTime": "出发时间（芝加哥时间）",
                 "price": "价格（美元）",
                 "totalSeats": "总座位数",
                 "vehicle": "车辆",
@@ -1314,7 +1315,7 @@
                 "pickedUpAt": "上车时间",
                 "readyForPickup": "已准备上车",
                 "preferredPickup": "期望上车时间",
-                "departure": "出发时间",
+                "departure": "出发时间（芝加哥时间）",
                 "tripStatus": "行程状态",
                 "cancellationPolicy": "取消政策",
                 "pickupInstructions": "上车说明",
@@ -1331,7 +1332,7 @@
                 "unpaid": "未付款",
                 "ready": "已就绪",
                 "notReady": "未标记就绪",
-                "checkInBegins": "行前确认将于 {{time}} 开始",
+                "checkInBegins": "行前确认将于 {{time}} 开始（芝加哥时间）",
                 "standard": "未提供",
                 "noneProvided": "未提供",
                 "contactHidden": "通过审核后显示联系方式",
@@ -1408,7 +1409,7 @@
             },
             "ready": "已就绪",
             "notReady": "未标记就绪",
-            "departureTime": "出发时间",
+            "departureTime": "出发时间（芝加哥时间）",
             "editBooking": {
                 "editButton": "编辑预约",
                 "saveButton": "保存修改",
@@ -1787,7 +1788,7 @@
                 "p1": "发布行程时，司机需要提供：",
                 "list": [
                     "出发地 / 目的地（安全公开文本）",
-                    "出发时间",
+                    "出发时间（芝加哥时间）",
                     "价格",
                     "可用座位数",
                     "可选备注"
@@ -2302,7 +2303,7 @@
             },
             "trip_late_warning": {
                 "title": "行程延迟",
-                "message": "行程已延迟，系统将在 {{time}} 自动出发。"
+                "message": "行程已延迟，系统将在 {{time}} 自动出发（芝加哥时间）。"
             },
             "pay_timeout": {
                 "title": "付款超时",
@@ -2477,7 +2478,7 @@
         }
     },
     "tripFields": {
-        "departure_time": "出发时间",
+        "departure_time": "出发时间（芝加哥时间）",
         "car": "车辆",
         "from_text": "上车地点",
         "to_text": "下车地点",

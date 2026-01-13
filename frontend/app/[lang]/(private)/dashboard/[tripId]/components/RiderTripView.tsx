@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Paper, Title, Text, Group, Stack, Alert, Box, SimpleGrid, Button, Flex, Badge, Modal, Switch, Textarea, Select, Autocomplete, ActionIcon, Loader, Avatar, NumberInput } from '@mantine/core';
 import { IconAlertTriangle, IconInfoCircle, IconCash, IconUserCheck, IconCalendar, IconLuggage, IconArmchair, IconClock, IconCreditCard, IconSteeringWheel, IconPhone, IconNote, IconMapPin, IconEdit, IconX, IconExclamationCircle } from '@tabler/icons-react';
-import dayjs from 'dayjs';
+import dayjs, { CHICAGO_TZ, getChicagoNow, fromChicagoISO, toChicagoISO } from '@/utils/dateUtils';
 import { DateTimePicker } from '@mantine/dates';
 import { useTranslation, Trans } from 'react-i18next';
 import { LocalizedLink } from '@/components/LocalizedLink';
@@ -144,7 +144,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
         setPickupLocation(trip.user_booking?.pickup_location_text || '');
         pickupLastSelection.current = trip.user_booking?.pickup_location_text || '';
         setPickupCoords(null); // Will be set if user changes location
-        setEditPreferredPickupTime(trip.user_booking?.preferred_pickup_time ? new Date(trip.user_booking.preferred_pickup_time) : null);
+        setEditPreferredPickupTime(trip.user_booking?.preferred_pickup_time ? fromChicagoISO(trip.user_booking.preferred_pickup_time) : null);
         setEditSeats(trip.user_booking?.seats_booked || 1);
         setEditBigLuggage(trip.user_booking?.big_luggage || 0);
         setEditSmallLuggage(trip.user_booking?.small_luggage || 0);
@@ -176,7 +176,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
 
             // preferred_pickup_time logic
             if (editPreferredPickupTime) {
-                payload.preferred_pickup_time = editPreferredPickupTime.toISOString();
+                payload.preferred_pickup_time = toChicagoISO(editPreferredPickupTime);
             } else {
                 payload.preferred_pickup_time = null;
             }
@@ -384,7 +384,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                         <Group gap="xs">
                             <IconCalendar size={18} style={{ opacity: 0.7 }} />
                             <Text size="lg" fw={500}>
-                                {dayjs(trip.departure_time).format('MMM D, h:mm A')}
+                                {dayjs(trip.departure_time).tz(CHICAGO_TZ).format('MMM D, h:mm A')}
                             </Text>
                         </Group>
                         <Badge
@@ -461,7 +461,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                         <SimpleGrid cols={{ base: 1, sm: 2 }}>
                             <InfoItem
                                 label={t('tripDetails.rider.labels.bookedAt')}
-                                value={trip.user_booking?.created_at ? dayjs(trip.user_booking.created_at).format('MMM D, h:mm A') : '-'}
+                                value={trip.user_booking?.created_at ? dayjs(trip.user_booking.created_at).tz(CHICAGO_TZ).format('MMM D, h:mm A') : '-'}
                             />
                             {isEditing && canEditSeating ? (
                                 <Box>
@@ -542,7 +542,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                     value={
                                         <Group gap="xs">
                                             <IconUserCheck size={16} style={{ opacity: 0.7 }} color="green" />
-                                            <span>{dayjs(trip.user_booking.picked_up_at).format('MMM D, h:mm A')}</span>
+                                            <span>{dayjs(trip.user_booking.picked_up_at).tz(CHICAGO_TZ).format('MMM D, h:mm A')}</span>
                                         </Group>
                                     }
                                 />
@@ -562,16 +562,16 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                                 <Text size="sm" fw={500}>{trip.user_booking?.ready ? t('tripDetails.rider.ready') : t('tripDetails.rider.notReady')}</Text>
                                             </Group>
                                             {trip.user_booking?.ready && trip.user_booking?.ready_at && (
-                                                <Text size="xs" c="dimmed">{t('dashboard.common.at')} {dayjs(trip.user_booking.ready_at).format('MMM D, h:mm A')}</Text>
+                                                <Text size="xs" c="dimmed">{t('dashboard.common.at')} {dayjs(trip.user_booking.ready_at).tz(CHICAGO_TZ).format('MMM D, h:mm A')}</Text>
                                             )}
                                         </Stack>
                                     );
                                 } else {
                                     const hrs = intervalToHours(scheduleHrs);
-                                    const startTime = dayjs(trip.departure_time).subtract(hrs, 'hour');
+                                    const startTime = dayjs(trip.departure_time).tz(CHICAGO_TZ).subtract(hrs, 'hour');
                                     content = (
                                         <Text size="sm" c="dimmed" fs="italic">
-                                            {t('tripDetails.rider.values.checkInBegins', { time: startTime.format('MMM D, h:mm A') })}
+                                            {t('tripDetails.rider.values.checkInBegins', { time: startTime.tz(CHICAGO_TZ).format('MMM D, h:mm A') })}
                                         </Text>
                                     );
                                 }
@@ -586,7 +586,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                         value={editPreferredPickupTime}
                                         onChange={(val) => setEditPreferredPickupTime(val ? new Date(val) : null)}
                                         placeholder={t('tripDetails.rider.labels.preferredPickup')}
-                                        minDate={new Date()} // Optional: restrict to future? Logic depends on flexibility, but usually not past.
+                                        minDate={getChicagoNow()}
                                         clearable
                                         valueFormat="MM/DD/YYYY HH:mm"
                                         leftSection={<IconCalendar size={16} stroke={1.5} />}
@@ -596,7 +596,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                             size="xs"
                                             c="blue"
                                             style={{ cursor: 'pointer', marginTop: 4 }}
-                                            onClick={() => setEditPreferredPickupTime(new Date(trip.departure_time))}
+                                            onClick={() => setEditPreferredPickupTime(fromChicagoISO(trip.departure_time))}
                                         >
                                             {t('tripDetails.rider.editBooking.resetToDeparture')}
                                         </Text>
@@ -607,7 +607,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                     label={t('tripDetails.rider.labels.preferredPickup')}
                                     value={
                                         trip.user_booking?.preferred_pickup_time ?
-                                            dayjs(trip.user_booking.preferred_pickup_time).format('MMM D, h:mm A') :
+                                            dayjs(trip.user_booking.preferred_pickup_time).tz(CHICAGO_TZ).format('MMM D, h:mm A') :
                                             t('tripDetails.rider.departureTime')
                                     }
                                 />
@@ -759,7 +759,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                 value={
                                     <Group gap="xs">
                                         <IconCalendar size={16} style={{ opacity: 0.7 }} />
-                                        <span>{dayjs(trip.departure_time).format('MMM D, h:mm A')} {formatFlexibility(rulesToDisplay?.time_flexibility || rulesToDisplay?.flexibility)}</span>
+                                        <span>{dayjs(trip.departure_time).tz(CHICAGO_TZ).format('MMM D, h:mm A')} {formatFlexibility(rulesToDisplay?.time_flexibility || rulesToDisplay?.flexibility)}</span>
                                     </Group>
                                 }
                             />

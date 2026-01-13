@@ -2,7 +2,7 @@ import { Card, Text, Badge, Group, Stack, Button, Flex, Alert, Anchor } from '@m
 import { getTripStatusConfig } from '@/utils/statusUtils';
 import { IconMapPin, IconCalendar, IconUsers, IconSteeringWheel, IconAlertTriangle, IconShare } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
-import dayjs from 'dayjs';
+import dayjs, { CHICAGO_TZ } from '@/utils/dateUtils';
 import { LocalizedLink } from '@/components/LocalizedLink';
 import { useTranslation, Trans } from 'react-i18next';
 
@@ -77,7 +77,7 @@ export function TripCard({ trip }: TripCardProps) {
                         <Group gap="xs">
                             <IconCalendar size={16} />
                             <Text size="sm">
-                                {dayjs(trip.departure_time).format('MMM D, YYYY h:mm A')}
+                                {dayjs(trip.departure_time).tz(CHICAGO_TZ).format('MMM D, YYYY h:mm A')}
                             </Text>
                         </Group>
 
@@ -131,7 +131,7 @@ export function TripCard({ trip }: TripCardProps) {
                         const shareText = t('rides.errors.share.text', {
                             from: trip.from_input_text || trip.from_text,
                             to: trip.to_input_text || trip.to_text,
-                            time: dayjs(trip.departure_time).format('MMM D, YYYY h:mm A'),
+                            time: dayjs(trip.departure_time).tz(CHICAGO_TZ).format('MMM D, YYYY h:mm A'),
                             link: `${window.location.origin}/rides/${trip.id}`
                         });
 

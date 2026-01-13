@@ -1,6 +1,7 @@
 import { PoolClient } from 'pg';
 
 import { parsePostgresIntervalToMs } from './intervalUtils';
+import dayjs, { CHICAGO_TZ } from '@/utils/dateUtils';
 
 /**
  * Helper to parse a Postgres interval object or number into milliseconds.
@@ -129,7 +130,7 @@ export async function checkAndProcessCheckInStart(client: PoolClient, tripId: st
 
                         // Calculate time when system will auto-depart
                         // autoDepartCutoff is already Date object
-                        const timeString = autoDepartCutoff.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                        const timeString = dayjs(autoDepartCutoff).tz(CHICAGO_TZ).format('h:mm A');
 
                         await createNotification({
                             client,

@@ -4,13 +4,10 @@ import { Menu, ActionIcon, Text, ScrollArea, Button, Group, Indicator, Loader, B
 import { useMediaQuery } from '@mantine/hooks';
 import { IconBell, IconCheck, IconSettings } from '@tabler/icons-react';
 import { useNotifications, NotificationItem } from './NotificationContext';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
+import dayjs from '@/utils/dateUtils';
 import { LocalizedLink } from '../LocalizedLink';
 import { useTranslation } from 'react-i18next';
 import { Metadata } from 'next';
-
-dayjs.extend(relativeTime);
 
 export default function Notifications() {
     const { t } = useTranslation('common');

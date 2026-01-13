@@ -2,12 +2,13 @@ import { useEffect, useState, useCallback } from 'react';
 import { Table, Avatar, Text, Group, Badge, Loader, Stack, Alert, Button, ActionIcon, Tooltip, Modal, Select, Textarea, Collapse, UnstyledButton, Anchor } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { IconInfoCircle, IconCheck, IconX, IconTrash, IconCurrencyDollar, IconChevronRight, IconChevronDown, IconLock, IconLockOpen, IconUserCheck, IconSortAscending, IconSortDescending, IconPencil, IconExternalLink } from '@tabler/icons-react';
-import dayjs from 'dayjs';
+import dayjs, { CHICAGO_TZ } from '@/utils/dateUtils';
 import { notifications } from '@mantine/notifications';
 import { useTranslation, Trans } from 'react-i18next';
 import { getBookingStatusConfig, getTripStatusConfig } from '@/utils/statusUtils';
 import { LocalizedLink } from '@/components/LocalizedLink';
 import { EditDriverNoteModal } from './EditDriverNoteModal';
+
 
 interface Booking {
     id: string;
@@ -831,7 +832,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                 </Table.Td>
                 <Table.Td>
                     <Text size="sm">
-                        {b.preferred_pickup_time ? dayjs(b.preferred_pickup_time).format('h:mm A') : '-'}
+                        {b.preferred_pickup_time ? dayjs(b.preferred_pickup_time).tz(CHICAGO_TZ).format('h:mm A') : '-'}
                     </Text>
                 </Table.Td>
                 <Table.Td>
@@ -858,7 +859,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                 <Table.Td>
                     <Stack gap={0}>
                         <Text size="sm">
-                            {dayjs(b.created_at).format('MMM D, h:mm A')}
+                            {dayjs(b.created_at).tz(CHICAGO_TZ).format('MMM D, h:mm A')}
                         </Text>
                         <Text size="xs" c="dimmed">
                             {dayjs(b.created_at).fromNow()}

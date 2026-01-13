@@ -13,6 +13,7 @@ import {
 import Link from 'next/link';
 import { getTripStatusConfig } from '@/utils/statusUtils';
 import { useTranslation } from 'react-i18next';
+import dayjs, { CHICAGO_TZ } from '@/utils/dateUtils';
 import { TFunction } from 'i18next';
 
 interface RideCardProps {
@@ -70,10 +71,13 @@ export function RideCard({ ride }: RideCardProps) {
     const seatsLeft = Math.max(0, ride.total_seats - ride.seats_taken);
     const date = new Date(ride.departure_time);
 
-    // Format Date using current i18n locale
-    const isToday = new Date().toDateString() === date.toDateString();
-    const dateStr = isToday ? t('rides.card.today') : date.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' });
-    const timeStr = date.toLocaleTimeString(i18n.language, { hour: 'numeric', minute: '2-digit' });
+    // Format Date using current i18n locale and Chicago Timezone
+    const chicagoDate = dayjs(ride.departure_time).tz(CHICAGO_TZ);
+    const nowChicago = dayjs().tz(CHICAGO_TZ);
+
+    const isToday = nowChicago.isSame(chicagoDate, 'day');
+    const dateStr = isToday ? t('rides.card.today') : chicagoDate.format('MMM D'); // consistent simplified format
+    const timeStr = chicagoDate.format('h:mm A');
 
     // Relative time
     const diffMs = date.getTime() - new Date().getTime();

@@ -224,7 +224,6 @@ export function HeaderMenu() {
       >
         <ScrollArea h="calc(100vh - 80px)" mx="-md">
           <Divider mb="sm" />
-
           <LocalizedLink href="/search" className={classes.mobileLink} onClick={closeDrawer}>
             {t('headerMenu.findRide')}
           </LocalizedLink>

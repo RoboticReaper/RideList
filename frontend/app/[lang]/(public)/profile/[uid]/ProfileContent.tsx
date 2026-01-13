@@ -7,6 +7,7 @@ import { useAuth } from '@/components/firebase/AuthContext';
 import { updateProfile } from "firebase/auth";
 import { useTranslation } from 'react-i18next';
 import { IconCheck, IconPhone, IconCalendar, IconPencil, IconX, IconDeviceFloppy, IconCar, IconSteeringWheel, IconCamera } from '@tabler/icons-react';
+import dayjs, { CHICAGO_TZ } from '@/utils/dateUtils';
 
 interface UserProfile {
     id: string;
@@ -256,7 +257,7 @@ export default function ProfilePage() {
 
                         <Group gap="xs" c="dimmed" fz="sm">
                             <IconCalendar size={16} />
-                            <Text>{t('profile.joined')} {new Date(profile.created_at).toLocaleDateString(i18n.language)}</Text>
+                            <Text>{t('profile.joined')} {dayjs(profile.created_at).tz(CHICAGO_TZ).format('MM/YYYY')}</Text>
                         </Group>
 
                         {isEditing ? (

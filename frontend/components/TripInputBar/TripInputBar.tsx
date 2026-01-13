@@ -1,5 +1,7 @@
 'use client';
 
+import dayjs, { toChicagoISO, getChicagoNow } from '@/utils/dateUtils';
+
 import { useState, useRef, useEffect } from 'react';
 import {
     ActionIcon, Autocomplete, Badge, Box, Button, Card, Checkbox, Collapse, Divider, Grid, Group, Loader as MantineLoader, Modal, NumberInput, Paper, Radio, Select, SimpleGrid, Stack, Stepper, Switch, TagsInput, Text, TextInput, Textarea, Title, Accordion, Anchor
@@ -296,7 +298,7 @@ export function TripInputBar() {
                     setIsEndSelected(true);
                     endLastSelection.current = draft.endLocation;
                 }
-                if (draft.startTime) setStartTime(new Date(draft.startTime));
+                if (draft.startTime) setStartTime(dayjs(draft.startTime).toDate());
                 if (draft.price !== undefined) setPrice(draft.price);
                 if (draft.seats !== undefined) setSeats(draft.seats);
 
@@ -488,7 +490,8 @@ export function TripInputBar() {
             let encodedStartTime = null;
             if (startTime) {
                 if (startTime instanceof Date) {
-                    encodedStartTime = startTime.toISOString();
+                    // Store as Chicago Wall Clock String for portability
+                    encodedStartTime = dayjs(startTime).format('YYYY-MM-DDTHH:mm:ss');
                 } else if (typeof startTime === 'string') {
                     encodedStartTime = startTime;
                 }
@@ -722,7 +725,7 @@ export function TripInputBar() {
                 notifications.show({ title: t('rides.errors.dateRequiredTitle'), message: t('rides.errors.dateRequired'), color: 'red' });
                 return;
             }
-            if (startTime < new Date()) {
+            if (startTime < getChicagoNow()) {
                 notifications.show({ title: t('rides.errors.pastDateTitle'), message: t('rides.errors.pastDate'), color: 'red' });
                 return;
             }
@@ -894,7 +897,7 @@ export function TripInputBar() {
                 lng: endCoords?.lng,
                 sessionToken: endSessionToken.current
             },
-            departureTime: startTime,
+            departureTime: startTime ? toChicagoISO(startTime) : null,
             price: Number(price),
             seats: Number(seats),
             paymentMethods,
@@ -1189,7 +1192,7 @@ export function TripInputBar() {
                             leftSection={<IconCalendar size={16} />}
                             value={startTime}
                             required
-                            minDate={new Date()}
+                            minDate={getChicagoNow()}
                             valueFormat="MM/DD/YYYY HH:mm"
                             onChange={(val) => {
                                 setStartTime(val as Date | null);

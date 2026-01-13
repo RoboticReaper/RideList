@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
+import dayjs, { CHICAGO_TZ } from '@/utils/dateUtils';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
 import { extractPublicArea } from '@/app/api/lib/extractPublicArea';
@@ -114,8 +115,11 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: t('api.errors.missingRequiredFieldsLocation') }, { status: 400 });
         }
 
-        // Validate Departure Time
-        if (new Date(departureTime) < new Date()) {
+        // Validate Departure Time (Must be in future relative to Chicago wall clock)
+        const departureDate = dayjs.tz(departureTime, CHICAGO_TZ);
+        const nowChicago = dayjs().tz(CHICAGO_TZ);
+
+        if (departureDate.isBefore(nowChicago)) {
             return NextResponse.json({ error: t('api.errors.departureTimePast') }, { status: 400 });
         }
 

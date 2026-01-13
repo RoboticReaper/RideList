@@ -3,8 +3,9 @@ import { useState } from 'react';
 import { Card, Text, Group, Stack, Button, Flex, ActionIcon, Tooltip, Badge } from '@mantine/core';
 import { getTripStatusConfig, getBookingStatusConfig } from '@/utils/statusUtils';
 import { IconMapPin, IconCalendar, IconUserCheck, IconExternalLink, IconCash, IconLuggage } from '@tabler/icons-react';
-import dayjs from 'dayjs';
+import dayjs, { CHICAGO_TZ } from '@/utils/dateUtils';
 import { LocalizedLink } from '@/components/LocalizedLink';
+
 import { useAuth } from '@/components/firebase/AuthContext';
 import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'react-i18next';
@@ -175,7 +176,7 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
                         <Group gap="xs">
                             <IconCalendar size={16} />
                             <Text size="sm">
-                                {dayjs(trip.departure_time).format('MMM D, YYYY h:mm A')}
+                                {dayjs(trip.departure_time).tz(CHICAGO_TZ).format('MMM D, YYYY h:mm A')}
                             </Text>
                         </Group>
 
