@@ -2,8 +2,6 @@
 -- PostgreSQL database dump
 --
 
-\restrict Uu741Iprt5b5RjSiFL9TN2F7Nn5HbhtwZEaUaxFukf0uHasVJhARsFjJOMZOcXU
-
 -- Dumped from database version 17.7 (Homebrew)
 -- Dumped by pg_dump version 17.7 (Homebrew)
 
@@ -434,6 +432,3 @@ INSERT INTO public.user_devices (id, user_id, device_id, fcm_token, platform, pe
 --
 -- PostgreSQL database dump complete
 --
-
-\unrestrict Uu741Iprt5b5RjSiFL9TN2F7Nn5HbhtwZEaUaxFukf0uHasVJhARsFjJOMZOcXU
-

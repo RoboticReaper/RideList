@@ -1,6 +1,6 @@
--- drop schema public cascade;
---
--- create schema public;
+drop schema public cascade;
+
+create schema public;
 
 
 
@@ -512,5 +512,52 @@ WHERE permission_state = 'granted'
   AND push_enabled = true
   AND invalidated_at IS NULL;
 
+CREATE INDEX idx_trips_status_departure
+ON trips (status, departure_time);
+
+CREATE INDEX idx_trips_driver_status
+ON trips (driver, status, departure_time);
+
+CREATE INDEX idx_bookings_created_status
+ON bookings (status, created_at)
+WHERE status = 'joined_with_pay_window';
+
+CREATE INDEX idx_trips_status_time_automation
+ON trips (status, departure_time, actual_departure_time);
+
+CREATE INDEX idx_bookings_status_trip
+ON bookings (status, trip);
+
+CREATE INDEX idx_bookings_rider_all
+ON bookings (rider, created_at DESC);
+
+CREATE INDEX idx_trip_events_type_time
+ON trip_events (event_type, created_at DESC);
+
+CREATE INDEX idx_user_devices_inactive
+ON user_devices (last_seen_at)
+WHERE invalidated_at IS NULL;
+
+CREATE INDEX idx_trips_status_departure_time
+ON trips (status, departure_time);
+
+CREATE INDEX idx_trip_rules_payment_methods
+ON trip_rules
+USING GIN (payment_methods);
+
+CREATE INDEX idx_trip_rules_id_filters
+ON trip_rules (id, big_luggage_lim, small_luggage_lim, auto_accept);
+
+CREATE INDEX idx_trips_price
+ON trips (price)
+WHERE status IN ('bookable','full');
+
+CREATE INDEX idx_trip_rules_radius
+ON trip_rules (pickup_radius_meters, drop_off_radius_meters);
+
+CREATE INDEX idx_trips_available_seats
+ON trips (departure_time)
+WHERE status = 'bookable'
+  AND seats_taken < total_seats;
 
 

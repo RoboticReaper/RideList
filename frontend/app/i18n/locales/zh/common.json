@@ -2336,6 +2336,10 @@
                 "title": "行前确认已开始",
                 "message": "司机已开启行前确认，请标记自己为已就绪。"
             },
+            "check_in_started_driver": {
+                "title": "行前确认已开始",
+                "message": "系统已自动开启行前确认，已通知乘客。"
+            },
             "trip_departed": {
                 "title": "行程已出发",
                 "message": "司机已开始行程。"

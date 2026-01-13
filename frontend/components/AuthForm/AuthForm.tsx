@@ -75,7 +75,7 @@ export function AuthForm(props: PaperProps) {
         <MicrosoftButton radius="xl" onClick={msLogin}>Microsoft</MicrosoftButton>
       </Group>
 
-      {process.env.NODE_ENV === 'development' &&
+      {(process.env.NODE_ENV === 'development' || true) &&
         <>
           <Button
             radius="xl"

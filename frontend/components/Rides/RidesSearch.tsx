@@ -520,6 +520,7 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 3 }}>
                         <DateTimePicker
+                            dropdownType="modal"
                             label={t('rides.search.dateLabel')}
                             placeholder={t('rides.search.datePlaceholder')}
                             value={startTime}

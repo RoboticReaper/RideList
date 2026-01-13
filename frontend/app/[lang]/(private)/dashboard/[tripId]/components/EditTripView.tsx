@@ -665,6 +665,7 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                         </SimpleGrid>
 
                         <DateTimePicker
+                            dropdownType="modal"
                             label={t('tripDetails.edit.labels.departureTime')}
                             placeholder={t('tripDetails.edit.placeholders.pickDate')}
                             leftSection={<IconCalendar size={16} />}

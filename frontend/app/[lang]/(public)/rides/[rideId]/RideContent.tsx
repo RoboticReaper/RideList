@@ -102,7 +102,7 @@ export default function RidePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const isSmallScreen = useMediaQuery('(max-width: 400px)');
+    const isSmallScreen = useMediaQuery('(max-width: 500px)');
     const { ref, entry } = useIntersection({
         threshold: 0,
     });
@@ -1041,6 +1041,7 @@ export default function RidePage() {
                             </Button>
                         </Group>
                         <DateTimePicker
+                            dropdownType="modal"
                             description={(() => {
                                 const f = ride.rules.flexibility;
                                 if (typeof f === 'object' && f !== null) {

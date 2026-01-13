@@ -182,8 +182,8 @@ export async function checkAndProcessCheckInStart(client: PoolClient, tripId: st
             createNotification({
                 client,
                 type: 'check_in_started',
-                titleKey: 'notifications.types.check_in_started.title',
-                messageKey: 'notifications.types.check_in_started.message',
+                titleKey: 'notifications.types.check_in_started_driver.title',
+                messageKey: 'notifications.types.check_in_started_driver.message',
                 userId: driver,
                 entityType: 'trips',
                 entityId: tripId,

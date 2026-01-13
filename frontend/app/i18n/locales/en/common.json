@@ -2336,6 +2336,10 @@
                 "title": "Check-in Started",
                 "message": "Driver has enabled check-in. Please mark yourself ready."
             },
+            "check_in_started_driver": {
+                "title": "Check-in Started",
+                "message": "System has started check-in for your trip. Riders have been notified."
+            },
             "trip_departed": {
                 "title": "Trip Departed",
                 "message": "Driver has started the trip."

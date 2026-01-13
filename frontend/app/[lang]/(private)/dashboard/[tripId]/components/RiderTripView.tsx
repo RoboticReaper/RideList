@@ -582,6 +582,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                 <Box>
                                     <Text c="dimmed" size="xs" mb={4}>{t('tripDetails.rider.labels.preferredPickup')}</Text>
                                     <DateTimePicker
+                                        dropdownType="modal"
                                         value={editPreferredPickupTime}
                                         onChange={(val) => setEditPreferredPickupTime(val ? new Date(val) : null)}
                                         placeholder={t('tripDetails.rider.labels.preferredPickup')}

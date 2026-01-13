@@ -1183,6 +1183,7 @@ export function TripInputBar() {
                         />
 
                         <DateTimePicker
+                            dropdownType="modal"
                             label={t('rides.create.labels.departure')}
                             placeholder={t('rides.create.labels.pickDateTime')}
                             leftSection={<IconCalendar size={16} />}
