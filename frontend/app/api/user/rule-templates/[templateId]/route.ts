@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { getTranslationForUser } from '@/app/api/lib/i18n';
+import { processPaymentQRCode } from '@/app/api/lib/processQRCode';
 
 export async function GET(
     req: Request,
@@ -60,8 +61,25 @@ export async function PUT(
             cutoff_time,
             payment_handle,
             pay_window,
-            start_check_in_hrs_before_departure
+            start_check_in_hrs_before_departure,
+            payment_qr_codes
         } = body;
+
+        // Process QR codes
+        const processedQRCodes: Record<string, string> = {};
+        if (payment_qr_codes && payment_methods) {
+            for (const method of payment_methods) {
+                const qrData = payment_qr_codes[method];
+                if (qrData && typeof qrData === 'string') {
+                    if (qrData.startsWith('data:')) {
+                        const url = await processPaymentQRCode(qrData, user.uid, t);
+                        processedQRCodes[method] = url;
+                    } else if (qrData.startsWith('https://')) {
+                        processedQRCodes[method] = qrData;
+                    }
+                }
+            }
+        }
 
         const res = await client.query(
             `UPDATE rule_templates SET
@@ -78,14 +96,15 @@ export async function PUT(
                 cutoff_time = $11,
                 payment_handle = $12,
                 pay_window = $13,
-                start_check_in_hrs_before_departure = $14
-             WHERE id = $15 AND driver = $16
+                start_check_in_hrs_before_departure = $14,
+                payment_qr_codes = $15
+             WHERE id = $16 AND driver = $17
              RETURNING *`,
             [
                 name, big_luggage_lim, small_luggage_lim, pickup_rules,
                 pickup_radius_meters, drop_off_radius_meters, departure_time_flexibility,
                 payment_methods, cancellation_policy, auto_accept, cutoff_time, payment_handle,
-                pay_window, start_check_in_hrs_before_departure,
+                pay_window, start_check_in_hrs_before_departure, processedQRCodes,
                 templateId, user.uid
             ]
         );

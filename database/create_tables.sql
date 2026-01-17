@@ -169,6 +169,7 @@ create table trip_rules (
   payment_methods text[],
   cancellation_policy text,
   payment_handle text,
+  payment_qr_codes jsonb default '{}'::jsonb,
 
   auto_accept bool not null default true,
   cutoff_time interval not null,
@@ -256,6 +257,7 @@ create table booking_rule_snapshot (
   departure_time_flexibility interval not null,
   payment_methods text[],
   payment_handle text,
+  payment_qr_codes jsonb,
   cancellation_policy text,
   auto_accept bool not null,
   cutoff_time interval,
@@ -319,6 +321,7 @@ create table rule_templates (
   auto_accept bool,
   cutoff_time interval,
   payment_handle text,
+  payment_qr_codes jsonb,
   pay_window interval,
   start_check_in_hrs_before_departure interval
 );

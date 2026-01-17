@@ -1,9 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Button, TextInput, NumberInput, Switch, Textarea, Group, Select, TagsInput, Stack, Paper, Title, Divider, Modal, Text } from '@mantine/core';
+import { Button, TextInput, NumberInput, Switch, Textarea, Group, Select, TagsInput, Stack, Paper, Title, Divider, Modal, Text, FileButton, Image, ActionIcon, SimpleGrid } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/navigation';
-import { IconDeviceFloppy, IconTrash } from '@tabler/icons-react';
+import { IconDeviceFloppy, IconTrash, IconUpload } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -56,6 +56,40 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
     const [opened, { open, close }] = useDisclosure(false);
     const [loading, setLoading] = useState(false);
 
+    // Payment QR codes state
+    const [paymentQRCodes, setPaymentQRCodes] = useState<Record<string, string>>(
+        initialData?.payment_qr_codes || {}
+    );
+
+    // QR Code helpers
+    const handleQRCodeUpload = (file: File | null, paymentMethod: string) => {
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const base64 = e.target?.result as string;
+            if (base64) {
+                setPaymentQRCodes(prev => ({ ...prev, [paymentMethod]: base64 }));
+            }
+        };
+        reader.onerror = () => {
+            notifications.show({
+                title: t('rides.errors.qrUploadErrorTitle'),
+                message: t('rides.errors.qrUploadError'),
+                color: 'red'
+            });
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const removeQRCode = (paymentMethod: string) => {
+        setPaymentQRCodes(prev => {
+            const updated = { ...prev };
+            delete updated[paymentMethod];
+            return updated;
+        });
+    };
+
     const handleSubmit = async () => {
         if (!name.trim()) {
             notifications.show({ title: t('rides.errors.errorTitle'), message: t('templates.rules.form.notifications.nameRequired'), color: 'red' });
@@ -80,6 +114,7 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
                 cutoff_time: (cutoffEnabled && cutoffHours !== '') ? `${cutoffHours} hours` : null,
                 pay_window: (payWindow !== '' && payWindow !== undefined) ? `${payWindow} minutes` : null,
                 start_check_in_hrs_before_departure: (startCheckInHrs !== '' && startCheckInHrs !== undefined) ? `${startCheckInHrs} hours` : null,
+                payment_qr_codes: paymentQRCodes
             };
 
             console.log(payload);
@@ -233,6 +268,66 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
                         placeholder={t('common.selectOrType')}
                     />
                     <TextInput label={t('templates.rules.form.paymentHandle')} placeholder={t('templates.rules.form.paymentHandlePlaceholder')} value={paymentHandle} onChange={(e) => setPaymentHandle(e.target.value)} />
+
+                    {/* Payment QR Codes */}
+                    {paymentMethods && paymentMethods.length > 0 && (
+                        <Stack gap="xs">
+                            <Text size="sm" fw={500}>
+                                {t('rides.create.labels.paymentQRCodes')}
+                            </Text>
+                            <Text size="xs" c="dimmed">
+                                {t('rides.create.labels.paymentQRCodesDesc')}
+                            </Text>
+                            <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
+                                {paymentMethods.map((method: string) => (
+                                    <Paper key={method} p="sm" withBorder radius="md">
+                                        <Stack gap="xs">
+                                            <Group justify="space-between">
+                                                <Text size="sm" fw={500}>{method}</Text>
+                                                {paymentQRCodes[method] && (
+                                                    <ActionIcon
+                                                        variant="subtle"
+                                                        color="red"
+                                                        size="sm"
+                                                        onClick={() => removeQRCode(method)}
+                                                        title={t('rides.create.labels.removeQRCode') as string}
+                                                    >
+                                                        <IconTrash size={14} />
+                                                    </ActionIcon>
+                                                )}
+                                            </Group>
+                                            {paymentQRCodes[method] ? (
+                                                <Image
+                                                    src={paymentQRCodes[method]}
+                                                    alt={`${method} QR Code`}
+                                                    h={120}
+                                                    w="auto"
+                                                    fit="contain"
+                                                    radius="sm"
+                                                />
+                                            ) : (
+                                                <FileButton
+                                                    onChange={(file) => handleQRCodeUpload(file, method)}
+                                                    accept="image/*"
+                                                >
+                                                    {(props) => (
+                                                        <Button
+                                                            {...props}
+                                                            variant="light"
+                                                            leftSection={<IconUpload size={14} />}
+                                                            size="xs"
+                                                        >
+                                                            {t('rides.create.labels.uploadQRCode')}
+                                                        </Button>
+                                                    )}
+                                                </FileButton>
+                                            )}
+                                        </Stack>
+                                    </Paper>
+                                ))}
+                            </SimpleGrid>
+                        </Stack>
+                    )}
 
                 </Stack>
             </Paper>

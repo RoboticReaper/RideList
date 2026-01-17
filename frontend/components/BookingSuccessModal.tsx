@@ -1,7 +1,7 @@
 'use client';
 
-import { Modal, Text, Button, Stack, ThemeIcon, Group, UnstyledButton } from '@mantine/core';
-import { IconCheck, IconClock, IconBellRinging, IconCreditCard } from '@tabler/icons-react';
+import { Modal, Text, Button, Stack, ThemeIcon, Group, UnstyledButton, Divider, Paper, Image } from '@mantine/core';
+import { IconCheck, IconClock, IconBellRinging, IconCreditCard, IconQrcode } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useNotifications } from '@/components/Notifications/NotificationContext';
 import { useState } from 'react';
@@ -14,9 +14,12 @@ interface BookingSuccessModalProps {
     onClose: () => void;
     status: string;
     payWindow: any; // Can be string, number, or PostgresInterval object
+    paymentHandle?: string | null;
+    paymentQRCode?: string | null;
+    selectedPaymentMethod?: string;
 }
 
-export function BookingSuccessModal({ opened, onClose, status, payWindow }: BookingSuccessModalProps) {
+export function BookingSuccessModal({ opened, onClose, status, payWindow, paymentHandle, paymentQRCode, selectedPaymentMethod }: BookingSuccessModalProps) {
     const { t } = useTranslation('common');
     const { pushPermission, showPrompt } = useNotifications();
     const { isIOS, isStandalone } = usePWAInstall();
@@ -86,6 +89,32 @@ export function BookingSuccessModal({ opened, onClose, status, payWindow }: Book
                             {t('rides.detail.bookingSuccess.waitingMessage')}
                         </Text>
                     </>
+                )}
+
+                {/* Payment Info Section (for pay window status) */}
+                {isPayWindow && (paymentHandle || paymentQRCode) && (
+                    <Paper withBorder p="sm" radius="md" w="100%" bg="gray.0">
+                        {paymentHandle && (
+                            <>
+                                <Text size="xs" c="dimmed" mb={2}>{t('rides.detail.payment.handleLabel' as any)}</Text>
+                                <Text size="sm" fw={500} mb={paymentQRCode ? 'sm' : 0}>{paymentHandle}</Text>
+                            </>
+                        )}
+                        {paymentQRCode && selectedPaymentMethod && (
+                            <>
+                                {paymentHandle && <Divider my="xs" />}
+                                <Text size="xs" c="dimmed" mb={4}>{selectedPaymentMethod} {t('rides.detail.payment.qrCodesLabel' as any)}</Text>
+                                <Image
+                                    src={paymentQRCode}
+                                    alt={`${selectedPaymentMethod} QR Code`}
+                                    w="100%"
+                                    mah={200}
+                                    fit="contain"
+                                    radius="sm"
+                                />
+                            </>
+                        )}
+                    </Paper>
                 )}
 
                 {/* PUSH UPDATES UPSELL (Only if default) */}

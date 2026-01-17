@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Button, NumberInput, Stack, Textarea, Group, Switch, Select, Alert, MultiSelect, SimpleGrid, Title, Divider, Autocomplete, Loader, ActionIcon, TextInput, TagsInput, Accordion, Text, Anchor } from '@mantine/core';
-import { useForm } from '@mantine/form';
+import { Button, NumberInput, Stack, Textarea, Group, Switch, Select, Alert, MultiSelect, SimpleGrid, Title, Divider, Autocomplete, Loader, ActionIcon, TextInput, TagsInput, Accordion, Text, Anchor, FileButton, Image, Paper } from '@mantine/core';
+import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications';
 import { DateTimePicker } from '@mantine/dates';
 import { useAuth } from '@/components/firebase/AuthContext';
-import { IconCheck, IconAlertTriangle, IconCalendar, IconCar, IconMapPin, IconCurrencyDollar, IconScript, IconX, IconLock } from '@tabler/icons-react';
+import { IconCheck, IconAlertTriangle, IconCalendar, IconCar, IconMapPin, IconCurrencyDollar, IconScript, IconX, IconLock, IconQrcode, IconUpload, IconTrash } from '@tabler/icons-react';
 import { parseFlexibility, parsePayWindow, parseCutoffTimeNullable, parseStartCheckInNullable, parseFlexibilityNullable, parseCutoffTime } from '@/utils/intervalParsers';
 import { toChicagoISO, fromChicagoISO, getChicagoNow } from '@/utils/dateUtils';
 import { LocalizedLink } from '@/components/LocalizedLink';
@@ -71,6 +71,11 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
     const predictionsMap = useRef<Map<string, string>>(new Map());
 
     const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    // Payment QR codes state: stores base64 (new) or URL (existing) for each payment method
+    const [paymentQRCodes, setPaymentQRCodes] = useState<Record<string, string>>(
+        trip.rules?.payment?.qr_codes || {}
+    );
 
     useEffect(() => {
         if (user) {
@@ -145,6 +150,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
             // Reset coords
             setOriginCoords(trip.origin ? { lat: trip.origin.lat, lng: trip.origin.lng } : null);
             setDestCoords(trip.destination ? { lat: trip.destination.lat, lng: trip.destination.lng } : null);
+            // Reset QR codes
+            setPaymentQRCodes(trip.rules?.payment?.qr_codes || {});
             prevManualRefreshId.current = manualRefreshId;
         } else {
             // Auto-refresh: Only update if form is clean
@@ -156,6 +163,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                 // Also reset coords if they assume sync with trip
                 setOriginCoords(trip.origin ? { lat: trip.origin.lat, lng: trip.origin.lng } : null);
                 setDestCoords(trip.destination ? { lat: trip.destination.lat, lng: trip.destination.lng } : null);
+                // Also reset QR codes
+                setPaymentQRCodes(trip.rules?.payment?.qr_codes || {});
             }
         }
     }, [trip, manualRefreshId]);
@@ -333,6 +342,34 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
         return null;
     };
 
+    // --- QR Code Helpers ---
+    const handleQRCodeUpload = (file: File | null, paymentMethod: string) => {
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const base64 = e.target?.result as string;
+            if (base64) {
+                setPaymentQRCodes(prev => ({ ...prev, [paymentMethod]: base64 }));
+            }
+        };
+        reader.onerror = () => {
+            notifications.show({
+                title: t('rides.errors.qrUploadErrorTitle'),
+                message: t('rides.errors.qrUploadError'),
+                color: 'red'
+            });
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const removeQRCode = (paymentMethod: string) => {
+        setPaymentQRCodes(prev => {
+            const updated = { ...prev };
+            delete updated[paymentMethod];
+            return updated;
+        });
+    };
 
     const handleSubmit = async (values: typeof form.values) => {
         if (!user) return;
@@ -524,6 +561,16 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
             if (payload.car === 'none') {
                 delete payload.car;
             }
+
+            // Add payment QR codes - filter to only include currently selected payment methods
+            const paymentMethods = values.paymentMethods || [];
+            const filteredQRCodes: Record<string, string> = {};
+            for (const method of paymentMethods) {
+                if (paymentQRCodes[method]) {
+                    filteredQRCodes[method] = paymentQRCodes[method];
+                }
+            }
+            payload.paymentQRCodes = filteredQRCodes;
 
             const token = await user.getIdToken();
             console.log(payload);
@@ -738,6 +785,66 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                                 {...form.getInputProps('paymentHandle')}
                             />
                         </SimpleGrid>
+
+                        {/* Payment QR Codes */}
+                        {form.values.paymentMethods && form.values.paymentMethods.length > 0 && (
+                            <Stack gap="xs">
+                                <Text size="sm" fw={500}>
+                                    {t('rides.create.labels.paymentQRCodes')}
+                                </Text>
+                                <Text size="xs" c="dimmed">
+                                    {t('rides.create.labels.paymentQRCodesDesc')}
+                                </Text>
+                                <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
+                                    {(form.values.paymentMethods as string[]).map((method: string) => (
+                                        <Paper key={method} p="sm" withBorder radius="md">
+                                            <Stack gap="xs">
+                                                <Group justify="space-between">
+                                                    <Text size="sm" fw={500}>{method}</Text>
+                                                    {paymentQRCodes[method] && (
+                                                        <ActionIcon
+                                                            variant="subtle"
+                                                            color="red"
+                                                            size="sm"
+                                                            onClick={() => removeQRCode(method)}
+                                                            title={t('rides.create.labels.removeQRCode') as string}
+                                                        >
+                                                            <IconTrash size={14} />
+                                                        </ActionIcon>
+                                                    )}
+                                                </Group>
+                                                {paymentQRCodes[method] ? (
+                                                    <Image
+                                                        src={paymentQRCodes[method]}
+                                                        alt={`${method} QR Code`}
+                                                        h={120}
+                                                        w="auto"
+                                                        fit="contain"
+                                                        radius="sm"
+                                                    />
+                                                ) : (
+                                                    <FileButton
+                                                        onChange={(file) => handleQRCodeUpload(file, method)}
+                                                        accept="image/*"
+                                                    >
+                                                        {(props) => (
+                                                            <Button
+                                                                {...props}
+                                                                variant="light"
+                                                                leftSection={<IconUpload size={14} />}
+                                                                size="xs"
+                                                            >
+                                                                {t('rides.create.labels.uploadQRCode')}
+                                                            </Button>
+                                                        )}
+                                                    </FileButton>
+                                                )}
+                                            </Stack>
+                                        </Paper>
+                                    ))}
+                                </SimpleGrid>
+                            </Stack>
+                        )}
 
                         <Textarea
                             label={t('tripDetails.edit.labels.pickupRules')}

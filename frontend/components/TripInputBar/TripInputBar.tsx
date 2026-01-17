@@ -4,12 +4,12 @@ import dayjs, { toChicagoISO, getChicagoNow } from '@/utils/dateUtils';
 
 import { useState, useRef, useEffect } from 'react';
 import {
-    ActionIcon, Autocomplete, Badge, Box, Button, Card, Checkbox, Collapse, Divider, Grid, Group, Loader as MantineLoader, Modal, NumberInput, Paper, Radio, Select, SimpleGrid, Stack, Stepper, Switch, TagsInput, Text, TextInput, Textarea, Title, Accordion, Anchor
+    ActionIcon, Autocomplete, Badge, Box, Button, Card, Checkbox, Collapse, Divider, FileButton, Grid, Group, Image, Loader as MantineLoader, Modal, NumberInput, Paper, Radio, Select, SimpleGrid, Stack, Stepper, Switch, TagsInput, Text, TextInput, Textarea, Title, Accordion, Anchor
 } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'next/navigation';
 import { DateTimePicker } from '@mantine/dates';
-import { IconMapPin, IconCalendar, IconX, IconCar, IconCheck } from '@tabler/icons-react';
+import { IconMapPin, IconCalendar, IconX, IconCar, IconCheck, IconUpload, IconTrash, IconQrcode } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useNotifications } from '../Notifications/NotificationContext';
 import { useRouter } from 'next/navigation';
@@ -138,6 +138,7 @@ export function TripInputBar() {
     // --- Step 4: Logistics State ---
     const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
     const [paymentHandle, setPaymentHandle] = useState('');
+    const [paymentQRCodes, setPaymentQRCodes] = useState<Record<string, string>>({});
     const [bigLuggage, setBigLuggage] = useState<number | ''>(0);
     const [smallLuggage, setSmallLuggage] = useState<number | ''>(0);
 
@@ -260,6 +261,7 @@ export function TripInputBar() {
         carSmallLuggage: number | '';
         carSeats: number | '';
         paymentMethods: string[];
+        paymentQRCodes?: Record<string, string>;
         paymentHandle: string;
         bigLuggage: number | '';
         smallLuggage: number | '';
@@ -315,6 +317,7 @@ export function TripInputBar() {
                 if (draft.carSeats !== undefined) setCarSeats(draft.carSeats);
 
                 if (draft.paymentMethods) setPaymentMethods(draft.paymentMethods);
+                if (draft.paymentQRCodes) setPaymentQRCodes(draft.paymentQRCodes);
                 if (draft.paymentHandle) setPaymentHandle(draft.paymentHandle);
                 if (draft.bigLuggage !== undefined) setBigLuggage(draft.bigLuggage);
                 if (draft.smallLuggage !== undefined) setSmallLuggage(draft.smallLuggage);
@@ -370,6 +373,7 @@ export function TripInputBar() {
                         (draft.carSeats !== '' && draft.carSeats !== undefined)
                     )) ||
                     (draft.paymentMethods && draft.paymentMethods.length > 0) ||
+                    (draft.paymentQRCodes && Object.keys(draft.paymentQRCodes).length > 0) ||
                     (!!draft.paymentHandle) ||
                     (draft.bigLuggage !== 0 && draft.bigLuggage !== '' && draft.bigLuggage !== undefined) ||
                     (draft.smallLuggage !== 0 && draft.smallLuggage !== '' && draft.smallLuggage !== undefined) ||
@@ -427,6 +431,7 @@ export function TripInputBar() {
         setCarSmallLuggage('');
         setCarSeats('');
         setPaymentMethods([]);
+        setPaymentQRCodes({});
         setPaymentHandle('');
         setBigLuggage(0);
         setSmallLuggage(0);
@@ -516,6 +521,7 @@ export function TripInputBar() {
                 carSmallLuggage,
                 carSeats,
                 paymentMethods,
+                paymentQRCodes,
                 paymentHandle,
                 bigLuggage,
                 smallLuggage,
@@ -709,6 +715,45 @@ export function TripInputBar() {
             );
         }
         return null;
+    };
+
+    // --- QR Code Upload Helpers ---
+    const handleQRCodeUpload = async (file: File | null, paymentMethod: string) => {
+        if (!file) {
+            // Remove QR code for this payment method
+            setPaymentQRCodes(prev => {
+                const next = { ...prev };
+                delete next[paymentMethod];
+                return next;
+            });
+            return;
+        }
+
+        // Convert File to base64
+        const reader = new FileReader();
+        reader.onload = () => {
+            const base64 = reader.result as string;
+            setPaymentQRCodes(prev => ({
+                ...prev,
+                [paymentMethod]: base64
+            }));
+        };
+        reader.onerror = () => {
+            notifications.show({
+                title: t('rides.errors.qrUploadErrorTitle'),
+                message: t('rides.errors.qrUploadError'),
+                color: 'red'
+            });
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const removeQRCode = (paymentMethod: string) => {
+        setPaymentQRCodes(prev => {
+            const next = { ...prev };
+            delete next[paymentMethod];
+            return next;
+        });
     };
 
     // --- Navigation Logic ---
@@ -921,6 +966,14 @@ export function TripInputBar() {
             ruleTemplateName,
             tripTemplateName,
             startCheckInHrs: (startCheckInHrs !== '' && startCheckInHrs !== null && startCheckInHrs !== undefined) ? `${startCheckInHrs} hours` : null,
+            // Only include QR codes for payment methods that have an uploaded image
+            paymentQRCodes: Object.keys(paymentQRCodes).length > 0
+                ? Object.fromEntries(
+                    paymentMethods
+                        .filter(m => paymentQRCodes[m])
+                        .map(m => [m, paymentQRCodes[m]])
+                )
+                : {},
         };
 
         // Attach Car Info
@@ -1062,6 +1115,7 @@ export function TripInputBar() {
                                                 setBigLuggage(r.big_luggage_lim ?? '');
                                                 setSmallLuggage(r.small_luggage_lim ?? '');
                                                 setPaymentMethods(r.payment_methods || []);
+                                                setPaymentQRCodes(r.payment_qr_codes || {});
                                                 setPaymentHandle(r.payment_handle || '');
                                                 setAutoAccept(r.auto_accept);
                                                 setFlexibility(r.departure_time_flexibility ? parseFlexibility(r.departure_time_flexibility) : 0.25);
@@ -1384,6 +1438,7 @@ export function TripInputBar() {
                                         const tmpl = templates.find(temp => temp.id === val);
                                         if (tmpl) {
                                             if (tmpl.payment_methods) setPaymentMethods(tmpl.payment_methods);
+                                            if (tmpl.payment_qr_codes) setPaymentQRCodes(tmpl.payment_qr_codes);
                                             if (tmpl.payment_handle) setPaymentHandle(tmpl.payment_handle);
                                             if (tmpl.pickup_rules) setPickupRules(tmpl.pickup_rules);
                                             if (tmpl.cancellation_policy) setCancellationPolicy(tmpl.cancellation_policy);
@@ -1463,6 +1518,68 @@ export function TripInputBar() {
                                 setFieldSourceManual(['paymentHandle']);
                             }}
                         />
+
+                        {/* Payment QR Code Uploads */}
+                        {paymentMethods.length > 0 && (
+                            <Paper withBorder p="sm" radius="md">
+                                <Group gap="xs" mb="xs">
+                                    <IconQrcode size={16} />
+                                    <Text fw={500} size="sm">
+                                        {t('rides.create.labels.paymentQRCodes')}
+                                    </Text>
+                                </Group>
+                                <Text size="xs" c="dimmed" mb="md">
+                                    {t('rides.create.labels.paymentQRCodesDesc')}
+                                </Text>
+                                <Stack gap="sm">
+                                    {paymentMethods.map((method) => (
+                                        <Paper key={method} withBorder p="xs" radius="sm" bg="gray.0">
+                                            <Group justify="space-between" wrap="nowrap">
+                                                <Text size="sm" fw={500}>{method}</Text>
+                                                <Group gap="xs">
+                                                    {paymentQRCodes[method] ? (
+                                                        <>
+                                                            <Image
+                                                                src={paymentQRCodes[method]}
+                                                                alt={`${method} QR Code`}
+                                                                w={48}
+                                                                h={48}
+                                                                radius="sm"
+                                                                fit="contain"
+                                                            />
+                                                            <ActionIcon
+                                                                variant="light"
+                                                                color="red"
+                                                                onClick={() => removeQRCode(method)}
+                                                                title={t('rides.create.labels.removeQRCode')}
+                                                            >
+                                                                <IconTrash size={16} />
+                                                            </ActionIcon>
+                                                        </>
+                                                    ) : (
+                                                        <FileButton
+                                                            onChange={(file) => handleQRCodeUpload(file, method)}
+                                                            accept="image/*"
+                                                        >
+                                                            {(props) => (
+                                                                <Button
+                                                                    {...props}
+                                                                    variant="light"
+                                                                    size="xs"
+                                                                    leftSection={<IconUpload size={14} />}
+                                                                >
+                                                                    {t('rides.create.labels.uploadQRCode')}
+                                                                </Button>
+                                                            )}
+                                                        </FileButton>
+                                                    )}
+                                                </Group>
+                                            </Group>
+                                        </Paper>
+                                    ))}
+                                </Stack>
+                            </Paper>
+                        )}
                         <Textarea
                             label={<Group gap="xs">{t('rides.create.labels.pickupRules')} {renderSourceBadge('pickupRules')}</Group>}
                             placeholder={t('rides.create.labels.pickupRulesPlaceholder')}

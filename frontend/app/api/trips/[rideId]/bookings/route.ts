@@ -306,6 +306,7 @@ export async function POST(
                 tr.drop_off_radius_meters,
                 tr.payment_methods,
                 tr.payment_handle,
+                tr.payment_qr_codes,
                 tr.cancellation_policy,
                 tr.pay_window,
                 tr.start_check_in_hrs_before_departure
@@ -585,12 +586,13 @@ export async function POST(
                 departure_time_flexibility,
                 payment_methods,
                 payment_handle,
+                payment_qr_codes,
                 cancellation_policy,
                 auto_accept,
                 cutoff_time,
                 pay_window,
                 start_check_in_hrs_before_departure
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         `;
 
         await client.query(snapshotQuery, [
@@ -603,6 +605,7 @@ export async function POST(
             trip.departure_time_flexibility,
             trip.payment_methods,
             trip.payment_handle,
+            trip.payment_qr_codes || {},
             trip.cancellation_policy,
             trip.auto_accept,
             trip.cutoff_time,

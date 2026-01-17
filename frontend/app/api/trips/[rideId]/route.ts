@@ -15,6 +15,7 @@ import { areIntervalsEqual } from '@/app/api/lib/intervalUtils';
 import { checkDriverRequirementsForDeparture } from '@/app/api/lib/tripValidation';
 import { logTripEvent } from '@/app/api/lib/tripEvents';
 import { redactName } from '@/app/api/lib/redactName';
+import { processPaymentQRCode } from '@/app/api/lib/processQRCode';
 
 export async function GET(
     req: Request,
@@ -65,6 +66,7 @@ export async function GET(
         tr.departure_time_flexibility, tr.payment_methods,
         tr.cancellation_policy, tr.payment_handle, tr.auto_accept,
         tr.cutoff_time, tr.pay_window, tr.start_check_in_hrs_before_departure,
+        tr.payment_qr_codes,
         
         -- Car Info
         CASE WHEN (t.status in ('departed', 'done', 'aborted')) THEN cs.original_car_id ELSE c.id END as car_id,
@@ -106,7 +108,8 @@ export async function GET(
 
         -- Snapshot Rules
         brs.payment_handle as snapshot_payment_handle,
-        brs.payment_methods as snapshot_payment_methods
+        brs.payment_methods as snapshot_payment_methods,
+        brs.payment_qr_codes as snapshot_payment_qr_codes
 
       FROM trips t
       LEFT JOIN trip_rules tr ON t.id = tr.id
@@ -289,7 +292,8 @@ export async function GET(
                 flexibility: row.departure_time_flexibility,
                 payment: {
                     methods: row.payment_methods,
-                    handle: paymentHandle
+                    handle: paymentHandle,
+                    qr_codes: row.payment_qr_codes || {}
                 },
                 auto_accept: row.auto_accept,
                 cancellation_policy: row.cancellation_policy,
@@ -319,7 +323,8 @@ export async function GET(
             snapshot_rules: {
                 payment: {
                     methods: row.snapshot_payment_methods,
-                    handle: row.snapshot_payment_handle
+                    handle: row.snapshot_payment_handle,
+                    qr_codes: row.snapshot_payment_qr_codes || {}
                 }
             }
         };
@@ -774,6 +779,39 @@ export async function PATCH(
         if (rulesUpdates.length > 0) {
             rulesValues.push(rideId);
             await client.query(`UPDATE trip_rules SET ${rulesUpdates.join(', ')} WHERE id = $${rIdx}`, rulesValues);
+        }
+
+        // --- PROCESS PAYMENT QR CODES ---
+        // paymentQRCodes can contain:
+        // - base64 string: new upload, process and store
+        // - URL string (https://): existing image, keep as-is
+        // - null/undefined: remove this payment method's QR code
+        if (body.paymentQRCodes !== undefined) {
+            const existingQRCodes = oldTripState.payment_qr_codes || {};
+            const newQRCodes: Record<string, string> = {};
+            const paymentMethods = body.paymentMethods ?? oldTripState.payment_methods ?? [];
+
+            for (const method of paymentMethods) {
+                const qrData = body.paymentQRCodes[method];
+
+                if (qrData && typeof qrData === 'string') {
+                    if (qrData.startsWith('data:')) {
+                        // New base64 upload - process it
+                        const url = await processPaymentQRCode(qrData, user.uid, t);
+                        newQRCodes[method] = url;
+                    } else if (qrData.startsWith('https://')) {
+                        // Existing URL - keep it
+                        newQRCodes[method] = qrData;
+                    }
+                }
+                // If qrData is null/undefined/empty, the method is removed from newQRCodes
+            }
+
+            // Update the payment_qr_codes column
+            await client.query(
+                `UPDATE trip_rules SET payment_qr_codes = $1 WHERE id = $2`,
+                [newQRCodes, rideId]
+            );
         }
 
         // --- CAR SNAPSHOT ON DEPARTURE ---

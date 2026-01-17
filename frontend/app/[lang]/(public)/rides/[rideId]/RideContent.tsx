@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-    Container, Title, Text, Card, Group, Badge, Stack, Grid, LoadingOverlay, Alert, Divider, Avatar, ThemeIcon, Progress, Tooltip, SimpleGrid, Paper, Button, Popover, Transition, NumberInput, Modal, Select, TextInput, ActionIcon, Autocomplete, Textarea, Loader, Box
+    Container, Title, Text, Card, Group, Badge, Stack, Grid, LoadingOverlay, Alert, Divider, Avatar, ThemeIcon, Progress, Tooltip, SimpleGrid, Paper, Button, Popover, Transition, NumberInput, Modal, Select, TextInput, ActionIcon, Autocomplete, Textarea, Loader, Box, Image
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
@@ -78,6 +78,7 @@ interface RideDetails {
         payment: {
             methods: string[];
             handle: string | null;
+            qr_codes?: Record<string, string>;
         };
         auto_accept: boolean;
         cancellation_policy: string | null;
@@ -129,6 +130,9 @@ export default function RidePage() {
 
     const [bookingSuccessModalOpen, setBookingSuccessModalOpen] = useState(false);
     const [bookingSuccessStatus, setBookingSuccessStatus] = useState<string>('');
+    const [bookingSuccessPaymentMethod, setBookingSuccessPaymentMethod] = useState<string>('');
+    const [qrModalOpen, setQrModalOpen] = useState(false);
+    const [qrModalData, setQrModalData] = useState<{ method: string; url: string } | null>(null);
 
     // Pickup Location Autocomplete State
     const [pickupLocation, setPickupLocation] = useState('');
@@ -402,25 +406,13 @@ export default function RidePage() {
             // For now, just close popover and maybe refresh or update local state
             setBookingOpen(false);
 
+            // Store the selected payment method before modal opens
+            setBookingSuccessPaymentMethod(bookingData.intendedPaymentMethod);
             setBookingSuccessStatus(data.status);
             setBookingSuccessModalOpen(true);
 
-            // Update local state to reflect booking immediately
-            setRide((prev) => {
-                if (!prev) return null;
-                const newTaken = data.status === 'joined_with_pay_window'
-                    ? prev.seats.taken + bookingData.seats
-                    : prev.seats.taken;
-
-                return {
-                    ...prev,
-                    user_booking_status: data.status,
-                    seats: {
-                        ...prev.seats,
-                        taken: newTaken
-                    }
-                };
-            });
+            // Refetch ride data to get updated permissions and payment info
+            await fetchRide();
 
         } catch (err: any) {
             notifications.show({
@@ -444,7 +436,27 @@ export default function RidePage() {
                 onClose={() => setBookingSuccessModalOpen(false)}
                 status={bookingSuccessStatus}
                 payWindow={ride?.rules.pay_window || null}
+                paymentHandle={ride?.rules.payment.handle || null}
+                paymentQRCode={bookingSuccessPaymentMethod && ride?.rules.payment.qr_codes?.[bookingSuccessPaymentMethod] || null}
+                selectedPaymentMethod={bookingSuccessPaymentMethod}
             />
+            <Modal
+                opened={qrModalOpen}
+                onClose={() => setQrModalOpen(false)}
+                title={qrModalData?.method ? `${qrModalData.method} QR Code` : 'QR Code'}
+                centered
+                size="lg"
+            >
+                {qrModalData && (
+                    <Image
+                        src={qrModalData.url}
+                        alt={`${qrModalData.method} QR Code`}
+                        mah="70vh"
+                        fit="contain"
+                        radius="sm"
+                    />
+                )}
+            </Modal>
             <Stack gap="xl">
 
                 {/* Header Section */}
@@ -826,6 +838,41 @@ export default function RidePage() {
                                         </Text>
                                     )}
                                 </div>
+
+                                {/* Payment QR Codes */}
+                                {ride.access.contact && ride.rules.payment.qr_codes && Object.keys(ride.rules.payment.qr_codes).length > 0 && (
+                                    <>
+                                        <Divider my="sm" />
+                                        <Text size="xs" c="dimmed" mb="xs">{t('rides.detail.payment.qrCodesLabel' as any)}</Text>
+                                        <Stack gap="sm">
+                                            {Object.entries(ride.rules.payment.qr_codes).map(([method, url]) => (
+                                                <Paper
+                                                    key={method}
+                                                    p="xs"
+                                                    withBorder
+                                                    radius="sm"
+                                                    w="100%"
+                                                    style={{ cursor: 'pointer' }}
+                                                    onClick={() => {
+                                                        setQrModalData({ method, url: url as string });
+                                                        setQrModalOpen(true);
+                                                    }}
+                                                >
+                                                    <Text size="xs" fw={500} mb="xs">{method}</Text>
+                                                    <Image
+                                                        src={url as string}
+                                                        alt={`${method} QR Code`}
+                                                        w="100%"
+                                                        h={50}
+                                                        fit="contain"
+                                                        radius="sm"
+                                                    />
+                                                    <Text size="xs" c="dimmed" ta="center" mt={4}>{t('common.clickToEnlarge' as any)}</Text>
+                                                </Paper>
+                                            ))}
+                                        </Stack>
+                                    </>
+                                )}
 
                                 <Text size="xs" c="dimmed" mt="md">
                                     {t('rides.detail.payment.disclaimer')}

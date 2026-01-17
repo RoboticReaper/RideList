@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Paper, Title, Text, Group, Stack, Alert, Box, SimpleGrid, Button, Flex, Badge, Modal, Switch, Textarea, Select, Autocomplete, ActionIcon, Loader, Avatar, NumberInput } from '@mantine/core';
+import { Paper, Title, Text, Group, Stack, Alert, Box, SimpleGrid, Button, Flex, Badge, Modal, Switch, Textarea, Select, Autocomplete, ActionIcon, Loader, Avatar, NumberInput, Image } from '@mantine/core';
 import { IconAlertTriangle, IconInfoCircle, IconCash, IconUserCheck, IconCalendar, IconLuggage, IconArmchair, IconClock, IconCreditCard, IconSteeringWheel, IconPhone, IconNote, IconMapPin, IconEdit, IconX, IconExclamationCircle } from '@tabler/icons-react';
 import dayjs, { CHICAGO_TZ, getChicagoNow, fromChicagoISO, toChicagoISO } from '@/utils/dateUtils';
 import { DateTimePicker } from '@mantine/dates';
@@ -44,6 +44,8 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
     const [cancelling, setCancelling] = useState(false);
     const [cancelModalOpen, setCancelModalOpen] = useState(false);
     const [viewingSnapshot, setViewingSnapshot] = useState(false);
+    const [qrModalOpen, setQrModalOpen] = useState(false);
+    const [qrModalData, setQrModalData] = useState<{ method: string; url: string } | null>(null);
 
     // Edit mode state
     const [isEditing, setIsEditing] = useState(false);
@@ -373,6 +375,24 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                         {t('tripDetails.rider.modals.leaveTrip.confirm')}
                     </Button>
                 </Group>
+            </Modal>
+
+            <Modal
+                opened={qrModalOpen}
+                onClose={() => setQrModalOpen(false)}
+                title={qrModalData?.method ? `${qrModalData.method} QR Code` : 'QR Code'}
+                centered
+                size="lg"
+            >
+                {qrModalData && (
+                    <Image
+                        src={qrModalData.url}
+                        alt={`${qrModalData.method} QR Code`}
+                        mah="70vh"
+                        fit="contain"
+                        radius="sm"
+                    />
+                )}
             </Modal>
 
             <Stack gap="lg" pb={200}>
@@ -853,6 +873,37 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                     )
                                 }
                             />
+                            {/* Payment QR Code for user's selected payment method */}
+                            {trip.access?.financial && (() => {
+                                const intendedMethod = trip.user_booking?.intended_payment_method;
+                                const qrCodes = rulesToDisplay?.payment?.qr_codes;
+                                const qrCodeUrl = intendedMethod && qrCodes?.[intendedMethod];
+
+                                if (!qrCodeUrl) return null;
+
+                                return (
+                                    <Box
+                                        style={{ cursor: 'pointer' }}
+                                        onClick={() => {
+                                            setQrModalData({ method: intendedMethod, url: qrCodeUrl });
+                                            setQrModalOpen(true);
+                                        }}
+                                    >
+                                        <Text c="dimmed" size="xs" mb={4}>{intendedMethod} {t('rides.detail.payment.qrCodesLabel' as any)}</Text>
+                                        <Group gap="xs" align="center">
+                                            <Image
+                                                src={qrCodeUrl}
+                                                alt={`${intendedMethod} QR Code`}
+                                                h={40}
+                                                w={40}
+                                                fit="contain"
+                                                radius="sm"
+                                            />
+                                            <Text size="xs" c="blue">{t('common.clickToEnlarge' as any)}</Text>
+                                        </Group>
+                                    </Box>
+                                );
+                            })()}
                         </SimpleGrid>
 
                         <InfoItem

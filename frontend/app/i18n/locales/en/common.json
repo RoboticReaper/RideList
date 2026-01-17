@@ -518,6 +518,8 @@
             "errorTitle": "Error",
             "templateLoaded": "Rules have been populated from template.",
             "templateLoadedTitle": "Template Loaded",
+            "qrUploadError": "Failed to process the image. Please try a different file.",
+            "qrUploadErrorTitle": "QR Code Upload Error",
             "share": {
                 "button": "Share Trip",
                 "copied": "Copied to clipboard!",
@@ -656,7 +658,8 @@
                 "none": "None",
                 "handleLabel": "Payment handle / contact",
                 "notProvided": "Not provided by driver",
-                "disclaimer": "RideList does not process payments."
+                "disclaimer": "RideList does not process payments.",
+                "qrCodesLabel": "Payment QR Codes"
             },
             "safety": {
                 "disclaimer": "RideList does not employ drivers. Always meet in public places and confirm details with the driver."
@@ -688,7 +691,7 @@
             "bookingSuccess": {
                 "title": "Booking Submitted",
                 "payNow": "Payment Window",
-                "payWindowMessage": "Please pay driver within {{time}} to confirm your seat. You can manage your booking in the dashboard.",
+                "payWindowMessage": "Please pay driver within {{time}} to confirm your seat. Mark the trip as 'paid' in your dashboard after payment.",
                 "waitingApproval": "Request Sent",
                 "waitingMessage": "Waiting for driver to accept your request. Upon acceptance, you will be notified to send payment within the payment window.",
                 "enablePushTitle": "Get Notified?",
@@ -776,6 +779,10 @@
                 "paymentMethodsPlaceholder": "Enter to add more. Empty = None accepted",
                 "paymentHandle": "Payment Handle / ID",
                 "paymentHandleDesc": "Who should riders pay? (e.g. @username)",
+                "paymentQRCodes": "Payment QR Codes",
+                "paymentQRCodesDesc": "Upload QR codes for each payment method to make it easier for riders to pay you",
+                "uploadQRCode": "Upload QR",
+                "removeQRCode": "Remove QR Code",
                 "pickupRules": "Pickup Rules",
                 "pickupRulesPlaceholder": "e.g. Wait at the bus stop, look for a red car",
                 "cancelPolicy": "Cancellation Policy",
@@ -893,7 +900,8 @@
         "ready": "Ready",
         "selectOrType": "Select or type...",
         "eg": "e.g.",
-        "unknown": "Unknown"
+        "unknown": "Unknown",
+        "clickToEnlarge": "Tap to enlarge"
     },
     "status": {
         "trip": {
@@ -2474,7 +2482,10 @@
             "ruleTemplateLinkedToTrip": "Cannot delete this rule template because it is currently linked to a trip template.",
             "templateSeatsExceedCarCapacity": "Template seats ({{seats}}) cannot exceed car capacity ({{capacity}}).",
             "ruleBigLuggageExceedsCar": "Rule big luggage limit ({{limit}}) exceeds car capacity ({{capacity}}).",
-            "ruleSmallLuggageExceedsCar": "Rule small luggage limit ({{limit}}) exceeds car capacity ({{capacity}})."
+            "ruleSmallLuggageExceedsCar": "Rule small luggage limit ({{limit}}) exceeds car capacity ({{capacity}}).",
+            "qrCodeInvalidBase64": "Invalid QR code image format",
+            "qrCodeProcessingFailed": "Failed to process QR code image. Please use a valid image file.",
+            "qrCodeUploadFailed": "Failed to upload QR code image. Please try again."
         }
     },
     "tripFields": {

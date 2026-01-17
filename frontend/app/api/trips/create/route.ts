@@ -5,6 +5,7 @@ import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
 import { extractPublicArea } from '@/app/api/lib/extractPublicArea';
 import { getTranslationForUser } from '@/app/api/lib/i18n';
+import { processPaymentQRCode } from '@/app/api/lib/processQRCode';
 
 // Helper to fetch Place Details from Google (New API)
 async function fetchPlaceDetails(placeId: string, sessionToken: string) {
@@ -87,6 +88,7 @@ export async function POST(req: Request) {
             carId, // UUID (Optional if car provided)
             paymentMethods,
             paymentHandle,
+            paymentQRCodes, // { "Venmo": "data:image/...", "Zelle": "data:image/..." }
             bigLuggage,
             smallLuggage,
             autoAccept,
@@ -350,6 +352,25 @@ export async function POST(req: Request) {
 
         const tripId = tripRes.rows[0].id;
 
+        // --- PROCESS PAYMENT QR CODES ---
+        let processedQRCodes: Record<string, string> = {};
+        if (paymentQRCodes && typeof paymentQRCodes === 'object') {
+            const methods = paymentMethods || [];
+            for (const method of methods) {
+                const qrData = paymentQRCodes[method];
+                if (qrData && typeof qrData === 'string') {
+                    if (qrData.startsWith('data:')) {
+                        // New base64 upload - process it
+                        const url = await processPaymentQRCode(qrData, user.uid, t);
+                        processedQRCodes[method] = url;
+                    } else if (qrData.startsWith('https://')) {
+                        // Existing URL - keep it
+                        processedQRCodes[method] = qrData;
+                    }
+                }
+            }
+        }
+
         // --- INSERT RULES ---
         // Insert Trip Rules
         await client.query(
@@ -359,6 +380,7 @@ export async function POST(req: Request) {
                 small_luggage_lim,
                 payment_methods,
                 payment_handle,
+                payment_qr_codes,
                 auto_accept,
                 departure_time_flexibility,
                 pickup_radius_meters,
@@ -369,8 +391,8 @@ export async function POST(req: Request) {
                 pay_window,
                 start_check_in_hrs_before_departure
             ) VALUES(
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
-                $13, $14
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+                $14, $15
             )`,
             [
                 tripId,
@@ -378,6 +400,7 @@ export async function POST(req: Request) {
                 smallLuggage || 0,
                 paymentMethods || [],
                 paymentHandle || null, // Optional now
+                processedQRCodes, // JSONB with payment method -> URL mapping
                 autoAccept,
                 flexibility !== undefined && flexibility !== null ? flexibility : '15 minutes',
                 pickupRadius,

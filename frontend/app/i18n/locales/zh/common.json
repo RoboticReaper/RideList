@@ -518,6 +518,8 @@
             "errorTitle": "错误",
             "templateLoaded": "已从模板加载规则。",
             "templateLoadedTitle": "模板已加载",
+            "qrUploadError": "图片处理失败，请尝试其他文件。",
+            "qrUploadErrorTitle": "二维码上传错误",
             "share": {
                 "button": "分享行程",
                 "copied": "已复制到剪贴板！",
@@ -656,7 +658,8 @@
                 "none": "无",
                 "handleLabel": "支付账号 / 联系方式",
                 "notProvided": "司机未提供",
-                "disclaimer": "RideList 不参与或处理任何付款。"
+                "disclaimer": "RideList 不参与或处理任何付款。",
+                "qrCodesLabel": "支付二维码"
             },
             "safety": {
                 "disclaimer": "RideList 不雇佣司机。请在公共场所会面，并提前与司机确认行程细节。"
@@ -688,7 +691,7 @@
             "bookingSuccess": {
                 "title": "预约已提交",
                 "payNow": "付款时限",
-                "payWindowMessage": "请在 {{time}} 内向司机完成付款以确认座位。你可以在行程管理中查看预约状态。",
+                "payWindowMessage": "请在 {{time}} 内向司机完成付款以确认座位。付款后在行程管理中标记为'已付款'。",
                 "waitingApproval": "请求已发送",
                 "waitingMessage": "等待司机确认。确认后你将收到通知并在付款时限内完成付款。",
                 "enablePushTitle": "接收通知？",
@@ -776,6 +779,10 @@
                 "paymentMethodsPlaceholder": "回车添加更多。空白=不接受任何方式",
                 "paymentHandle": "收款账号 / 联系方式",
                 "paymentHandleDesc": "乘客应向谁付款？（例如：@username）",
+                "paymentQRCodes": "收款二维码",
+                "paymentQRCodesDesc": "为每种支付方式上传收款二维码，方便乘客付款",
+                "uploadQRCode": "上传二维码",
+                "removeQRCode": "删除二维码",
                 "pickupRules": "上车规则",
                 "pickupRulesPlaceholder": "例如：在公交站等候，寻找红色车辆",
                 "cancelPolicy": "取消政策",
@@ -893,7 +900,8 @@
         "ready": "就绪",
         "selectOrType": "选择或输入...",
         "eg": "例如",
-        "unknown": "未知"
+        "unknown": "未知",
+        "clickToEnlarge": "点击放大"
     },
     "status": {
         "trip": {
@@ -2474,7 +2482,10 @@
             "ruleTemplateLinkedToTrip": "该规则模板已关联至行程模板，无法删除。",
             "templateSeatsExceedCarCapacity": "模板中的座位数（{{seats}}）不能超过车辆载客能力（{{capacity}}）。",
             "ruleBigLuggageExceedsCar": "规则中大件行李上限（{{limit}}）超过车辆容量（{{capacity}}）。",
-            "ruleSmallLuggageExceedsCar": "规则中小件行李上限（{{limit}}）超过车辆容量（{{capacity}}）。"
+            "ruleSmallLuggageExceedsCar": "规则中小件行李上限（{{limit}}）超过车辆容量（{{capacity}}）。",
+            "qrCodeInvalidBase64": "二维码图片格式无效",
+            "qrCodeProcessingFailed": "二维码图片处理失败，请使用有效的图片文件。",
+            "qrCodeUploadFailed": "二维码图片上传失败，请重试。"
         }
     },
     "tripFields": {
