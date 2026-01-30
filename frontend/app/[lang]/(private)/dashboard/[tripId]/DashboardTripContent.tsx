@@ -2,13 +2,15 @@
 import { useEffect, useState, use, useCallback } from 'react';
 import { Container, Title, Tabs, Loader, Alert, Button, Group, Badge, Text, Stack } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
-import { IconUsers, IconEdit, IconArrowLeft, IconExternalLink, IconRefresh, IconCalendar } from '@tabler/icons-react';
+import { IconUsers, IconEdit, IconArrowLeft, IconExternalLink, IconRefresh, IconCalendar, IconMessage, IconFileText } from '@tabler/icons-react';
 import dayjs, { CHICAGO_TZ } from '@/utils/dateUtils';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { ManageTripView } from './components/ManageTripView';
 import { EditTripView } from './components/EditTripView';
 import { RiderTripView } from './components/RiderTripView';
+import { RiderChatView } from './components/RiderChatView';
+import { DriverChatView } from './components/DriverChatView';
 import { LocalizedLink } from '@/components/LocalizedLink';
 import { useDashboard } from '../../DashboardContext';
 import { getTripStatusConfig } from '@/utils/statusUtils';
@@ -26,6 +28,7 @@ function TripManagementContent({ params }: { params: Promise<{ tripId: string }>
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<string | null>('manage');
+    const [riderActiveTab, setRiderActiveTab] = useState<string | null>('booking');
     const [lastRefreshed, setLastRefreshed] = useState(new Date());
     const [manualRefreshId, setManualRefreshId] = useState(0);
 
@@ -34,8 +37,13 @@ function TripManagementContent({ params }: { params: Promise<{ tripId: string }>
 
     useEffect(() => {
         const tab = searchParams.get('tab');
-        if (tab === 'manage' || tab === 'edit') {
+        if (tab === 'manage' || tab === 'edit' || tab === 'messages') {
             setActiveTab(tab);
+            const params = new URLSearchParams(searchParams.toString());
+            params.delete('tab');
+            router.replace(`${pathname}?${params.toString()}`);
+        } else if (tab === 'booking' || tab === 'chat') {
+            setRiderActiveTab(tab);
             const params = new URLSearchParams(searchParams.toString());
             params.delete('tab');
             router.replace(`${pathname}?${params.toString()}`);
@@ -136,7 +144,7 @@ function TripManagementContent({ params }: { params: Promise<{ tripId: string }>
         const backLink = ['done', 'cancelled'].includes(trip.status) ? '/history' : '/dashboard';
 
         if (!trip.isDriver) {
-            // Rider View matches role='rider' (or we just default to showing it if logic allows, but precise is better)
+            // Rider View with tabs
             return (
                 <>
                     <Group mb="md" gap="xs">
@@ -150,7 +158,29 @@ function TripManagementContent({ params }: { params: Promise<{ tripId: string }>
                             {t('dashboard.common.refresh')}
                         </Button>
                     </Group>
-                    <RiderTripView trip={trip} onRefresh={refreshTrip} />
+
+                    <Tabs value={riderActiveTab} onChange={setRiderActiveTab}>
+                        <Tabs.List>
+                            <Tabs.Tab value="booking" leftSection={<IconFileText size={14} />}>
+                                {t('tripDetails.tabs.bookingDetails' as any) || 'Booking Details'}
+                            </Tabs.Tab>
+                            <Tabs.Tab value="chat" leftSection={<IconMessage size={14} />}>
+                                {t('tripDetails.tabs.messages' as any) || 'Messages'}
+                            </Tabs.Tab>
+                        </Tabs.List>
+
+                        <Tabs.Panel value="booking" pt="lg">
+                            <RiderTripView trip={trip} onRefresh={refreshTrip} />
+                        </Tabs.Panel>
+
+                        <Tabs.Panel value="chat" pt="lg">
+                            <RiderChatView
+                                tripId={tripId}
+                                driverName={trip.driver?.name}
+                                driverPhotoUrl={trip.driver?.photo_url}
+                            />
+                        </Tabs.Panel>
+                    </Tabs>
                 </>
             );
         }
@@ -203,6 +233,9 @@ function TripManagementContent({ params }: { params: Promise<{ tripId: string }>
                         <Tabs.Tab value="manage" leftSection={<IconUsers size={14} />}>
                             {t('tripDetails.tabs.manage')}
                         </Tabs.Tab>
+                        <Tabs.Tab value="messages" leftSection={<IconMessage size={14} />}>
+                            {t('tripDetails.tabs.messages' as any)}
+                        </Tabs.Tab>
                         <Tabs.Tab value="edit" leftSection={<IconEdit size={14} />}>
                             {t('tripDetails.tabs.edit')}
                         </Tabs.Tab>
@@ -210,6 +243,10 @@ function TripManagementContent({ params }: { params: Promise<{ tripId: string }>
 
                     <Tabs.Panel value="manage" pt="lg">
                         <ManageTripView tripId={tripId} tripStatus={trip.status} trip={trip} onStatusChange={refreshTrip} lastRefreshed={lastRefreshed} />
+                    </Tabs.Panel>
+
+                    <Tabs.Panel value="messages" pt={0}>
+                        <DriverChatView tripId={tripId} />
                     </Tabs.Panel>
 
                     <Tabs.Panel value="edit" pt="lg">

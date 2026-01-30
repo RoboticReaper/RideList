@@ -256,6 +256,7 @@ export async function POST(
             // Allowed message types for Rider
             const allowedTypes = ['question', 'followup'];
             if (!allowedTypes.includes(message_type)) {
+                console.log('Invalid message type for rider:', message_type);
                 return NextResponse.json({ error: t('api.errors.invalidMessageType') }, { status: 400 });
             }
 

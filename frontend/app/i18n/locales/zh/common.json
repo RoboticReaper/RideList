@@ -930,7 +930,41 @@
     "tripDetails": {
         "tabs": {
             "manage": "管理行程",
-            "edit": "编辑行程"
+            "edit": "编辑行程",
+            "messages": "消息",
+            "bookingDetails": "预约详情"
+        },
+        "chat": {
+            "title": "消息",
+            "placeholder": "输入消息...",
+            "send": "发送",
+            "noMessages": "暂无消息",
+            "selectRider": "选择乘客开始聊天",
+            "yourself": "你",
+            "announcement": "发送公告",
+            "announcementDesc": "同时向所有乘客发送消息",
+            "announcementPlaceholder": "输入公告内容...",
+            "sendAnnouncement": "发送给所有人",
+            "threads": "对话列表",
+            "directMessages": "私信",
+            "questions": "提问",
+            "question": "提问",
+            "noThreads": "暂无对话",
+            "back": "返回",
+            "viewHistory": "查看历史",
+            "announcementHistory": "公告历史",
+            "noAnnouncements": "暂无公告",
+            "publicReply": "公开回复",
+            "announcementSent": "公告已发送",
+            "announcementSentDesc": "你的公告已发送给所有乘客",
+            "announcements": "公告",
+            "driver": "司机",
+            "yourQuestions": "我的提问",
+            "askQuestion": "向司机提问",
+            "askQuestionDesc": "你的问题将发送给司机",
+            "questionPlaceholder": "输入你的问题...",
+            "questionSent": "问题已发送",
+            "questionSentDesc": "你的问题已发送给司机"
         },
         "status": {
             "paid": "已付款",
