@@ -63,6 +63,7 @@ export async function GET(
                 SELECT * 
                 FROM trip_messages 
                 WHERE trip_id = $1 
+                  AND deleted = false
                 ORDER BY created_at ASC
             `;
             values = [rideId];
@@ -86,6 +87,7 @@ export async function GET(
                     WHERE trip_id = $1 
                       AND message_type = 'answer_public'
                       AND parent_message_id IS NOT NULL
+                      AND deleted = false
                 )
                 SELECT 
                     id,
@@ -106,6 +108,7 @@ export async function GET(
                     deleted
                 FROM trip_messages 
                 WHERE trip_id = $1
+                  AND deleted = false
                   AND (
                     message_type IN ('announcement', 'answer_public') -- Broadcasts
                     OR sender_id = $2 -- My sent messages
