@@ -964,7 +964,14 @@
             "askQuestionDesc": "你的问题将发送给司机",
             "questionPlaceholder": "输入你的问题...",
             "questionSent": "问题已发送",
-            "questionSentDesc": "你的问题已发送给司机"
+            "questionSentDesc": "你的问题已发送给司机",
+            "replyPublicly": "公开回复",
+            "publicReplyWarning": "原始问题和你的回复将对行程中的所有乘客可见。",
+            "originalQuestion": "原始问题",
+            "yourReply": "你的回复",
+            "sendPublicReply": "发送公开回复",
+            "publicReplySent": "公开回复已发送",
+            "publicReplySentDesc": "你的回复现在对所有乘客可见"
         },
         "status": {
             "paid": "已付款",

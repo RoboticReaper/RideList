@@ -37,7 +37,18 @@ function TripManagementContent({ params }: { params: Promise<{ tripId: string }>
 
     useEffect(() => {
         const tab = searchParams.get('tab');
-        if (tab === 'manage' || tab === 'edit' || tab === 'messages') {
+        const chatThread = searchParams.get('chat_thread');
+        const chatRecipient = searchParams.get('chat_recipient');
+
+        // If chat params exist, auto-open the messages/chat tab
+        if (chatThread || chatRecipient) {
+            // For drivers, use 'messages' tab; for riders, use 'chat' tab
+            if (role === 'driver') {
+                setActiveTab('messages');
+            } else {
+                setRiderActiveTab('chat');
+            }
+        } else if (tab === 'manage' || tab === 'edit' || tab === 'messages') {
             setActiveTab(tab);
             const params = new URLSearchParams(searchParams.toString());
             params.delete('tab');
@@ -48,7 +59,7 @@ function TripManagementContent({ params }: { params: Promise<{ tripId: string }>
             params.delete('tab');
             router.replace(`${pathname}?${params.toString()}`);
         }
-    }, [searchParams, pathname, router]);
+    }, [searchParams, pathname, router, role]);
 
     const fetchTrip = useCallback(async () => {
         if (!user) return;

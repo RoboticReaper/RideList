@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { Box, Loader, Alert, Paper, Textarea, Button, Group, Text, Stack, Modal, ScrollArea, Avatar } from '@mantine/core';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { Box, Loader, Alert, Paper, Textarea, Button, Group, Text, Stack, Modal, ScrollArea, Avatar, ActionIcon, TextInput, Switch } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconSpeakerphone, IconSend, IconHistory, IconCheck, IconX } from '@tabler/icons-react';
+import { IconSpeakerphone, IconSend, IconHistory, IconCheck, IconX, IconArrowLeft, IconWorld } from '@tabler/icons-react';
 import { ChatSubjectList } from './ChatSubjectList';
 import { ChatInterface } from './ChatInterface';
 import { ThreadListView, Thread, extractThreadsFromMessages } from './ThreadListView';
@@ -25,6 +26,10 @@ interface Rider {
 export function DriverChatView({ tripId }: DriverChatViewProps) {
     const { user } = useAuth();
     const { t } = useTranslation('common');
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+
     const [activeRider, setActiveRider] = useState<Rider | null>(null);
     const [activeThread, setActiveThread] = useState<Thread | null>(null);
     const [riders, setRiders] = useState<Rider[]>([]);
@@ -41,6 +46,15 @@ export function DriverChatView({ tripId }: DriverChatViewProps) {
     const [announcements, setAnnouncements] = useState<any[]>([]);
     const [loadingAnnouncements, setLoadingAnnouncements] = useState(false);
 
+    // URL sync tracking
+    const urlInitialized = useRef(false);
+
+    // Public reply state
+    const [publicReplyEnabled, setPublicReplyEnabled] = useState(false);
+    const [showPublicReplyModal, setShowPublicReplyModal] = useState(false);
+    const [publicReplyText, setPublicReplyText] = useState('');
+    const [sendingPublicReply, setSendingPublicReply] = useState(false);
+
     // Fetch Riders (Subjects)
     const fetchRiders = useCallback(async () => {
         if (!user) return;
@@ -52,14 +66,22 @@ export function DriverChatView({ tripId }: DriverChatViewProps) {
             if (!res.ok) throw new Error("Failed to load riders");
             const data = await res.json();
 
-            const riderList = data.bookings.map((b: any) => ({
+            const riderListRaw = data.bookings.map((b: any) => ({
                 rider_id: b.rider_id,
                 rider_name: b.rider_name,
                 rider_photo_url: b.rider_photo_url,
                 status: b.status
             }));
 
-            setRiders(riderList);
+            // Dedupe riders to match ChatSubjectMap behavior (last one wins)
+            // This prevents issues where an older booking might have redacted info
+            const uniqueRidersMap = new Map();
+            riderListRaw.forEach((r: any) => {
+                uniqueRidersMap.set(r.rider_id, r);
+            });
+            const uniqueRiders = Array.from(uniqueRidersMap.values()) as Rider[];
+
+            setRiders(uniqueRiders);
         } catch (err: any) {
             console.error(err);
             setError("Failed to load rider list");
@@ -68,9 +90,53 @@ export function DriverChatView({ tripId }: DriverChatViewProps) {
         }
     }, [user, tripId]);
 
+    // Helper to update URL params without navigation
+    const updateUrlParams = useCallback((riderId: string | null, threadId: string | null) => {
+        const params = new URLSearchParams(searchParams.toString());
+
+        if (riderId) {
+            params.set('chat_recipient', riderId);
+        } else {
+            params.delete('chat_recipient');
+        }
+
+        if (threadId) {
+            params.set('chat_thread', threadId);
+        } else {
+            params.delete('chat_thread');
+        }
+
+        const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+        router.replace(newUrl, { scroll: false });
+    }, [pathname, router, searchParams]);
+
     useEffect(() => {
         fetchRiders();
     }, [fetchRiders]);
+
+    // Initialize state from URL params after riders are loaded
+    useEffect(() => {
+        if (urlInitialized.current || loadingRiders || riders.length === 0) return;
+
+        const chatRiderId = searchParams.get('chat_recipient');
+        const chatThreadId = searchParams.get('chat_thread');
+
+        if (chatRiderId) {
+            const rider = riders.find(r => r.rider_id === chatRiderId);
+            if (rider) {
+                setActiveRider(rider);
+                urlInitialized.current = true;
+
+                // Thread will be initialized in a separate effect after messages are loaded
+                // Store threadId in a ref temporarily
+                if (chatThreadId) {
+                    (window as any).__pendingChatThreadId = chatThreadId;
+                }
+            }
+        } else {
+            urlInitialized.current = true;
+        }
+    }, [riders, loadingRiders, searchParams]);
 
     // Fetch ALL Chat Messages for Active Rider (to build thread list)
     const fetchChatForRider = useCallback(async () => {
@@ -108,6 +174,18 @@ export function DriverChatView({ tripId }: DriverChatViewProps) {
             // Extract threads
             const extractedThreads = extractThreadsFromMessages(riderMessages, activeRider.rider_id, user.uid);
             setThreads(extractedThreads);
+
+            // Check for pending thread from URL params
+            const pendingThreadId = (window as any).__pendingChatThreadId;
+            if (pendingThreadId && extractedThreads.length > 0) {
+                const thread = extractedThreads.find(t =>
+                    t.parentMessageId === pendingThreadId || t.id === pendingThreadId
+                );
+                if (thread) {
+                    setActiveThread(thread);
+                }
+                delete (window as any).__pendingChatThreadId;
+            }
 
         } catch (err) {
             console.error(err);
@@ -284,13 +362,24 @@ export function DriverChatView({ tripId }: DriverChatViewProps) {
             if (!res.ok) throw new Error("Failed to load chat");
             const data = await res.json();
 
-            // Filter announcements and answer_public messages
-            const announcementMsgs = data.messages.filter((m: any) =>
+            // Get all messages to find original questions
+            const allMsgs = data.messages;
+
+            // Filter announcements and answer_public messages, attaching original question for public answers
+            const announcementMsgs = allMsgs.filter((m: any) =>
                 m.message_type === 'announcement' || m.message_type === 'answer_public'
-            ).map((m: any) => ({
-                ...m,
-                is_me: m.sender_id === user.uid
-            }));
+            ).map((m: any) => {
+                let originalQuestion = '';
+                if (m.message_type === 'answer_public' && m.parent_message_id) {
+                    const parentQ = allMsgs.find((q: any) => q.id === m.parent_message_id);
+                    originalQuestion = parentQ?.content || '';
+                }
+                return {
+                    ...m,
+                    is_me: m.sender_id === user.uid,
+                    original_question: originalQuestion
+                };
+            });
 
             setAnnouncements(announcementMsgs);
         } catch (err) {
@@ -305,19 +394,86 @@ export function DriverChatView({ tripId }: DriverChatViewProps) {
         fetchAnnouncements();
     };
 
+    // Get the original question content for the current thread
+    const getOriginalQuestion = () => {
+        if (!activeThread?.parentMessageId || !allMessages.length) return '';
+        const question = allMessages.find(m => m.id === activeThread.parentMessageId);
+        return question?.content || '';
+    };
+
+    const sendPublicReply = async () => {
+        if (!user || !activeRider || !activeThread || !publicReplyText.trim()) return;
+        setSendingPublicReply(true);
+        try {
+            const token = await user.getIdToken();
+            const payload = {
+                content: publicReplyText.trim(),
+                message_type: 'answer_public',
+                parent_message_id: activeThread.parentMessageId,
+                receiver_id: activeRider.rider_id
+            };
+
+            const res = await fetch(`/api/trips/${tripId}/chat`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                setPublicReplyText('');
+                setShowPublicReplyModal(false);
+                setPublicReplyEnabled(false);
+                notifications.show({
+                    title: t('tripDetails.chat.publicReplySent' as any) || 'Public Reply Sent',
+                    message: t('tripDetails.chat.publicReplySentDesc' as any) || 'Your reply is now visible to all riders',
+                    color: 'green',
+                    icon: <IconCheck size={16} />,
+                    autoClose: 3000
+                });
+                await fetchChatForRider();
+            } else {
+                const errorData = await res.json();
+                notifications.show({
+                    title: t('common.error' as any) || 'Error',
+                    message: errorData.error || t('tripDetails.chat.sendFailed' as any) || 'Failed to send reply',
+                    color: 'red',
+                    icon: <IconX size={16} />,
+                    autoClose: 5000
+                });
+            }
+        } catch (err) {
+            console.error(err);
+            notifications.show({
+                title: t('common.error' as any) || 'Error',
+                message: t('tripDetails.chat.sendFailed' as any) || 'Failed to send reply',
+                color: 'red',
+                icon: <IconX size={16} />,
+                autoClose: 5000
+            });
+        } finally {
+            setSendingPublicReply(false);
+        }
+    };
+
     const handleSelectRider = (rider: Rider) => {
         setActiveRider(rider);
         setActiveThread(null);
         setThreadMessages([]);
+        updateUrlParams(rider.rider_id, null);
     };
 
     const handleSelectThread = (thread: Thread) => {
         setActiveThread(thread);
+        updateUrlParams(activeRider?.rider_id || null, thread.parentMessageId || thread.id);
     };
 
     const handleBackFromThread = () => {
         setActiveThread(null);
         setThreadMessages([]);
+        updateUrlParams(activeRider?.rider_id || null, null);
     };
 
     const handleBackFromThreadList = () => {
@@ -325,6 +481,7 @@ export function DriverChatView({ tripId }: DriverChatViewProps) {
         setActiveThread(null);
         setAllMessages([]);
         setThreads([]);
+        updateUrlParams(null, null);
     };
 
     if (loadingRiders) return <Box p="xl" ta="center"><Loader /></Box>;
@@ -332,20 +489,98 @@ export function DriverChatView({ tripId }: DriverChatViewProps) {
 
     // View: Chat Interface (inside a thread)
     if (activeRider && activeThread) {
+        const isQuestionThread = activeThread.type === 'question';
+
+        // Custom send handler that shows modal when public toggle is on
+        const handleSend = async (content: string) => {
+            if (isQuestionThread && publicReplyEnabled) {
+                // Store the content and show confirmation modal
+                setPublicReplyText(content);
+                setShowPublicReplyModal(true);
+            } else {
+                // Normal send
+                await sendMessage(content);
+            }
+        };
+
         return (
             <Box style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 200, background: 'white' }}>
                 <ChatInterface
                     messages={threadMessages}
-                    onSend={sendMessage}
+                    onSend={handleSend}
                     recipientName={activeThread.type === 'dm'
                         ? activeRider.rider_name
                         : `${activeRider.rider_name} - ${t('tripDetails.chat.question' as any) || 'Question'}`}
                     recipientPhotoUrl={activeRider.rider_photo_url}
                     onBack={handleBackFromThread}
                     loading={loadingChat && threadMessages.length === 0}
-                    sending={sending}
+                    sending={sending || sendingPublicReply}
+                    showPublicToggle={isQuestionThread}
+                    publicReplyEnabled={publicReplyEnabled}
+                    onPublicReplyToggle={setPublicReplyEnabled}
                 />
-            </Box>
+
+                {/* Public Reply Confirmation Modal */}
+                <Modal
+                    opened={showPublicReplyModal}
+                    onClose={() => {
+                        setShowPublicReplyModal(false);
+                        setPublicReplyText('');
+                    }}
+                    zIndex={300}
+                    title={
+                        <Group gap="xs">
+                            <IconWorld size={20} color="var(--mantine-color-green-6)" />
+                            <Text fw={600}>{t('tripDetails.chat.replyPublicly' as any) || 'Reply Publicly'}</Text>
+                        </Group>
+                    }
+                    size="lg"
+                >
+                    <Stack>
+                        <Alert color="yellow" variant="light">
+                            <Text size="sm">
+                                {t('tripDetails.chat.publicReplyWarning' as any) || 'The original question and your reply will both be visible to everyone in the trip.'}
+                            </Text>
+                        </Alert>
+
+                        <Paper p="md" withBorder radius="md" bg="gray.0">
+                            <Text size="xs" c="dimmed" mb="xs" fw={600}>
+                                {t('tripDetails.chat.originalQuestion' as any) || 'Original Question'}
+                            </Text>
+                            <Text size="sm">{getOriginalQuestion()}</Text>
+                        </Paper>
+
+                        <Paper p="md" withBorder radius="md" bg="green.0">
+                            <Text size="xs" c="dimmed" mb="xs" fw={600}>
+                                {t('tripDetails.chat.yourReply' as any) || 'Your Reply'}
+                            </Text>
+                            <Text size="sm">{publicReplyText}</Text>
+                        </Paper>
+
+                        <Group justify="flex-end">
+                            <Button
+                                variant="subtle"
+                                onClick={() => {
+                                    setShowPublicReplyModal(false);
+                                    setPublicReplyText('');
+                                    setPublicReplyEnabled(false);
+                                }}
+                            >
+                                {t('common.cancel' as any) || 'Cancel'}
+                            </Button>
+                            <Button
+                                color="green"
+                                leftSection={<IconWorld size={14} />}
+                                onClick={sendPublicReply}
+                                loading={sendingPublicReply}
+                                disabled={!publicReplyText.trim()}
+                            >
+                                {t('tripDetails.chat.sendPublicReply' as any) || 'Send Public Reply'}
+                            </Button>
+                        </Group>
+                    </Stack>
+                </Modal>
+            </Box >
         );
     }
 
@@ -438,7 +673,7 @@ export function DriverChatView({ tripId }: DriverChatViewProps) {
                                         {msg.message_type === 'announcement' ? (
                                             <IconSpeakerphone size={16} color="var(--mantine-color-blue-6)" />
                                         ) : (
-                                            <Avatar size="xs" radius="xl" color="green">A</Avatar>
+                                            <IconWorld size={16} color="var(--mantine-color-green-6)" />
                                         )}
                                         <Text size="xs" c="dimmed">
                                             {msg.message_type === 'announcement'
@@ -450,6 +685,17 @@ export function DriverChatView({ tripId }: DriverChatViewProps) {
                                             {dayjs(msg.created_at).format('MMM D, h:mm A')}
                                         </Text>
                                     </Group>
+
+                                    {/* Show original question for public replies */}
+                                    {msg.message_type === 'answer_public' && msg.original_question && (
+                                        <Paper p="sm" mb="sm" bg="white" radius="sm" withBorder>
+                                            <Text size="xs" c="dimmed" fw={600} mb={4}>
+                                                {t('tripDetails.chat.originalQuestion' as any) || 'Original Question'}
+                                            </Text>
+                                            <Text size="sm" c="dark">{msg.original_question}</Text>
+                                        </Paper>
+                                    )}
+
                                     <Text size="sm">{msg.content}</Text>
                                 </Paper>
                             ))}

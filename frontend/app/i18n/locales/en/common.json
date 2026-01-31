@@ -964,7 +964,14 @@
             "askQuestionDesc": "Your question will be sent to the driver",
             "questionPlaceholder": "Type your question...",
             "questionSent": "Question Sent",
-            "questionSentDesc": "Your question has been sent to the driver"
+            "questionSentDesc": "Your question has been sent to the driver",
+            "replyPublicly": "Reply Publicly",
+            "publicReplyWarning": "The original question and your reply will both be visible to everyone in the trip.",
+            "originalQuestion": "Original Question",
+            "yourReply": "Your Reply",
+            "sendPublicReply": "Send Public Reply",
+            "publicReplySent": "Public Reply Sent",
+            "publicReplySentDesc": "Your reply is now visible to all riders"
         },
         "status": {
             "paid": "Paid",

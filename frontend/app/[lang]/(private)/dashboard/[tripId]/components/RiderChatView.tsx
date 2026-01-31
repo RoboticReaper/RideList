@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Box, Loader, Alert, Paper, Textarea, Button, Group, Text, Stack, Modal, UnstyledButton, Badge, Avatar, ScrollArea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconSpeakerphone, IconSend, IconMessage, IconMessageCircleQuestion, IconChevronRight, IconCheck, IconPlus, IconX } from '@tabler/icons-react';
@@ -27,6 +28,10 @@ interface Thread {
 export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatViewProps) {
     const { user } = useAuth();
     const { t } = useTranslation('common');
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+
     const [activeThread, setActiveThread] = useState<Thread | null>(null);
     const [messages, setMessages] = useState<any[]>([]);
     const [threadMessages, setThreadMessages] = useState<any[]>([]);
@@ -36,6 +41,23 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
     const [questionText, setQuestionText] = useState('');
     const [askingQuestion, setAskingQuestion] = useState(false);
     const [showAskModal, setShowAskModal] = useState(false);
+
+    // URL sync tracking
+    const urlInitialized = useRef(false);
+
+    // Helper to update URL params
+    const updateUrlParams = useCallback((threadId: string | null) => {
+        const params = new URLSearchParams(searchParams.toString());
+
+        if (threadId) {
+            params.set('chat_thread', threadId);
+        } else {
+            params.delete('chat_thread');
+        }
+
+        const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+        router.replace(newUrl, { scroll: false });
+    }, [pathname, router, searchParams]);
 
     // Fetch all messages for this trip
     const fetchMessages = useCallback(async () => {
@@ -58,12 +80,26 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
             // Extract threads from messages
             const extractedThreads = extractRiderThreads(msgs, user.uid);
             setThreads(extractedThreads);
+
+            // Initialize thread from URL params on first load
+            if (!urlInitialized.current) {
+                const chatThreadId = searchParams.get('chat_thread');
+                if (chatThreadId && extractedThreads.length > 0) {
+                    const thread = extractedThreads.find(t =>
+                        t.parentMessageId === chatThreadId || t.id === chatThreadId || t.type === chatThreadId
+                    );
+                    if (thread) {
+                        setActiveThread(thread);
+                    }
+                }
+                urlInitialized.current = true;
+            }
         } catch (err) {
             console.error(err);
         } finally {
             setLoadingChat(false);
         }
-    }, [user, tripId]);
+    }, [user, tripId, searchParams]);
 
     useEffect(() => {
         fetchMessages();
@@ -79,10 +115,16 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
         }
 
         if (activeThread.type === 'announcement') {
-            // Show all announcements
+            // Show all announcements and public answers with original questions attached
             const announcementMsgs = messages.filter(m =>
                 m.message_type === 'announcement' || m.message_type === 'answer_public'
-            );
+            ).map(m => {
+                if (m.message_type === 'answer_public' && m.parent_message_id) {
+                    const parentQ = messages.find(q => q.id === m.parent_message_id);
+                    return { ...m, original_question: parentQ?.content || '' };
+                }
+                return m;
+            });
             setThreadMessages(announcementMsgs);
         } else if (activeThread.type === 'dm') {
             // Show DMs between rider and driver (includes dm_private and followups to the first DM)
@@ -234,7 +276,7 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
                         ? (t('tripDetails.chat.announcements' as any) || 'Announcements')
                         : (driverName || t('tripDetails.chat.driver' as any) || 'Driver')}
                     recipientPhotoUrl={activeThread.type === 'announcement' ? null : driverPhotoUrl}
-                    onBack={() => setActiveThread(null)}
+                    onBack={() => { setActiveThread(null); updateUrlParams(null); }}
                     loading={false}
                     sending={sending}
                 />
@@ -260,7 +302,7 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
 
             {/* Announcements Thread */}
             {announcementThread && (
-                <UnstyledButton onClick={() => setActiveThread(announcementThread)} w="100%">
+                <UnstyledButton onClick={() => { setActiveThread(announcementThread); updateUrlParams('announcement'); }} w="100%">
                     <Paper p="md" withBorder radius="md" bg="blue.0">
                         <Group wrap="nowrap" align="center">
                             <IconSpeakerphone size={24} color="var(--mantine-color-blue-6)" />
@@ -281,7 +323,7 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
 
             {/* DM Thread */}
             {dmThread && (
-                <UnstyledButton onClick={() => setActiveThread(dmThread)} w="100%">
+                <UnstyledButton onClick={() => { setActiveThread(dmThread); updateUrlParams(dmThread.parentMessageId || 'dm'); }} w="100%">
                     <Paper p="md" withBorder radius="md">
                         <Group wrap="nowrap" align="center">
                             <Avatar src={driverPhotoUrl} radius="xl" size="md" color="initials">
@@ -307,7 +349,7 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
                         {t('tripDetails.chat.yourQuestions' as any) || 'Your Questions'}
                     </Text>
                     {questionThreads.map((qThread) => (
-                        <UnstyledButton key={qThread.id} onClick={() => setActiveThread(qThread)} w="100%">
+                        <UnstyledButton key={qThread.id} onClick={() => { setActiveThread(qThread); updateUrlParams(qThread.parentMessageId || qThread.id); }} w="100%">
                             <Paper p="md" withBorder radius="md">
                                 <Group wrap="nowrap" align="center">
                                     <Avatar src={driverPhotoUrl} radius="xl" size="md" color="initials">

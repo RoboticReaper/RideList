@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Stack, Group, TextInput, ActionIcon, Text, Paper, ScrollArea, Avatar, Box, LoadingOverlay } from '@mantine/core';
-import { IconSend, IconArrowLeft } from '@tabler/icons-react';
+import { Stack, Group, TextInput, ActionIcon, Text, Paper, ScrollArea, Avatar, Box, LoadingOverlay, Switch } from '@mantine/core';
+import { IconSend, IconArrowLeft, IconWorld } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 interface Message {
@@ -11,6 +11,8 @@ interface Message {
     sender_id: string; // 'driver' messages are from current user if viewing as driver
     created_at: string;
     is_me: boolean;
+    message_type?: string;
+    original_question?: string;
 }
 
 interface ChatInterfaceProps {
@@ -21,9 +23,16 @@ interface ChatInterfaceProps {
     onBack: () => void;
     loading?: boolean;
     sending?: boolean;
+    // Public reply toggle
+    showPublicToggle?: boolean;
+    publicReplyEnabled?: boolean;
+    onPublicReplyToggle?: (enabled: boolean) => void;
 }
 
-export function ChatInterface({ messages, onSend, recipientName, recipientPhotoUrl, onBack, loading, sending }: ChatInterfaceProps) {
+export function ChatInterface({
+    messages, onSend, recipientName, recipientPhotoUrl, onBack, loading, sending,
+    showPublicToggle, publicReplyEnabled, onPublicReplyToggle
+}: ChatInterfaceProps) {
     const { t } = useTranslation('common');
     const [inputValue, setInputValue] = useState('');
     const viewport = useRef<HTMLDivElement>(null);
@@ -94,6 +103,15 @@ export function ChatInterface({ messages, onSend, recipientName, recipientPhotoU
                                         borderBottomLeftRadius: !msg.is_me ? 4 : undefined
                                     }}
                                 >
+                                    {/* Show original question for public answers */}
+                                    {msg.message_type === 'answer_public' && msg.original_question && (
+                                        <Paper p="xs" mb="xs" bg={msg.is_me ? 'blue.7' : 'gray.3'} radius="sm">
+                                            <Text size="xs" fw={600} mb={2}>
+                                                {t('tripDetails.chat.originalQuestion' as any) || 'Original Question'}
+                                            </Text>
+                                            <Text size="xs" style={{ wordBreak: 'break-word' }}>{msg.original_question}</Text>
+                                        </Paper>
+                                    )}
                                     <Text size="sm" style={{ wordBreak: 'break-word' }}>{msg.content}</Text>
                                 </Paper>
                             </Group>
@@ -105,6 +123,21 @@ export function ChatInterface({ messages, onSend, recipientName, recipientPhotoU
             {/* Input Area - only show if onSend is provided */}
             {onSend && (
                 <Paper p="sm" shadow="xs" radius={0} withBorder>
+                    {/* Public Reply Toggle - shown above input when applicable */}
+                    {showPublicToggle && (
+                        <Group gap="xs" mb="xs" justify="flex-end">
+                            <IconWorld size={14} color={publicReplyEnabled ? 'var(--mantine-color-green-6)' : 'var(--mantine-color-gray-5)'} />
+                            <Text size="xs" c={publicReplyEnabled ? 'green' : 'dimmed'}>
+                                {t('tripDetails.chat.replyPublicly' as any) || 'Reply Publicly'}
+                            </Text>
+                            <Switch
+                                size="xs"
+                                checked={publicReplyEnabled}
+                                onChange={(e) => onPublicReplyToggle?.(e.currentTarget.checked)}
+                                color="green"
+                            />
+                        </Group>
+                    )}
                     <form onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
                         <Group gap="xs">
                             <TextInput
@@ -117,7 +150,7 @@ export function ChatInterface({ messages, onSend, recipientName, recipientPhotoU
                             />
                             <ActionIcon
                                 variant="filled"
-                                color="blue"
+                                color={publicReplyEnabled ? 'green' : 'blue'}
                                 radius="xl"
                                 size="lg"
                                 type="submit"
