@@ -138,8 +138,8 @@ export function AuthForm(props: PaperProps) {
             <Trans
               i18nKey="auth.agreementsCheckbox"
               components={{
-                1: <Anchor component={LocalizedLink} href="/privacy" target="_blank" inherit c="blue" />,
-                3: <Anchor component={LocalizedLink} href="/tos" target="_blank" inherit c="blue" />
+                1: <Anchor component={LocalizedLink} href="/privacy" inherit c="blue" />,
+                3: <Anchor component={LocalizedLink} href="/tos" inherit c="blue" />
               }}
             />
           }

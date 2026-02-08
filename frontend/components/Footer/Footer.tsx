@@ -97,9 +97,14 @@ export function Footer() {
       </Container>
 
       <Container className={classes.inner} style={{ paddingTop: 0, paddingBottom: 20, justifyContent: 'flex-end' }}>
-        <Text c="dimmed" size="sm">
-          {t('footer.copyright', { year: new Date().getFullYear() })}
-        </Text>
+        <Stack gap={0} align="flex-end">
+          <Anchor href="mailto:support@ridelist.app" c="blue" size="sm">
+            support@ridelist.app
+          </Anchor>
+          <Text c="dimmed" size="sm" mt={10}>
+            {t('footer.copyright', { year: new Date().getFullYear() })}
+          </Text>
+        </Stack>
       </Container>
 
       <Modal opened={opened} onClose={close} title={t('feedback.modalTitle')} centered>
