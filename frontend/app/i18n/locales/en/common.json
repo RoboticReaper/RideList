@@ -220,15 +220,15 @@
     },
     "riderSteps": {
         "title": "Find Your Ride in 3 Simple Steps",
-        "description": "Search, compare, and book verified rides — no group chats, no spam, no guessing.",
+        "description": "Search, compare, and book rides — no group chats, no spam, no guessing.",
         "search": "Search rides that fit your plan",
-        "searchDesc": "Enter where you’re going and when. See real rides that match — all in one place.\n\n• Public-safe pickup areas\n• Live availability\n• Browse without an account",
+        "searchDesc": "Enter where you’re going and when. See rides that match — all in one place.\n\n• View pickup areas\n• Live availability\n• Browse without an account",
         "compare": "Compare clearly, decide confidently",
-        "compareDesc": "Compare price, timing, distance, luggage space, and driver ratings at a glance.\n\n• Verified drivers\n• Clear trip rules\n• Seats shown upfront",
+        "compareDesc": "Compare price, timing, distance, luggage space, and driver ratings at a glance.\n\n• Detailed information\n• Clear trip rules\n• Seats shown upfront",
         "book": "Book your seat, stress-free",
         "bookDesc": "Reserve with your UIUC email. The system handles confirmations and reminders for you.\n\n• Secure booking flow\n• Automatic status updates\n• No chasing messages",
         "screenshotPlaceholder": "Screenshot Placeholder",
-        "footer": "Built for the UIUC community with privacy and clarity first.",
+        "footer": "Built for the UIUC community with privacy and clarity in mind.",
         "howItWorksLink": "→ Learn how it works",
         "captions": {
             "step1": "Search results page",
@@ -240,11 +240,11 @@
         "title": "Post a Ride in 3 Simple Steps",
         "description": "Set the rules once. The system handles the rest.",
         "post": "Post your ride with clear rules",
-        "postDesc": "Set your route, time, price, and preferences in one place.\n\n• Public-safe locations\n• Luggage & payment rules\n• Auto-accept or manual approval",
+        "postDesc": "Set your route, time, price, and preferences in one place.\n\n• Pickup locations with area\n• Luggage & payment rules\n• Auto-accept or manual approval",
         "manage": "Manage bookings without chaos",
         "manageDesc": "See who joined, who paid, and who’s ready — all in one dashboard.\n\n• Real-time booking status\n• Automatic pay windows\n• No group chats",
         "drive": "Pick up and go",
-        "driveDesc": "Start pickup when ready. The system locks details and handles the rest.\n\n• Check-in & no-show handling\n• Car info frozen for safety\n• Trip history saved automatically",
+        "driveDesc": "Start pickup when ready. The system locks details and handles the rest.\n\n• Check-in & no-show handling\n• Car info frozen for records\n• Trip history saved automatically",
         "screenshotPlaceholder": "Screenshot Placeholder",
         "footer": "Designed to reduce coordination, not add more work.",
         "howItWorksLink": "→ Learn how it works",
@@ -282,7 +282,7 @@
                 "questions": [
                     {
                         "q": "Who can use this platform?",
-                        "a": "This platform is currently available to users with a valid UIUC Microsoft account. This helps keep the community trusted and accountable."
+                        "a": "This platform is currently available to users with a valid UIUC Microsoft account. This helps keep the community accountable, though we perform no background checks for riders and drivers."
                     },
                     {
                         "q": "Do I need to create a profile?",
@@ -290,7 +290,7 @@
                     },
                     {
                         "q": "Is my real name visible to everyone?",
-                        "a": "No. Your full name is only shown to people who are actively booking or riding with you. Public viewers see a shortened or anonymized name."
+                        "a": "No. Your full name is only shown to people who are actively booking or riding with you. Public viewers see a redacted name."
                     }
                 ]
             },
@@ -311,7 +311,7 @@
                     },
                     {
                         "q": "Can I edit trip details after riders join?",
-                        "a": "Some fields can be edited before pickup starts. Once pickup begins, trip rules and car info are locked for safety."
+                        "a": "Some fields can be edited before pickup starts. Once pickup begins, trip rules and car info are locked for records."
                     }
                 ]
             },
@@ -405,7 +405,7 @@
                 "questions": [
                     {
                         "q": "What notifications will I receive?",
-                        "a": "You’ll receive notifications for important events like booking updates, check-in, pickup start, and trip changes."
+                        "a": "You’ll receive notifications for important events like booking updates, check-in, pickup start, trip changes, and direct messages."
                     },
                     {
                         "q": "Can I turn off notifications?",
@@ -418,7 +418,7 @@
                 "questions": [
                     {
                         "q": "How do you prevent misuse?",
-                        "a": "We use:\n\n- verified accounts\n- limited data visibility\n- event logs\n- automated safeguards"
+                        "a": "We cannot prevent real-life safety issues. However, we designed the system with\n- Limited data visibility\n- Event logs for clarity \n- Automated privacy safeguards\nRegardless, please be aware of your safety and use common sense when meeting people."
                     },
                     {
                         "q": "Is my phone number public?",
@@ -444,11 +444,11 @@
                 "questions": [
                     {
                         "q": "Is this a rideshare company?",
-                        "a": "No. This platform helps students coordinate rides. Drivers and riders arrange details directly."
+                        "a": "No. This platform helps students coordinate rides. Drivers and riders arrange details directly. We do not make any safety-related promises."
                     },
                     {
                         "q": "Who do I contact if something goes wrong?",
-                        "a": "Use the reporting tools in the app or contact support through the help page."
+                        "a": "Use the contact button in the footer"
                     }
                 ]
             }
@@ -456,7 +456,7 @@
     },
     "auth": {
         "loginWelcome": "Welcome to RideList, login with",
-        "uiucOnly": "Only UIUC accounts (@illinois.edu) are currently allowed for student verification.",
+        "uiucOnly": "Only UIUC accounts (@illinois.edu) are currently allowed for student status.",
         "agreementsLabel": "Agreements",
         "agreementsCheckbox": "I agree to <1>privacy policy</1> and <3>terms of service</3>",
         "agreementsError": "Please check agreements to login",
@@ -621,7 +621,7 @@
             },
             "driver": {
                 "title": "Your Driver",
-                "verifiedStudent": "Verified Student",
+                "verifiedStudent": "UIUC Student",
                 "memberSince": "Member since {{year}}",
                 "phoneNotProvided": "Not provided by driver",
                 "bookToView": "Book ride to view",
@@ -664,7 +664,7 @@
                 "qrCodesLabel": "Payment QR Codes"
             },
             "safety": {
-                "disclaimer": "RideList does not employ drivers. Always meet in public places and confirm details with the driver."
+                "disclaimer": "RideList does not employ drivers nor screen drivers nor riders. Always meet in public places and use caution."
             },
             "booking": {
                 "modalTitle": "Booking Details",
@@ -1739,8 +1739,8 @@
     },
     "about": {
         "title": "About Us",
-        "description": "Connecting the UIUC community with safe, affordable rides.",
-        "content": "RideList was built to solve the fragmentation of ride-sharing at UIUC. No more digging through Facebook groups or group chats. We provide a centralized, searchable, and verified platform for students to find and post rides."
+        "description": "Connecting the UIUC community with convenient, transparent rides.",
+        "content": "RideList was built to solve the fragmentation of ride-sharing at UIUC. No more digging through Facebook groups or group chats. We provide a centralized, searchable, and easily usable platform for students to find and post rides."
     },
     "how": {
         "title": "How It Works",
@@ -1748,7 +1748,7 @@
         "intro": {
             "noteTitle": "Note",
             "title": "What This Platform Is",
-            "description": "This platform helps UIUC students coordinate rides in a safe, transparent, and structured way.",
+            "description": "This platform helps UIUC students coordinate rides in a transparent and structured way.",
             "note": "This is not a traditional rideshare or taxi service. Drivers post trips they are already planning to take, and riders request to join those trips under clearly defined rules.",
             "listTitle": "The system is designed to:",
             "list": [
@@ -1820,7 +1820,7 @@
         "vehicles": {
             "title": "Vehicles & Driver Requirements",
             "registering": {
-                "title": "Registering a vehicle",
+                "title": "Adding a vehicle",
                 "p1": "Drivers must input vehicle information before using them for trips.",
                 "p2": "Each vehicle includes:",
                 "list": [
@@ -1833,11 +1833,10 @@
                 "title": "Why vehicle information is required",
                 "p1": "Vehicle information is essential for:",
                 "list": [
-                    "Safety",
                     "Pickup coordination",
                     "Dispute resolution"
                 ],
-                "p2": "Trips cannot safely start without an assigned vehicle."
+                "p2": "Trips cannot start without an assigned vehicle."
             }
         },
         "posting": {
@@ -1846,7 +1845,7 @@
                 "title": "Core trip details",
                 "p1": "When posting a trip, drivers provide:",
                 "list": [
-                    "From / To locations (public-safe text)",
+                    "From / To locations (fuzzy location)",
                     "Departure time (Chigago time)",
                     "Price",
                     "Available seats",
@@ -1855,7 +1854,7 @@
                 "p2": "Exact addresses are not made public."
             },
             "location": {
-                "title": "Public-safe location text",
+                "title": "Fuzzy location text",
                 "p1": "The system automatically converts exact addresses into:",
                 "list": [
                     "Neighborhoods",
@@ -2014,7 +2013,7 @@
                 ]
             },
             "safeguards": {
-                "title": "Automation safeguards",
+                "title": "Automations",
                 "p1": "The system may:",
                 "list": [
                     "Lock trips at cutoff",
@@ -2071,8 +2070,8 @@
         "safety": {
             "title": "Safety & Trust Principles",
             "anonymous": {
-                "title": "No anonymous coordination",
-                "p1": "All users are verified through university login."
+                "title": "No fake accounts",
+                "p1": "All users must use university login."
             },
             "sensitive": {
                 "title": "Limited exposure of sensitive info",
@@ -2116,7 +2115,7 @@
                 "Reduce ambiguity",
                 "Encourage accountability",
                 "Protect privacy",
-                "Scale safely within a university community"
+                "Be used within a university community"
             ],
             "p2": "If something feels “restricted,” it is usually intentional — to protect users on both sides."
         }
@@ -2126,7 +2125,7 @@
         "toc": "On this page",
         "intro": {
             "title": "Our goal",
-            "p1": "This platform is designed to help UIUC students coordinate rides safely, transparently, and with clear expectations. While no system can eliminate all risk, we’ve built strong safeguards into identity, privacy, and trip coordination."
+            "p1": "This platform is designed to help UIUC students coordinate rides convenient, transparently, and with clear expectations. While no system can eliminate all risk, we’ve built the system with privacy and trip coordination as priority."
         },
         "who": {
             "title": "Who is allowed on this platform",
@@ -2136,7 +2135,7 @@
                 "No external signups",
                 "Each account is tied to a real university identity"
             ],
-            "p2": "This creates accountability and reduces abuse.",
+            "p2": "Disclaimer: we do not screen or perform safety checks. Use caution when meeting people",
             "link": "Learn more about account creation in How it works → Getting started"
         },
         "identity": {
@@ -2166,7 +2165,7 @@
             "link": "See how location visibility works in How it works → Location handling"
         },
         "pickup": {
-            "title": "Pickup & meeting safety",
+            "title": "Pickup & meeting procedure",
             "p1": "To reduce pressure and ambiguity:",
             "list": [
                 "Pickup coordination opens only when it’s operationally necessary",
@@ -2174,7 +2173,7 @@
                 "You are never required to meet before a trip becomes active",
                 "If something feels wrong, you can leave or remove a booking before departure"
             ],
-            "p2": "Trust your judgment — the system supports it."
+            "p2": "Trust your judgment and use common sense."
         },
         "payments": {
             "title": "Payments & financial expectations",
@@ -2250,7 +2249,7 @@
         "name": "Name",
         "changePhoto": "Change Photo",
         "removePhoto": "Remove Photo",
-        "verifiedStudent": "Verified Student",
+        "verifiedStudent": "UIUC Student",
         "joined": "Joined",
         "phone": "Phone",
         "phonePlaceholder": "Used for coordination",
@@ -2643,7 +2642,7 @@
                                     "Maintain only one account"
                                 ]
                             },
-                            "We may suspend or terminate accounts that violate these requirements."
+                            "We may suspend or terminate accounts that violate these requirements and we reserve the right to terminate accounts for any reason."
                         ]
                     },
                     {
@@ -2674,6 +2673,7 @@
                                 "items": [
                                     "Holding a valid driver’s license",
                                     "Having legally required insurance",
+                                    "Being legally allowed to work",
                                     "Ensuring your vehicle is safe and roadworthy",
                                     "Complying with all applicable laws"
                                 ]
@@ -2711,7 +2711,7 @@
                                 "items": [
                                     "Display seating capacity",
                                     "Enforce luggage limits",
-                                    "Support safety and coordination"
+                                    "Support coordination"
                                 ]
                             }
                         ]
@@ -2719,7 +2719,7 @@
                     {
                         "title": "Vehicle snapshots",
                         "body": [
-                            "Once a trip begins, vehicle information may be snapshotted and frozen for record-keeping and safety purposes."
+                            "Once a trip begins, vehicle information may be snapshotted and frozen for record-keeping."
                         ]
                     }
                 ]
@@ -2747,7 +2747,7 @@
                     {
                         "title": "Location privacy",
                         "body": [
-                            "Exact addresses may be processed into public-safe location labels (e.g., neighborhood or landmark) to protect privacy.",
+                            "Exact addresses may be processed into fuzzy location labels (e.g., neighborhood or landmark) to protect privacy.",
                             "Precise location details may only be shared with relevant users during active coordination windows."
                         ]
                     }
@@ -2893,16 +2893,7 @@
                     {
                         "title": "Our rights",
                         "body": [
-                            "We reserve the right to suspend or terminate accounts at any time for:",
-                            {
-                                "type": "list",
-                                "items": [
-                                    "policy violations",
-                                    "safety concerns",
-                                    "abuse or misuse",
-                                    "system integrity reasons"
-                                ]
-                            },
+                            "We reserve the right to suspend or terminate accounts at any time for any reason.",
                             "We are not required to provide continued access."
                         ]
                     }
@@ -2940,7 +2931,6 @@
                         "title": "Updates",
                         "body": [
                             "We may update these Terms from time to time.",
-                            "If changes are significant, we may notify users.",
                             "Continued use of the platform constitutes acceptance of the updated Terms."
                         ]
                     }
@@ -3038,7 +3028,7 @@
                                     "timestamps and status changes"
                                 ]
                             },
-                            "This information is required to coordinate trips and enforce system rules."
+                            "This information is required to coordinate trips and enforce system rules. We also retain messages between riders and drivers for record-keeping purposes."
                         ]
                     },
                     {
@@ -3053,7 +3043,7 @@
                                     "license plate (limited visibility)"
                                 ]
                             },
-                            "Vehicle information is used for coordination and safety."
+                            "Vehicle information is used for coordination."
                         ]
                     },
                     {
@@ -3088,7 +3078,7 @@
                                     "manage bookings and trip status",
                                     "notify users of relevant events",
                                     "enforce booking rules and deadlines",
-                                    "support safety and accountability"
+                                    "support accountability"
                                 ]
                             }
                         ]
@@ -3167,9 +3157,9 @@
                 "title": "Location Privacy",
                 "subsections": [
                     {
-                        "title": "Public-safe locations",
+                        "title": "Fuzzy locations",
                         "body": [
-                            "Exact addresses entered by drivers may be processed into public-safe location labels, such as:",
+                            "Exact addresses entered by drivers may be processed into fuzzy location labels, such as:",
                             {
                                 "type": "list",
                                 "items": [
