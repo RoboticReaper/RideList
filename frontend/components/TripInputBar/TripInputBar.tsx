@@ -836,7 +836,11 @@ export function TripInputBar() {
                 notifications.show({ title: t('rides.errors.paymentMethodRequiredTitle'), message: t('rides.errors.paymentMethodRequired'), color: 'red' });
                 return;
             } */
-            // Payment Handle is now OPTIONAL
+            // Payment Handle is now OPTIONAL unless Payment Methods are selected
+            if (paymentMethods.length > 0 && !paymentHandle.trim()) {
+                notifications.show({ title: t('rides.errors.paymentHandleRequiredTitle'), message: t('rides.errors.paymentHandleRequired'), color: 'red' });
+                return;
+            }
 
             // Validate Luggage Limits against Car Capacity
             if (selectedCarId !== 'none') {
@@ -1255,6 +1259,19 @@ export function TripInputBar() {
                             }}
                         />
 
+                        <NumberInput
+                            label={<Group gap="xs">{t('rides.create.labels.flexibility')} {renderSourceBadge('flexibility')}</Group>}
+                            description={t('rides.create.labels.flexibilityDesc')}
+                            required
+                            value={flexibility}
+                            onChange={(val) => {
+                                setFlexibility(val === '' ? '' : Number(val));
+                                setFieldSourceManual(['flexibility']);
+                            }}
+                            min={0}
+                            step={0.25}
+                        />
+
                         <Group justify="flex-end" mt="md">
                             <Button onClick={nextStep}>{t('rides.create.labels.nextDetails')}</Button>
                         </Group>
@@ -1638,18 +1655,6 @@ export function TripInputBar() {
                     <Stack gap="md" mt="lg">
                         <Title order={4}>{t('rides.create.labels.settings')}</Title>
                         <Title order={5}>{t('rides.create.labels.advancedSettings')}</Title>
-                        <NumberInput
-                            label={<Group gap="xs">{t('rides.create.labels.flexibility')} {renderSourceBadge('flexibility')}</Group>}
-                            description={t('rides.create.labels.flexibilityDesc')}
-                            required
-                            value={flexibility}
-                            onChange={(val) => {
-                                setFlexibility(val === '' ? '' : Number(val));
-                                setFieldSourceManual(['flexibility']);
-                            }}
-                            min={0}
-                            step={0.25}
-                        />
                         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                             <NumberInput
                                 label={<Group gap="xs">{t('rides.create.labels.pickupRadius')} {renderSourceBadge('pickupRadius')}</Group>}

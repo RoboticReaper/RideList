@@ -500,6 +500,8 @@
             "ruleTemplateNameRequired": "请为规则模板填写名称。",
             "paymentMethodRequired": "请至少选择一种支付方式。",
             "paymentMethodRequiredTitle": "需要支付方式",
+            "paymentHandleRequired": "如果你指定了支付方式，请务必填写对应的收款账号（如微信号或收款二维码）。",
+            "paymentHandleRequiredTitle": "需要收款账号",
             "flexibilityRequired": "请填写出发时间浮动范围。",
             "flexibilityRequiredTitle": "需要时间浮动",
             "pickupRadiusRequired": "请填写接送半径。",
@@ -896,6 +898,8 @@
         "save": "保存",
         "cancel": "取消",
         "new": "新建",
+        "error": "错误",
+        "success": "成功",
         "none": "无",
         "ready": "就绪",
         "selectOrType": "选择或输入...",
@@ -935,6 +939,7 @@
             "bookingDetails": "预约详情"
         },
         "chat": {
+            "sendFailed": "发送失败",
             "title": "消息",
             "placeholder": "输入消息...",
             "send": "发送",
@@ -944,6 +949,7 @@
             "announcement": "发送公告",
             "announcementDesc": "同时向所有乘客发送消息",
             "announcementPlaceholder": "输入公告内容...",
+            "announcementFailed": "发送公告失败",
             "sendAnnouncement": "发送给所有人",
             "threads": "对话列表",
             "directMessages": "私信",
@@ -971,7 +977,11 @@
             "yourReply": "你的回复",
             "sendPublicReply": "发送公开回复",
             "publicReplySent": "公开回复已发送",
-            "publicReplySentDesc": "你的回复现在对所有乘客可见"
+            "publicReplySentDesc": "你的回复现在对所有乘客可见",
+            "deleteMessage": "删除消息",
+            "deleteConfirmation": "确定要删除此消息吗？此操作无法撤销。消息仍在数据库存储，但不会再显示。",
+            "messageDeleted": "消息已删除",
+            "deleteFailed": "删除消息失败"
         },
         "status": {
             "paid": "已付款",
@@ -2434,10 +2444,22 @@
                 "title": "行程已完成",
                 "message": "行程已标记为完成。"
             }
+        },
+        "messages": {
+            "newMessage": {
+                "title": "新消息",
+                "body": "{{preview}}"
+            }
         }
     },
     "api": {
         "errors": {
+            "messageEmpty": "不能发送空消息",
+            "chatReadOnly": "聊天已锁定",
+            "invalidMessageType": "错误的消息类型",
+            "invalidMessageFormat": "错误的消息格式",
+            "missingReceiver": "缺少消息接收者",
+            "missingParent": "缺少父消息",
             "unauthorized": "未授权",
             "forbidden": "无权限",
             "tripNotFound": "未找到行程",

@@ -356,7 +356,7 @@ create table notifications (
   title text not null,
   body text not null,
 
-  entity_type text,   -- 'trip', 'booking'
+  entity_type text,   -- 'trip', 'booking', 'messages'
   entity_id uuid,
 
   open_link text,

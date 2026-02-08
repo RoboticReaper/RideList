@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Stack, Group, TextInput, ActionIcon, Text, Paper, ScrollArea, Avatar, Box, LoadingOverlay, Switch } from '@mantine/core';
-import { IconSend, IconArrowLeft, IconWorld } from '@tabler/icons-react';
+import { Stack, Group, Textarea, ActionIcon, Text, Paper, ScrollArea, Avatar, Box, LoadingOverlay, Switch, Modal, Button } from '@mantine/core';
+import { IconSend, IconArrowLeft, IconWorld, IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
+import dayjs from '@/utils/dateUtils';
 
 interface Message {
     id: string;
@@ -13,11 +14,13 @@ interface Message {
     is_me: boolean;
     message_type?: string;
     original_question?: string;
+    parent_message_id?: string | null;
 }
 
 interface ChatInterfaceProps {
     messages: Message[];
     onSend?: (content: string) => Promise<void>;
+    onDelete?: (messageId: string) => Promise<void>;
     recipientName: string;
     recipientPhotoUrl?: string | null;
     onBack: () => void;
@@ -30,12 +33,16 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({
-    messages, onSend, recipientName, recipientPhotoUrl, onBack, loading, sending,
+    messages, onSend, onDelete, recipientName, recipientPhotoUrl, onBack, loading, sending,
     showPublicToggle, publicReplyEnabled, onPublicReplyToggle
 }: ChatInterfaceProps) {
     const { t } = useTranslation('common');
     const [inputValue, setInputValue] = useState('');
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState(false);
     const viewport = useRef<HTMLDivElement>(null);
+    const prevLastMessageId = useRef<string | null>(null);
 
     const scrollToBottom = () => {
         if (viewport.current) {
@@ -43,8 +50,15 @@ export function ChatInterface({
         }
     };
 
+    // Only scroll when messages actually change (new message added)
     useEffect(() => {
-        scrollToBottom();
+        const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
+
+        // Scroll if: loading finished, or last message ID changed (new message)
+        if (prevLastMessageId.current !== lastMessageId) {
+            scrollToBottom();
+            prevLastMessageId.current = lastMessageId;
+        }
     }, [messages, loading]);
 
     const handleSend = async () => {
@@ -53,6 +67,23 @@ export function ChatInterface({
         setInputValue(''); // Optimistic clear
         await onSend(temp);
         scrollToBottom();
+    };
+
+    const openDeleteModal = (messageId: string) => {
+        setDeletingMessageId(messageId);
+        setDeleteModalOpen(true);
+    };
+
+    const handleDelete = async () => {
+        if (!deletingMessageId || !onDelete) return;
+        setDeleting(true);
+        try {
+            await onDelete(deletingMessageId);
+            setDeleteModalOpen(false);
+            setDeletingMessageId(null);
+        } finally {
+            setDeleting(false);
+        }
     };
 
     return (
@@ -77,44 +108,65 @@ export function ChatInterface({
                     <Stack gap="xs">
                         {messages.length === 0 && !loading && (
                             <Text c="dimmed" ta="center" mt="xl" size="sm">
-                                {t('tripDetails.chat.noMessages' as any)}
+                                {t('tripDetails.chat.noMessages')}
                             </Text>
                         )}
                         {messages.map((msg) => (
-                            <Group
-                                key={msg.id}
-                                justify={msg.is_me ? 'flex-end' : 'flex-start'}
-                                align="flex-end"
-                                gap={8}
-                            >
-                                {!msg.is_me && (
-                                    <Avatar src={recipientPhotoUrl} radius="xl" size="sm" style={{ width: 24, height: 24 }} />
-                                )}
-                                <Paper
-                                    p="xs"
-                                    px="md"
-                                    radius="lg"
-                                    bg={msg.is_me ? 'blue' : 'gray.2'}
-                                    c={msg.is_me ? 'white' : 'dark'}
-                                    role="article" // For accessibility
-                                    style={{
-                                        maxWidth: '75%',
-                                        borderBottomRightRadius: msg.is_me ? 4 : undefined,
-                                        borderBottomLeftRadius: !msg.is_me ? 4 : undefined
-                                    }}
+                            <Stack key={msg.id} gap={2}>
+                                <Group
+                                    justify={msg.is_me ? 'flex-end' : 'flex-start'}
+                                    align="flex-end"
+                                    gap={8}
                                 >
-                                    {/* Show original question for public answers */}
-                                    {msg.message_type === 'answer_public' && msg.original_question && (
-                                        <Paper p="xs" mb="xs" bg={msg.is_me ? 'blue.7' : 'gray.3'} radius="sm">
-                                            <Text size="xs" fw={600} mb={2}>
-                                                {t('tripDetails.chat.originalQuestion' as any) || 'Original Question'}
-                                            </Text>
-                                            <Text size="xs" style={{ wordBreak: 'break-word' }}>{msg.original_question}</Text>
-                                        </Paper>
+                                    {!msg.is_me && (
+                                        <Avatar src={recipientPhotoUrl} radius="xl" size="sm" style={{ width: 24, height: 24 }} />
                                     )}
-                                    <Text size="sm" style={{ wordBreak: 'break-word' }}>{msg.content}</Text>
-                                </Paper>
-                            </Group>
+                                    <Paper
+                                        p="xs"
+                                        px="md"
+                                        radius="lg"
+                                        bg={msg.is_me ? 'blue' : 'gray.2'}
+                                        c={msg.is_me ? 'white' : 'dark'}
+                                        role="article" // For accessibility
+                                        style={{
+                                            maxWidth: '75%',
+                                            borderBottomRightRadius: msg.is_me ? 4 : undefined,
+                                            borderBottomLeftRadius: !msg.is_me ? 4 : undefined
+                                        }}
+                                    >
+                                        {/* Show original question for public answers */}
+                                        {msg.message_type === 'answer_public' && msg.original_question && (
+                                            <Paper p="xs" mb="xs" bg={msg.is_me ? 'blue.7' : 'gray.3'} radius="sm">
+                                                <Text size="xs" fw={600} mb={2}>
+                                                    {t('tripDetails.chat.originalQuestion') || 'Original Question'}
+                                                </Text>
+                                                <Text size="xs" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{msg.original_question}</Text>
+                                            </Paper>
+                                        )}
+                                        <Text size="sm" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{msg.content}</Text>
+                                    </Paper>
+                                    {/* Delete button for own messages (but not root messages of conversations) */}
+                                    {msg.is_me && onDelete && !((msg.message_type === 'dm_private' || msg.message_type === 'question') && !msg.parent_message_id) && (
+                                        <ActionIcon
+                                            variant="subtle"
+                                            color="gray"
+                                            size="sm"
+                                            onClick={() => openDeleteModal(msg.id)}
+                                        >
+                                            <IconTrash size={14} />
+                                        </ActionIcon>
+                                    )}
+                                </Group>
+                                {/* Timestamp */}
+                                <Text
+                                    size="xs"
+                                    c="dimmed"
+                                    ta={msg.is_me ? 'right' : 'left'}
+                                    px={msg.is_me ? 0 : 32}
+                                >
+                                    {dayjs(msg.created_at).format('MMM D, h:mm A')}
+                                </Text>
+                            </Stack>
                         ))}
                     </Stack>
                 </ScrollArea>
@@ -128,7 +180,7 @@ export function ChatInterface({
                         <Group gap="xs" mb="xs" justify="flex-end">
                             <IconWorld size={14} color={publicReplyEnabled ? 'var(--mantine-color-green-6)' : 'var(--mantine-color-gray-5)'} />
                             <Text size="xs" c={publicReplyEnabled ? 'green' : 'dimmed'}>
-                                {t('tripDetails.chat.replyPublicly' as any) || 'Reply Publicly'}
+                                {t('tripDetails.chat.replyPublicly') || 'Reply Publicly'}
                             </Text>
                             <Switch
                                 size="xs"
@@ -140,13 +192,15 @@ export function ChatInterface({
                     )}
                     <form onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
                         <Group gap="xs">
-                            <TextInput
-                                placeholder={t('tripDetails.chat.placeholder' as any)}
+                            <Textarea
+                                placeholder={t('tripDetails.chat.placeholder')}
                                 style={{ flex: 1 }}
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.currentTarget.value)}
                                 disabled={sending}
                                 radius="xl"
+                                minRows={1}
+                                autosize
                             />
                             <ActionIcon
                                 variant="filled"
@@ -163,6 +217,28 @@ export function ChatInterface({
                     </form>
                 </Paper>
             )}
+
+            {/* Delete Confirmation Modal */}
+            <Modal
+                opened={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                title={t('tripDetails.chat.deleteMessage') || 'Delete Message'}
+                centered
+                zIndex={1000}
+                size="sm"
+            >
+                <Text size="sm" mb="lg">
+                    {t('tripDetails.chat.deleteConfirmation') || 'Are you sure you want to delete this message? This action cannot be undone.'}
+                </Text>
+                <Group justify="flex-end">
+                    <Button variant="subtle" onClick={() => setDeleteModalOpen(false)}>
+                        {t('common.cancel') || 'Cancel'}
+                    </Button>
+                    <Button color="red" onClick={handleDelete} loading={deleting}>
+                        {t('common.delete') || 'Delete'}
+                    </Button>
+                </Group>
+            </Modal>
         </Stack>
     );
 }

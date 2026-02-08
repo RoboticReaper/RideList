@@ -42,8 +42,8 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
     const [askingQuestion, setAskingQuestion] = useState(false);
     const [showAskModal, setShowAskModal] = useState(false);
 
-    // URL sync tracking
-    const urlInitialized = useRef(false);
+    // URL sync tracking - track previous value to detect changes
+    const prevChatThread = useRef<string | null>(null);
 
     // Helper to update URL params
     const updateUrlParams = useCallback((threadId: string | null) => {
@@ -80,26 +80,36 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
             // Extract threads from messages
             const extractedThreads = extractRiderThreads(msgs, user.uid);
             setThreads(extractedThreads);
-
-            // Initialize thread from URL params on first load
-            if (!urlInitialized.current) {
-                const chatThreadId = searchParams.get('chat_thread');
-                if (chatThreadId && extractedThreads.length > 0) {
-                    const thread = extractedThreads.find(t =>
-                        t.parentMessageId === chatThreadId || t.id === chatThreadId || t.type === chatThreadId
-                    );
-                    if (thread) {
-                        setActiveThread(thread);
-                    }
-                }
-                urlInitialized.current = true;
-            }
         } catch (err) {
             console.error(err);
         } finally {
             setLoadingChat(false);
         }
-    }, [user, tripId, searchParams]);
+    }, [user, tripId]);
+
+    // Sync thread from URL params whenever they change (including navigation from notifications)
+    useEffect(() => {
+        if (threads.length === 0) return;
+
+        const chatThreadId = searchParams.get('chat_thread');
+
+        // Detect if param has changed
+        if (chatThreadId === prevChatThread.current) return;
+
+        // Update previous value
+        prevChatThread.current = chatThreadId;
+
+        if (chatThreadId) {
+            const thread = threads.find(t =>
+                t.parentMessageId === chatThreadId || t.id === chatThreadId || t.type === chatThreadId
+            );
+            if (thread) {
+                setActiveThread(thread);
+            }
+        } else {
+            setActiveThread(null);
+        }
+    }, [threads, searchParams]);
 
     useEffect(() => {
         fetchMessages();
@@ -184,8 +194,8 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
             if (!res.ok) {
                 const errorData = await res.json();
                 notifications.show({
-                    title: t('common.error' as any) || 'Error',
-                    message: errorData.error || t('tripDetails.chat.sendFailed' as any) || 'Failed to send message',
+                    title: t('common.error') || 'Error',
+                    message: errorData.error || t('tripDetails.chat.sendFailed') || 'Failed to send message',
                     color: 'red',
                     icon: <IconX size={16} />,
                     autoClose: 5000
@@ -197,8 +207,8 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
         } catch (err) {
             console.error(err);
             notifications.show({
-                title: t('common.error' as any) || 'Error',
-                message: t('tripDetails.chat.sendFailed' as any) || 'Failed to send message',
+                title: t('common.error') || 'Error',
+                message: t('tripDetails.chat.sendFailed') || 'Failed to send message',
                 color: 'red',
                 icon: <IconX size={16} />,
                 autoClose: 5000
@@ -207,6 +217,38 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
             setSending(false);
         }
     };
+
+    const deleteMessage = useCallback(async (messageId: string) => {
+        if (!user) return;
+        try {
+            const token = await user.getIdToken();
+            const res = await fetch(`/api/trips/${tripId}/chat?message_id=${messageId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Failed to delete message');
+
+            // Refresh messages after successful deletion
+            await fetchMessages();
+
+            notifications.show({
+                title: t('common.success') || 'Success',
+                message: t('tripDetails.chat.messageDeleted') || 'Message deleted',
+                color: 'green',
+                icon: <IconCheck size={16} />,
+                autoClose: 3000
+            });
+        } catch (err) {
+            console.error(err);
+            notifications.show({
+                title: t('common.error') || 'Error',
+                message: t('tripDetails.chat.deleteFailed') || 'Failed to delete message',
+                color: 'red',
+                icon: <IconX size={16} />,
+                autoClose: 5000
+            });
+        }
+    }, [user, tripId, fetchMessages, t]);
 
     const askQuestion = async () => {
         if (!user || !questionText.trim()) return;
@@ -231,8 +273,8 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
                 setQuestionText('');
                 setShowAskModal(false);
                 notifications.show({
-                    title: t('tripDetails.chat.questionSent' as any) || 'Question Sent',
-                    message: t('tripDetails.chat.questionSentDesc' as any) || 'Your question has been sent to the driver',
+                    title: t('tripDetails.chat.questionSent') || 'Question Sent',
+                    message: t('tripDetails.chat.questionSentDesc') || 'Your question has been sent to the driver',
                     color: 'green',
                     icon: <IconCheck size={16} />,
                     autoClose: 3000
@@ -241,8 +283,8 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
             } else {
                 const errorData = await res.json();
                 notifications.show({
-                    title: t('common.error' as any) || 'Error',
-                    message: errorData.error || t('tripDetails.chat.sendFailed' as any) || 'Failed to send question',
+                    title: t('common.error') || 'Error',
+                    message: errorData.error || t('tripDetails.chat.sendFailed') || 'Failed to send question',
                     color: 'red',
                     icon: <IconX size={16} />,
                     autoClose: 5000
@@ -251,8 +293,8 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
         } catch (err) {
             console.error(err);
             notifications.show({
-                title: t('common.error' as any) || 'Error',
-                message: t('tripDetails.chat.sendFailed' as any) || 'Failed to send question',
+                title: t('common.error') || 'Error',
+                message: t('tripDetails.chat.sendFailed') || 'Failed to send question',
                 color: 'red',
                 icon: <IconX size={16} />,
                 autoClose: 5000
@@ -272,9 +314,10 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
                 <ChatInterface
                     messages={threadMessages}
                     onSend={canSend ? sendMessage : undefined}
+                    onDelete={activeThread.type !== 'announcement' ? deleteMessage : undefined}
                     recipientName={activeThread.type === 'announcement'
-                        ? (t('tripDetails.chat.announcements' as any) || 'Announcements')
-                        : (driverName || t('tripDetails.chat.driver' as any) || 'Driver')}
+                        ? (t('tripDetails.chat.announcements') || 'Announcements')
+                        : (driverName || t('tripDetails.chat.driver') || 'Driver')}
                     recipientPhotoUrl={activeThread.type === 'announcement' ? null : driverPhotoUrl}
                     onBack={() => { setActiveThread(null); updateUrlParams(null); }}
                     loading={false}
@@ -297,7 +340,7 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
                 onClick={() => setShowAskModal(true)}
                 variant="light"
             >
-                {t('tripDetails.chat.askQuestion' as any) || 'Ask a Question'}
+                {t('tripDetails.chat.askQuestion') || 'Ask a Question'}
             </Button>
 
             {/* Announcements Thread */}
@@ -308,7 +351,7 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
                             <IconSpeakerphone size={24} color="var(--mantine-color-blue-6)" />
                             <Stack gap={2} style={{ flex: 1 }}>
                                 <Group gap="xs">
-                                    <Text fw={600}>{t('tripDetails.chat.announcements' as any) || 'Announcements'}</Text>
+                                    <Text fw={600}>{t('tripDetails.chat.announcements') || 'Announcements'}</Text>
                                     <Badge size="xs" variant="light" color="blue">
                                         {messages.filter(m => m.message_type === 'announcement' || m.message_type === 'answer_public').length}
                                     </Badge>
@@ -331,10 +374,10 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
                             </Avatar>
                             <Stack gap={2} style={{ flex: 1 }}>
                                 <Group gap="xs">
-                                    <Text fw={600}>{t('tripDetails.chat.directMessages' as any) || 'Direct Messages'}</Text>
+                                    <Text fw={600}>{t('tripDetails.chat.directMessages') || 'Direct Messages'}</Text>
                                     <Badge size="xs" variant="light" color="gray">DM</Badge>
                                 </Group>
-                                <Text size="xs" c="dimmed" lineClamp={1}>{dmThread.preview || t('tripDetails.chat.noMessages' as any)}</Text>
+                                <Text size="xs" c="dimmed" lineClamp={1}>{dmThread.preview || t('tripDetails.chat.noMessages')}</Text>
                             </Stack>
                             <IconChevronRight size={16} color="var(--mantine-color-gray-5)" />
                         </Group>
@@ -346,7 +389,7 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
             {questionThreads.length > 0 && (
                 <>
                     <Text size="sm" fw={600} c="dimmed" tt="uppercase" mt="sm">
-                        {t('tripDetails.chat.yourQuestions' as any) || 'Your Questions'}
+                        {t('tripDetails.chat.yourQuestions') || 'Your Questions'}
                     </Text>
                     {questionThreads.map((qThread) => (
                         <UnstyledButton key={qThread.id} onClick={() => { setActiveThread(qThread); updateUrlParams(qThread.parentMessageId || qThread.id); }} w="100%">
@@ -372,7 +415,7 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
             {/* Empty state */}
             {!announcementThread && !dmThread && questionThreads.length === 0 && (
                 <Text c="dimmed" ta="center" py="xl">
-                    {t('tripDetails.chat.noThreads' as any) || 'No conversations yet'}
+                    {t('tripDetails.chat.noThreads') || 'No conversations yet'}
                 </Text>
             )}
 
@@ -383,26 +426,25 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
                 title={
                     <Group gap="xs">
                         <IconMessageCircleQuestion size={20} />
-                        <Text fw={600}>{t('tripDetails.chat.askQuestion' as any) || 'Ask a Question'}</Text>
+                        <Text fw={600}>{t('tripDetails.chat.askQuestion') || 'Ask a Question'}</Text>
                     </Group>
                 }
             >
                 <Stack>
                     <Text size="sm" c="dimmed">
-                        {t('tripDetails.chat.askQuestionDesc' as any) || 'Your question will be sent to the driver'}
+                        {t('tripDetails.chat.askQuestionDesc') || 'Your question will be sent to the driver'}
                     </Text>
                     <Textarea
-                        placeholder={t('tripDetails.chat.questionPlaceholder' as any) || 'Type your question...'}
+                        placeholder={t('tripDetails.chat.questionPlaceholder') || 'Type your question...'}
                         value={questionText}
                         onChange={(e) => setQuestionText(e.currentTarget.value)}
                         disabled={askingQuestion}
                         minRows={3}
-                        maxRows={6}
                         autosize
                     />
                     <Group justify="flex-end">
                         <Button variant="subtle" onClick={() => setShowAskModal(false)}>
-                            {t('common.cancel' as any) || 'Cancel'}
+                            {t('common.cancel') || 'Cancel'}
                         </Button>
                         <Button
                             leftSection={<IconSend size={14} />}
@@ -410,7 +452,7 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
                             loading={askingQuestion}
                             disabled={!questionText.trim()}
                         >
-                            {t('tripDetails.chat.send' as any) || 'Send'}
+                            {t('tripDetails.chat.send') || 'Send'}
                         </Button>
                     </Group>
                 </Stack>
@@ -452,7 +494,7 @@ function extractRiderThreads(messages: any[], riderId: string): Thread[] {
         const lastDmMessage = allDmMessages[allDmMessages.length - 1];
         threads.push({
             type: 'dm',
-            id: 'dm',
+            id: firstDmId,
             label: 'Direct Messages',
             preview: lastDmMessage.content,
             timestamp: lastDmMessage.created_at,

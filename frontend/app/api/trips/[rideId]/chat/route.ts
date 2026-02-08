@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { getTranslationForUser, getTranslation } from '@/app/api/lib/i18n';
+import { createNotification } from '@/app/api/lib/createNotification';
 
 export async function GET(
     req: Request,
@@ -184,6 +185,7 @@ export async function POST(
         const tripRow = tripCheck.rows[0];
         const isDriver = tripRow.driver === userId;
         const tripStatus = tripRow.status;
+        const driverId = tripRow.driver;
 
         let senderRole = '';
 
@@ -325,11 +327,192 @@ export async function POST(
             content, parent_message_id || null, finalReceiverId || null
         ]);
 
-        return NextResponse.json(inserted.rows[0]);
+        const insertedMessage = inserted.rows[0];
+
+        // =========================================================
+        // SEND NOTIFICATIONS
+        // =========================================================
+        // Determine who should receive the notification
+        // - Driver messages -> notify the receiver (if private) or all riders (if announcement)
+        // - Rider messages -> notify the driver
+
+        const messagePreview = content.length > 50 ? content.substring(0, 50) + '...' : content;
+        let driverOpenLink = `/dashboard/${rideId}?tab=messages&chat_recipient=${userId}&chat_thread=${parent_message_id || insertedMessage.id}`;
+        let riderOpenLink = `/dashboard/${rideId}?tab=messages&chat_thread=${parent_message_id || insertedMessage.id}`;
+
+        if (senderRole === 'driver') {
+            if (message_type === 'announcement' || message_type === 'answer_public') {
+                // Notify all active riders
+                const ridersRes = await client.query(`
+                    SELECT DISTINCT rider FROM bookings 
+                    WHERE trip = $1 
+                    AND status IN ('waiting_approval', 'joined_with_pay_window', 'pending_pay_confirmation_from_driver', 'confirmed')
+                `, [rideId]);
+
+                riderOpenLink = `/dashboard/${rideId}?tab=messages&chat_thread=announcement`;
+
+
+                for (const riderRow of ridersRes.rows) {
+                    await createNotification({
+                        client,
+                        type: 'messages',
+                        titleKey: 'notifications.messages.newMessage.title',
+                        messageKey: 'notifications.messages.newMessage.body',
+                        variables: { preview: messagePreview },
+                        userId: riderRow.rider,
+                        entityType: 'messages',
+                        entityId: insertedMessage.id,
+                        openLink: riderOpenLink,
+                        role: 'rider'
+                    });
+                }
+            } else if (finalReceiverId) {
+                // Private message to a specific rider
+                await createNotification({
+                    client,
+                    type: 'messages',
+                    titleKey: 'notifications.messages.newMessage.title',
+                    messageKey: 'notifications.messages.newMessage.body',
+                    variables: { preview: messagePreview },
+                    userId: finalReceiverId,
+                    entityType: 'messages',
+                    entityId: insertedMessage.id,
+                    openLink: riderOpenLink,
+                    role: 'rider'
+                });
+            }
+        } else {
+            // Rider sent a message -> notify driver
+            await createNotification({
+                client,
+                type: 'messages',
+                titleKey: 'notifications.messages.newMessage.title',
+                messageKey: 'notifications.messages.newMessage.body',
+                variables: { preview: messagePreview },
+                userId: driverId,
+                entityType: 'messages',
+                entityId: insertedMessage.id,
+                openLink: driverOpenLink,
+                role: 'driver'
+            });
+        }
+
+        return NextResponse.json(insertedMessage);
 
     } catch (error) {
         console.error('Error posting chat message:', error);
         const t = await getTranslation('en'); // fallback
+        return NextResponse.json({ error: t('api.errors.internalError') }, { status: 500 });
+    } finally {
+        client.release();
+    }
+}
+
+export async function DELETE(
+    req: Request,
+    { params }: { params: Promise<{ rideId: string }> }
+) {
+    const { rideId } = await params;
+    const client = await pool.connect();
+
+    try {
+        const user = await verifyUserFromRequest(req.headers.get('authorization') ?? undefined);
+        if (!user || !user.uid) {
+            const t = await getTranslation('en');
+            return NextResponse.json({ error: t('api.errors.unauthorized') }, { status: 401 });
+        }
+        const userId = user.uid;
+        const t = await getTranslationForUser(userId, client);
+
+        // Get message_id from query params
+        const url = new URL(req.url);
+        const messageId = url.searchParams.get('message_id');
+
+        if (!messageId) {
+            return NextResponse.json({ error: t('api.errors.missingMessageId') || 'Missing message ID' }, { status: 400 });
+        }
+
+        // 1. Determine Role & Check Read-Only Status
+        const tripCheck = await client.query('SELECT driver, status FROM trips WHERE id = $1', [rideId]);
+        if (tripCheck.rowCount === 0) {
+            return NextResponse.json({ error: t('api.errors.tripNotFound') }, { status: 404 });
+        }
+        const tripRow = tripCheck.rows[0];
+        const isDriver = tripRow.driver === userId;
+        const tripStatus = tripRow.status;
+
+        if (isDriver) {
+            // Driver Write Access Rules - same as POST
+            const activeTripStatuses = ['bookable', 'locked', 'full', 'departed'];
+            if (!activeTripStatuses.includes(tripStatus)) {
+                return NextResponse.json({ error: t('api.errors.tripReadOnly') }, { status: 403 });
+            }
+        } else {
+            // Rider Write Access Rules - same as POST
+            const bookingRes = await client.query(`
+                SELECT status 
+                FROM bookings 
+                WHERE trip = $1 AND rider = $2 
+                ORDER BY created_at DESC 
+                LIMIT 1
+            `, [rideId, userId]);
+
+            if ((bookingRes.rowCount ?? 0) === 0) {
+                return NextResponse.json({ error: t('api.errors.forbidden') }, { status: 403 });
+            }
+            const bookingStatus = bookingRes.rows[0].status;
+
+            const activeBookingStatuses = [
+                'waiting_approval',
+                'joined_with_pay_window',
+                'pending_pay_confirmation_from_driver',
+                'confirmed'
+            ];
+
+            if (!activeBookingStatuses.includes(bookingStatus)) {
+                return NextResponse.json({ error: t('api.errors.chatReadOnly') }, { status: 403 });
+            }
+        }
+
+        // 2. Fetch the message and verify ownership
+        const messageRes = await client.query(`
+            SELECT id, sender_id, deleted, message_type, parent_message_id
+            FROM trip_messages 
+            WHERE id = $1 AND trip_id = $2
+        `, [messageId, rideId]);
+
+        if (messageRes.rowCount === 0) {
+            return NextResponse.json({ error: t('api.errors.messageNotFound') || 'Message not found' }, { status: 404 });
+        }
+
+        const message = messageRes.rows[0];
+
+        if (message.deleted) {
+            return NextResponse.json({ error: t('api.errors.messageAlreadyDeleted') || 'Message already deleted' }, { status: 400 });
+        }
+
+        // 3. Verify sender matches current user
+        if (message.sender_id !== userId) {
+            return NextResponse.json({ error: t('api.errors.cannotDeleteOthersMessage') || 'Cannot delete messages from other users' }, { status: 403 });
+        }
+
+        // 4. Check if it's a root DM or Question message - cannot delete (conversations must have a root)
+        if ((message.message_type === 'dm_private' || message.message_type === 'question') && !message.parent_message_id) {
+            return NextResponse.json({ error: t('api.errors.cannotDeleteRootMessage') || 'Cannot delete the first message in this conversation' }, { status: 403 });
+        }
+
+        // 5. Soft delete by setting deleted = true
+        await client.query(`
+            UPDATE trip_messages 
+            SET deleted = true 
+            WHERE id = $1
+        `, [messageId]);
+
+        return NextResponse.json({ success: true, message_id: messageId });
+
+    } catch (error) {
+        console.error('Error deleting chat message:', error);
+        const t = await getTranslation('en');
         return NextResponse.json({ error: t('api.errors.internalError') }, { status: 500 });
     } finally {
         client.release();

@@ -173,10 +173,10 @@ function TripManagementContent({ params }: { params: Promise<{ tripId: string }>
                     <Tabs value={riderActiveTab} onChange={setRiderActiveTab}>
                         <Tabs.List>
                             <Tabs.Tab value="booking" leftSection={<IconFileText size={14} />}>
-                                {t('tripDetails.tabs.bookingDetails' as any) || 'Booking Details'}
+                                {t('tripDetails.tabs.bookingDetails') || 'Booking Details'}
                             </Tabs.Tab>
                             <Tabs.Tab value="chat" leftSection={<IconMessage size={14} />}>
-                                {t('tripDetails.tabs.messages' as any) || 'Messages'}
+                                {t('tripDetails.tabs.messages') || 'Messages'}
                             </Tabs.Tab>
                         </Tabs.List>
 
@@ -245,7 +245,7 @@ function TripManagementContent({ params }: { params: Promise<{ tripId: string }>
                             {t('tripDetails.tabs.manage')}
                         </Tabs.Tab>
                         <Tabs.Tab value="messages" leftSection={<IconMessage size={14} />}>
-                            {t('tripDetails.tabs.messages' as any)}
+                            {t('tripDetails.tabs.messages')}
                         </Tabs.Tab>
                         <Tabs.Tab value="edit" leftSection={<IconEdit size={14} />}>
                             {t('tripDetails.tabs.edit')}
@@ -257,7 +257,7 @@ function TripManagementContent({ params }: { params: Promise<{ tripId: string }>
                     </Tabs.Panel>
 
                     <Tabs.Panel value="messages" pt={0}>
-                        <DriverChatView tripId={tripId} />
+                        <DriverChatView tripId={tripId} manualRefreshId={manualRefreshId} />
                     </Tabs.Panel>
 
                     <Tabs.Panel value="edit" pt="lg">

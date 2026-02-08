@@ -19,13 +19,13 @@ interface ChatSubjectListProps {
 export function ChatSubjectList({ riders, onSelect }: ChatSubjectListProps) {
     const { t } = useTranslation('common');
 
-    // Filter unique riders based on rider_id
-    const uniqueRiders = Array.from(new Map(riders.map(item => [item.rider_id, item])).values());
+    // Dedupe riders - "last one wins" (riders are already sorted by created_at by parent)
+    const uniqueRiders = Array.from(new Map(riders.map(r => [r.rider_id, r])).values());
 
     if (uniqueRiders.length === 0) {
         return (
             <Text c="dimmed" fs="italic" ta="center" mt="xl">
-                {t('tripDetails.chat.noMessages' as any)}
+                {t('tripDetails.chat.noMessages')}
             </Text>
         );
     }

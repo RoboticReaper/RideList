@@ -500,6 +500,8 @@
             "ruleTemplateNameRequired": "Please provide a name for your Rule Template.",
             "paymentMethodRequired": "Please select at least one method.",
             "paymentMethodRequiredTitle": "Payment Method Required",
+            "paymentHandleRequired": "Please provide a payment handle/ID (e.g. your Venmo username) for the selected payment method.",
+            "paymentHandleRequiredTitle": "Payment Handle Required",
             "flexibilityRequired": "Please specify departure flexibility.",
             "flexibilityRequiredTitle": "Flexibility Required",
             "pickupRadiusRequired": "Please specify pickup radius.",
@@ -896,6 +898,8 @@
         "save": "Save",
         "cancel": "Cancel",
         "new": "New",
+        "error": "Error",
+        "success": "Success",
         "none": "None",
         "ready": "Ready",
         "selectOrType": "Select or type...",
@@ -935,6 +939,7 @@
             "bookingDetails": "Booking Details"
         },
         "chat": {
+            "sendFailed": "Failed to send message.",
             "title": "Messages",
             "placeholder": "Type a message...",
             "send": "Send",
@@ -944,6 +949,7 @@
             "announcement": "Send Announcement",
             "announcementDesc": "Send a message to all riders at once",
             "announcementPlaceholder": "Type your announcement...",
+            "announcementFailed": "Failed to send announcement.",
             "sendAnnouncement": "Send to All",
             "threads": "Conversations",
             "directMessages": "Direct Messages",
@@ -971,7 +977,11 @@
             "yourReply": "Your Reply",
             "sendPublicReply": "Send Public Reply",
             "publicReplySent": "Public Reply Sent",
-            "publicReplySentDesc": "Your reply is now visible to all riders"
+            "publicReplySentDesc": "Your reply is now visible to all riders",
+            "deleteMessage": "Delete Message",
+            "deleteConfirmation": "Are you sure you want to delete this message? This action cannot be undone. The message will be stored in the database, but it will not be visible.",
+            "messageDeleted": "Message deleted",
+            "deleteFailed": "Failed to delete message"
         },
         "status": {
             "paid": "Paid",
@@ -2434,10 +2444,22 @@
                 "title": "Trip Completed",
                 "message": "Trip marked as completed."
             }
+        },
+        "messages": {
+            "newMessage": {
+                "title": "New Message",
+                "body": "{{preview}}"
+            }
         }
     },
     "api": {
         "errors": {
+            "messageEmpty": "Cannot send empty message",
+            "chatReadOnly": "Chat is read only",
+            "invalidMessageType": "Invalid message type",
+            "invalidMessageFormat": "Invalid message format",
+            "missingReceiver": "Missing message recipient",
+            "missingParent": "Missing parent message thread",
             "unauthorized": "Unauthorized",
             "forbidden": "Forbidden",
             "tripNotFound": "Trip not found",

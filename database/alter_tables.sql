@@ -50,7 +50,7 @@ create table trip_messages (
           'dm_private',
           'system'
         )
-        AND parent_message_id IS NULL
+        AND (parent_message_id IS NULL OR message_type = 'dm_private')
       )
 
       OR

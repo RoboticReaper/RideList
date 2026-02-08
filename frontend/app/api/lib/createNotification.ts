@@ -12,7 +12,7 @@ interface CreateNotificationArgs {
     message?: string; // fallback
     userId: string | null; // who should receive the notification
     openLink: string; // link to open when notification is clicked
-    entityType: "trips" | "bookings";
+    entityType: "trips" | "bookings" | "messages";
     entityId: string;
     role: "driver" | "rider" | "global"; // role of the user
 }
@@ -29,6 +29,7 @@ export const NOTIFICATION_TYPES = {
             'trip_auto_locked',                // system locked trip (cutoff)
             'booking_updated',                 // rider updated booking details after check-in
             'trip_late_warning',               // trip is late
+            'messages'                         // new message
         ],
 
         // Informational / reminders
@@ -56,6 +57,7 @@ export const NOTIFICATION_TYPES = {
             'picked_up',                        // rider picked up
             'driver_contact_changed',           // driver changed phone number
             'vehicle_updated',                  // driver updated vehicle information
+            'messages'                          // new message
         ],
 
         // Informational / reminders

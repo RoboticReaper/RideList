@@ -44,7 +44,7 @@ export function ThreadListView({ riderName, riderPhotoUrl, threads, onSelectThre
             <Paper p="md" shadow="xs" radius={0} withBorder>
                 <Group gap="sm">
                     <UnstyledButton onClick={onBack}>
-                        <Text c="blue" size="sm">← {t('tripDetails.chat.back' as any) || 'Back'}</Text>
+                        <Text c="blue" size="sm">← {t('tripDetails.chat.back') || 'Back'}</Text>
                     </UnstyledButton>
                     <Avatar src={riderPhotoUrl} radius="xl" size="sm" color="initials">
                         {riderName?.charAt(0)}
@@ -55,7 +55,7 @@ export function ThreadListView({ riderName, riderPhotoUrl, threads, onSelectThre
 
             <Stack gap={0} p="md">
                 <Text size="xs" c="dimmed" tt="uppercase" fw={600} mb="xs">
-                    {t('tripDetails.chat.threads' as any) || 'Conversations'}
+                    {t('tripDetails.chat.threads') || 'Conversations'}
                 </Text>
 
                 {/* DM Thread - Always at top */}
@@ -69,10 +69,10 @@ export function ThreadListView({ riderName, riderPhotoUrl, threads, onSelectThre
                                 <IconMessage size={20} color="var(--mantine-color-blue-6)" />
                                 <Stack gap={2} style={{ flex: 1 }}>
                                     <Group gap="xs">
-                                        <Text fw={500} size="sm">{t('tripDetails.chat.directMessages' as any) || 'Direct Messages'}</Text>
+                                        <Text fw={500} size="sm">{t('tripDetails.chat.directMessages') || 'Direct Messages'}</Text>
                                         <Badge size="xs" variant="light" color="blue">DM</Badge>
                                     </Group>
-                                    <Text size="xs" c="dimmed" lineClamp={1}>{dmThread.preview || t('tripDetails.chat.noMessages' as any)}</Text>
+                                    <Text size="xs" c="dimmed" lineClamp={1}>{dmThread.preview || t('tripDetails.chat.noMessages')}</Text>
                                 </Stack>
                                 <IconChevronRight size={16} color="var(--mantine-color-gray-5)" />
                             </Group>
@@ -84,7 +84,7 @@ export function ThreadListView({ riderName, riderPhotoUrl, threads, onSelectThre
                 {questionThreads.length > 0 && (
                     <>
                         <Text size="xs" c="dimmed" tt="uppercase" fw={600} mt="md" mb="xs">
-                            {t('tripDetails.chat.questions' as any) || 'Questions'}
+                            {t('tripDetails.chat.questions') || 'Questions'}
                         </Text>
                         {questionThreads.map((qThread) => (
                             <UnstyledButton
@@ -114,7 +114,7 @@ export function ThreadListView({ riderName, riderPhotoUrl, threads, onSelectThre
                 {/* Empty state */}
                 {!dmThread && questionThreads.length === 0 && (
                     <Text c="dimmed" ta="center" mt="xl" size="sm">
-                        {t('tripDetails.chat.noThreads' as any) || 'No conversations yet'}
+                        {t('tripDetails.chat.noThreads') || 'No conversations yet'}
                     </Text>
                 )}
             </Stack>
@@ -146,10 +146,11 @@ export function extractThreadsFromMessages(messages: Message[], riderId: string,
         const lastDmMessage = allDmMessages[allDmMessages.length - 1];
         threads.push({
             type: 'dm',
-            id: 'dm',
+            id: firstDmId || 'dm',
             label: 'Direct Messages',
             preview: lastDmMessage?.content || '',
-            timestamp: lastDmMessage?.created_at || new Date().toISOString()
+            timestamp: lastDmMessage?.created_at || new Date().toISOString(),
+            parentMessageId: firstDmId
         });
     }
 

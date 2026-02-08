@@ -889,7 +889,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                             setQrModalOpen(true);
                                         }}
                                     >
-                                        <Text c="dimmed" size="xs" mb={4}>{intendedMethod} {t('rides.detail.payment.qrCodesLabel' as any)}</Text>
+                                        <Text c="dimmed" size="xs" mb={4}>{intendedMethod} {t('rides.detail.payment.qrCodesLabel')}</Text>
                                         <Group gap="xs" align="center">
                                             <Image
                                                 src={qrCodeUrl}
@@ -899,7 +899,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                                 fit="contain"
                                                 radius="sm"
                                             />
-                                            <Text size="xs" c="blue">{t('common.clickToEnlarge' as any)}</Text>
+                                            <Text size="xs" c="blue">{t('common.clickToEnlarge')}</Text>
                                         </Group>
                                     </Box>
                                 );
@@ -927,9 +927,8 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                 </Box>
                             </Group>
                             <Button
-                                component="a"
+                                component={LocalizedLink}
                                 href={`/profile/${trip.driver.id}?role=driver`}
-                                target="_blank"
                                 variant="light"
                                 size="xs"
                             >
