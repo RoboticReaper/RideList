@@ -726,6 +726,8 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                                     form.setFieldValue('departure_time', val ? fromDateTimeLocalString(val) : null);
                                 }}
                                 leftSection={<IconCalendar size={16} />}
+                                rightSection={renderRightSection(false, form.values.departure_time ? 'true' : '', () => form.setFieldValue('departure_time', null))}
+                                rightSectionPointerEvents="all"
                                 min={toDateTimeLocalString(getChicagoNow())}
                             />
                         </Input.Wrapper>

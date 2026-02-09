@@ -532,6 +532,8 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
                                     setStartTime(val ? fromDateTimeLocalString(val) : null);
                                 }}
                                 leftSection={<IconCalendar size={16} />}
+                                rightSection={renderRightSection(false, startTime ? 'true' : '', () => setStartTime(null))}
+                                rightSectionPointerEvents="all"
                                 min={toDateTimeLocalString(getChicagoNow())}
                             />
                         </Input.Wrapper>

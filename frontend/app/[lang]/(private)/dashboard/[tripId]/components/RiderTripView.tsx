@@ -612,6 +612,14 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                         placeholder={t('tripDetails.rider.labels.preferredPickup')}
                                         min={toDateTimeLocalString(getChicagoNow())}
                                         leftSection={<IconCalendar size={16} stroke={1.5} />}
+                                        rightSection={
+                                            editPreferredPickupTime ? (
+                                                <ActionIcon variant="subtle" size="sm" onClick={() => setEditPreferredPickupTime(null)}>
+                                                    <IconX size={14} />
+                                                </ActionIcon>
+                                            ) : null
+                                        }
+                                        rightSectionPointerEvents="all"
                                     />
                                     {editPreferredPickupTime && (
                                         <Text

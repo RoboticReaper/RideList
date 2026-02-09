@@ -9,7 +9,7 @@ import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconListCheck, IconPlus, IconCheck, IconTrash, IconMapPin } from '@tabler/icons-react';
+import { IconListCheck, IconPlus, IconCheck, IconTrash, IconMapPin, IconClock } from '@tabler/icons-react';
 import dayjs, { toDateTimeLocalString, fromDateTimeLocalString, getChicagoNow, toChicagoISO, CHICAGO_TZ } from '@/utils/dateUtils';
 import { DEFAULT_AUTOCOMPLETE_LOCATIONS } from '@/utils/defaultLocations';
 import { Autocomplete, Loader as MantineLoader } from '@mantine/core';
@@ -612,6 +612,9 @@ export function SearchContent() {
                                 const val = e.currentTarget.value;
                                 setPreferredTime(val ? fromDateTimeLocalString(val) : null);
                             }}
+                            leftSection={<IconClock size={16} />}
+                            rightSection={renderRightSection(false, preferredTime ? 'true' : '', () => setPreferredTime(null))}
+                            rightSectionPointerEvents="all"
                             min={toDateTimeLocalString(getChicagoNow())}
                         />
                     </Input.Wrapper>
@@ -657,6 +660,8 @@ export function SearchContent() {
                                 const val = e.currentTarget.value;
                                 setExpiresAt(val ? fromDateTimeLocalString(val) : null);
                             }}
+                            rightSection={renderRightSection(false, expiresAt ? 'true' : '', () => setExpiresAt(null))}
+                            rightSectionPointerEvents="all"
                             min={toDateTimeLocalString(getChicagoNow())}
                         />
                     </Input.Wrapper>

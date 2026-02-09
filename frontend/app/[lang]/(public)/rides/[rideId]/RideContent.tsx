@@ -1113,6 +1113,14 @@ export default function RidePage() {
                                     setBookingData({ ...bookingData, pickupTime: val ? fromDateTimeLocalString(val) : null });
                                 }}
                                 leftSection={<IconClock size={16} />}
+                                rightSection={
+                                    bookingData.pickupTime ? (
+                                        <ActionIcon variant="transparent" color="gray" onClick={() => setBookingData(prev => ({ ...prev, pickupTime: null }))}>
+                                            <IconX size={16} />
+                                        </ActionIcon>
+                                    ) : null
+                                }
+                                rightSectionPointerEvents="all"
                                 min={toDateTimeLocalString(getChicagoNow())}
                             />
                         </Input.Wrapper>
