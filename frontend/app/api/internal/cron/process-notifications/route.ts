@@ -148,12 +148,12 @@ export async function POST(req: Request) {
         // ------------------------------------------------------------------
         // 4. Expire Ride Requests
         // ------------------------------------------------------------------
-        // Set ride requests to 'expired' if now() > expires_at and status is 'active'
+        // Set ride requests to 'expired' if now() > expires_at or now() > preferred_time + time_flexibility and status is 'active'
         const expiredRequestsResult = await client.query(`
             UPDATE ride_requests
             SET status = 'expired'
             WHERE status = 'active'
-              AND NOW() > expires_at
+              AND (NOW() > expires_at OR NOW() > preferred_time + time_flexibility)
             RETURNING id
         `);
         stats.ride_requests_expired = expiredRequestsResult.rowCount ?? 0;
