@@ -74,6 +74,39 @@ export function SearchContent() {
     const [loadingDest, setLoadingDest] = useState(false);
 
     const [preferredTime, setPreferredTime] = useState<Date | null>(null);
+
+    // Autofill from search state when opening modal
+    const handleOpenPostRequest = () => {
+        try {
+            const saved = localStorage.getItem('ride_search_last_state');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+
+                if (parsed.startLocation) {
+                    setOrigin(parsed.startLocation);
+                    setOriginPlaceId(null);
+                    if (parsed.startCoords) {
+                        setOriginCoords(parsed.startCoords);
+                    }
+                }
+
+                if (parsed.endLocation) {
+                    setDestination(parsed.endLocation);
+                    setDestPlaceId(null);
+                    if (parsed.endCoords) {
+                        setDestCoords(parsed.endCoords);
+                    }
+                }
+
+                if (parsed.startTime) {
+                    setPreferredTime(dayjs(parsed.startTime).toDate());
+                }
+            }
+        } catch (e) {
+            console.error("Failed to autofill request modal", e);
+        }
+        openPostRequest();
+    };
     const [timeFlexibility, setTimeFlexibility] = useState<string | null>('1 hour');
     const [seats, setSeats] = useState<number | ''>(1);
     const [price, setPrice] = useState<number | ''>('');
@@ -421,7 +454,7 @@ export function SearchContent() {
                     <Button
                         variant="light"
                         leftSection={<IconPlus size={18} />}
-                        onClick={openPostRequest}
+                        onClick={handleOpenPostRequest}
                     >
                         {t('rides.rideRequests.postRequest')}
                     </Button>
