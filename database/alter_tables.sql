@@ -1,85 +1,85 @@
+
+
+
+
 -- V3
 
-create type ride_request_status as enum (
-  'active',
-  'fulfilled',
-  'expired',
-  'deleted'
-);
+-- create type ride_request_status as enum (
+--   'active',
+--   'fulfilled',
+--   'expired',
+--   'deleted'
+-- );
+--
+-- create table ride_requests (
+--     id uuid primary key default gen_random_uuid(),
+--     requester_id text references users(id) not null,
+--     origin_geog geography(Point, 4326) not null,
+--     destination_geog geography(Point, 4326) not null,
+--     from_text text not null,
+--     to_text text not null,
+--     preferred_time timestamptz not null,
+--     time_flexibility interval not null,
+--     seats int not null check (seats > 0),
+--     price decimal(8, 2),
+--     status ride_request_status not null default 'active',
+--     created_at timestamptz not null default now(),
+--     expires_at timestamptz not null,
+--     -- Generated columns for grid-based clustering (~1km grid cells)
+--     origin_grid geometry GENERATED ALWAYS AS (
+--         ST_SnapToGrid(origin_geog::geometry, 0.01)
+--     ) STORED,
+--     dest_grid geometry GENERATED ALWAYS AS (
+--         ST_SnapToGrid(destination_geog::geometry, 0.01)
+--     ) STORED
+-- );
+--
+-- CREATE OR REPLACE FUNCTION enforce_max_active_requests()
+-- RETURNS trigger AS $$
+-- DECLARE
+--     active_count integer;
+-- BEGIN
+--     -- Only enforce when inserting ACTIVE request
+--     IF NEW.status = 'active' THEN
+--
+--         SELECT COUNT(*)
+--         INTO active_count
+--         FROM ride_requests
+--         WHERE requester_id = NEW.requester_id
+--           AND status = 'active';
+--
+--         IF active_count > 5 THEN
+--             RAISE EXCEPTION 'Maximum of 5 active ride requests allowed per user';
+--         END IF;
+--
+--     END IF;
+--
+--     RETURN NEW;
+-- END;
+-- $$ LANGUAGE plpgsql;
+--
+-- CREATE TRIGGER check_max_active_requests
+-- BEFORE INSERT ON ride_requests
+-- FOR EACH ROW
+-- EXECUTE FUNCTION enforce_max_active_requests();
+--
+--
+-- create index idx_requests_origin_geog
+-- on ride_requests using gist (origin_geog);
+--
+-- create index idx_requests_destination_geog
+-- on ride_requests using gist (destination_geog);
+--
+-- create index idx_requests_active
+-- on ride_requests (preferred_time)
+-- where status = 'active';
+--
+-- -- Indexes on generated grid columns for fast aggregation
+-- CREATE INDEX idx_requests_grids_active
+-- ON ride_requests (origin_grid, dest_grid)
+-- WHERE status='active';
 
-create table ride_requests (
-    id uuid primary key default gen_random_uuid(),
-    requester_id text references users(id) not null,
-    origin_geog geography(Point, 4326) not null,
-    destination_geog geography(Point, 4326) not null,
-    from_text text not null,
-    to_text text not null,
-    preferred_time timestamptz not null,
-    time_flexibility interval not null,
-    seats int not null check (seats > 0),
-    price decimal(8, 2),
-    status ride_request_status not null default 'active',
-    created_at timestamptz not null default now(),
-    expires_at timestamptz not null,
-    -- Generated columns for grid-based clustering (~1km grid cells)
-    origin_grid geometry GENERATED ALWAYS AS (
-        ST_SnapToGrid(origin_geog::geometry, 0.01)
-    ) STORED,
-    dest_grid geometry GENERATED ALWAYS AS (
-        ST_SnapToGrid(destination_geog::geometry, 0.01)
-    ) STORED
-);
 
-CREATE OR REPLACE FUNCTION enforce_max_active_requests()
-RETURNS trigger AS $$
-DECLARE
-    active_count integer;
-BEGIN
-    -- Only enforce when inserting ACTIVE request
-    IF NEW.status = 'active' THEN
-
-        SELECT COUNT(*)
-        INTO active_count
-        FROM ride_requests
-        WHERE requester_id = NEW.requester_id
-          AND status = 'active';
-
-        IF active_count > 5 THEN
-            RAISE EXCEPTION 'Maximum of 5 active ride requests allowed per user';
-        END IF;
-
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER check_max_active_requests
-BEFORE INSERT ON ride_requests
-FOR EACH ROW
-EXECUTE FUNCTION enforce_max_active_requests();
-
-
-create index idx_requests_origin_geog
-on ride_requests using gist (origin_geog);
-
-create index idx_requests_destination_geog
-on ride_requests using gist (destination_geog);
-
-create index idx_requests_active
-on ride_requests (preferred_time)
-where status = 'active';
-
--- Indexes on generated grid columns for fast aggregation
-CREATE INDEX idx_requests_grids_active
-ON ride_requests (origin_grid, dest_grid)
-WHERE status='active';
-
-
--- Composite index for the trends query grouping
-create index idx_requests_grids_active
-on ride_requests (origin_grid, dest_grid)
-where status = 'active';
 
 
 
