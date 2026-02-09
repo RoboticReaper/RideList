@@ -558,6 +558,66 @@
             "paymentPlaceholder": "Select relevant methods",
             "loadMore": "Load More"
         },
+        "rideRequests": {
+            "myRequests": "My Ride Requests",
+            "postRequest": "Post Ride Request",
+            "noActiveRequests": "You have no active ride requests.",
+            "from": "From",
+            "to": "To",
+            "preferredTime": "Preferred Time",
+            "flexibility": "Flexibility",
+            "seats": "Seats",
+            "price": "Price",
+            "priceDesc": "Optional - your budget per seat",
+            "expiresAt": "Expires At",
+            "expiresAtLabel": "Expires At (Optional, defaults to 7 days)",
+            "status": "Status",
+            "markFulfilled": "Mark Fulfilled",
+            "delete": "Delete",
+            "origin": "Origin",
+            "destination": "Destination",
+            "timeFlexibility": "Time Flexibility",
+            "submit": "Submit Request",
+            "success": "Ride request submitted successfully!",
+            "updateSuccess": "Ride request updated successfully!",
+            "error": "Failed to submit ride request",
+            "maxRequestsReached": "Maximum of 5 active ride requests reached",
+            "originRequired": "Please select a valid origin location",
+            "destRequired": "Please select a valid destination",
+            "timeRequired": "Please select a preferred time",
+            "flexRequired": "Please select time flexibility",
+            "seatsRequired": "Please enter at least 1 seat",
+            "loginPrompt": "Log in to post a ride request or view your existing requests."
+        },
+        "trends": {
+            "viewTrends": "View Ride Request Trends",
+            "title": "Popular Routes & Demand",
+            "description": "See what riders are looking for based on active ride requests.",
+            "noTrends": "No active ride request trends available.",
+            "demand": "Demand",
+            "seats": "seats",
+            "requests": "requests",
+            "priceRange": "Price Range",
+            "avg": "Avg",
+            "popularTime": "Popular Time",
+            "demandLevel": "Demand Level",
+            "levels": {
+                "low": "Low",
+                "medium": "Medium",
+                "high": "High"
+            },
+            "apply": "Apply",
+            "applied": "Route Applied",
+            "dateTime": "Date & Time",
+            "tomorrow": "Tomorrow",
+            "time": {
+                "morning": "Morning (6AM-12PM)",
+                "afternoon": "Afternoon (12PM-6PM)",
+                "evening": "Evening (6PM-12AM)",
+                "night": "Night (12AM-6AM)"
+            },
+            "loginPrompt": "Log in to view ride request trends."
+        },
         "card": {
             "today": "Today",
             "seatsAvailable": "{{count}} / {{total}} seats available",
@@ -2442,6 +2502,10 @@
             "trip_completed": {
                 "title": "Trip Completed",
                 "message": "Trip marked as completed."
+            },
+            "potential_match": {
+                "title": "A Trip Matches Your Request!",
+                "message": "A new trip from {{from}} to {{to}} matches what you're looking for."
             }
         },
         "messages": {

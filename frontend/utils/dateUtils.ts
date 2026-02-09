@@ -94,3 +94,24 @@ export function isBeforeChicagoNow(date: Date): boolean {
     const inputRef = dayjs.tz(dayjs(date).format('YYYY-MM-DD HH:mm:ss'), CHICAGO_TZ);
     return inputRef.isBefore(nowRef);
 }
+
+/**
+ * Formats a JavaScript Date to the string format required by HTML datetime-local input.
+ * Format: YYYY-MM-DDTHH:mm
+ * @param date The JS Date object
+ * @returns String in YYYY-MM-DDTHH:mm format
+ */
+export function toDateTimeLocalString(date: Date | null): string {
+    if (!date) return '';
+    return dayjs(date).format('YYYY-MM-DDTHH:mm');
+}
+
+/**
+ * Parses a datetime-local input string back to a JavaScript Date.
+ * @param value The string from datetime-local input (YYYY-MM-DDTHH:mm)
+ * @returns JS Date object or null if invalid
+ */
+export function fromDateTimeLocalString(value: string): Date | null {
+    if (!value) return null;
+    return dayjs(value).toDate();
+}

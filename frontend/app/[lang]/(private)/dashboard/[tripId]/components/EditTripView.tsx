@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Button, NumberInput, Stack, Textarea, Group, Switch, Select, Alert, MultiSelect, SimpleGrid, Title, Divider, Autocomplete, Loader, ActionIcon, TextInput, TagsInput, Accordion, Text, Anchor, FileButton, Image, Paper } from '@mantine/core';
+import { Button, NumberInput, Stack, Textarea, Group, Switch, Select, Alert, MultiSelect, SimpleGrid, Title, Divider, Autocomplete, Loader, ActionIcon, TextInput, TagsInput, Accordion, Text, Anchor, FileButton, Image, Paper, Input } from '@mantine/core';
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications';
-import { DateTimePicker } from '@mantine/dates';
+import { toDateTimeLocalString, fromDateTimeLocalString } from '@/utils/dateUtils';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { IconCheck, IconAlertTriangle, IconCalendar, IconCar, IconMapPin, IconCurrencyDollar, IconScript, IconX, IconLock, IconQrcode, IconUpload, IconTrash } from '@tabler/icons-react';
 import { parseFlexibility, parsePayWindow, parseCutoffTimeNullable, parseStartCheckInNullable, parseFlexibilityNullable, parseCutoffTime } from '@/utils/intervalParsers';
@@ -715,15 +715,20 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                             </Stack>
                         </SimpleGrid>
 
-                        <DateTimePicker
-                            dropdownType="modal"
-                            label={t('tripDetails.edit.labels.departureTime')}
-                            placeholder={t('tripDetails.edit.placeholders.pickDate')}
-                            leftSection={<IconCalendar size={16} />}
-                            valueFormat="MM/DD/YYYY HH:mm"
-                            minDate={getChicagoNow()}
-                            {...form.getInputProps('departure_time')}
-                        />
+                        <Input.Wrapper label={t('tripDetails.edit.labels.departureTime')}>
+                            <Input
+                                component="input"
+                                type="datetime-local"
+                                placeholder={t('tripDetails.edit.placeholders.pickDate')}
+                                value={toDateTimeLocalString(form.values.departure_time)}
+                                onChange={(e) => {
+                                    const val = e.currentTarget.value;
+                                    form.setFieldValue('departure_time', val ? fromDateTimeLocalString(val) : null);
+                                }}
+                                leftSection={<IconCalendar size={16} />}
+                                min={toDateTimeLocalString(getChicagoNow())}
+                            />
+                        </Input.Wrapper>
 
                         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                             <NumberInput

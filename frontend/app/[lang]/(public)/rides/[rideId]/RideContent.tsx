@@ -3,9 +3,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
-    Container, Title, Text, Card, Group, Badge, Stack, Grid, LoadingOverlay, Alert, Divider, Avatar, ThemeIcon, Progress, Tooltip, SimpleGrid, Paper, Button, Popover, Transition, NumberInput, Modal, Select, TextInput, ActionIcon, Autocomplete, Textarea, Loader, Box, Image
+    Container, Title, Text, Card, Group, Badge, Stack, Grid, LoadingOverlay, Alert, Divider, Avatar, ThemeIcon, Progress, Tooltip, SimpleGrid, Paper, Button, Popover, Transition, NumberInput, Modal, Select, TextInput, ActionIcon, Autocomplete, Textarea, Loader, Box, Image, Input
 } from '@mantine/core';
-import { DateTimePicker } from '@mantine/dates';
+import { toDateTimeLocalString, fromDateTimeLocalString } from '@/utils/dateUtils';
 import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { useMediaQuery, useIntersection, useInterval, useWindowEvent } from '@mantine/hooks';
@@ -1088,8 +1088,7 @@ export default function RidePage() {
                                 {t('rides.detail.booking.resetToDeparture')}
                             </Button>
                         </Group>
-                        <DateTimePicker
-                            dropdownType="modal"
+                        <Input.Wrapper
                             description={(() => {
                                 const f = ride.rules.flexibility;
                                 if (typeof f === 'object' && f !== null) {
@@ -1104,15 +1103,19 @@ export default function RidePage() {
                                 }
                                 return t('rides.detail.booking.optional');
                             })()}
-                            leftSection={<IconClock size={16} />}
-                            value={bookingData.pickupTime}
-                            valueFormat="MM/DD/YYYY HH:mm"
-                            minDate={getChicagoNow()}
-                            onChange={(date: any) => {
-                                const d = (typeof date === 'string' && date) ? new Date(date) : date;
-                                setBookingData({ ...bookingData, pickupTime: d });
-                            }}
-                        />
+                        >
+                            <Input
+                                component="input"
+                                type="datetime-local"
+                                value={toDateTimeLocalString(bookingData.pickupTime)}
+                                onChange={(e) => {
+                                    const val = e.currentTarget.value;
+                                    setBookingData({ ...bookingData, pickupTime: val ? fromDateTimeLocalString(val) : null });
+                                }}
+                                leftSection={<IconClock size={16} />}
+                                min={toDateTimeLocalString(getChicagoNow())}
+                            />
+                        </Input.Wrapper>
 
                         <Button
                             fullWidth

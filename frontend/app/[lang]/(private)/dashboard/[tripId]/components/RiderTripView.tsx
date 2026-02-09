@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react';
-import { Paper, Title, Text, Group, Stack, Alert, Box, SimpleGrid, Button, Flex, Badge, Modal, Switch, Textarea, Select, Autocomplete, ActionIcon, Loader, Avatar, NumberInput, Image } from '@mantine/core';
+import { Paper, Title, Text, Group, Stack, Alert, Box, SimpleGrid, Button, Flex, Badge, Modal, Switch, Textarea, Select, Autocomplete, ActionIcon, Loader, Avatar, NumberInput, Image, Input } from '@mantine/core';
 import { IconAlertTriangle, IconInfoCircle, IconCash, IconUserCheck, IconCalendar, IconLuggage, IconArmchair, IconClock, IconCreditCard, IconSteeringWheel, IconPhone, IconNote, IconMapPin, IconEdit, IconX, IconExclamationCircle } from '@tabler/icons-react';
 import dayjs, { CHICAGO_TZ, getChicagoNow, fromChicagoISO, toChicagoISO } from '@/utils/dateUtils';
-import { DateTimePicker } from '@mantine/dates';
+import { toDateTimeLocalString, fromDateTimeLocalString } from '@/utils/dateUtils';
 import { useTranslation, Trans } from 'react-i18next';
 import { LocalizedLink } from '@/components/LocalizedLink';
 import { FuzzyRadiusMap } from '@/components/Rides/FuzzyRadiusMap';
@@ -601,14 +601,16 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                             {isEditing ? (
                                 <Box>
                                     <Text c="dimmed" size="xs" mb={4}>{t('tripDetails.rider.labels.preferredPickup')}</Text>
-                                    <DateTimePicker
-                                        dropdownType="modal"
-                                        value={editPreferredPickupTime}
-                                        onChange={(val) => setEditPreferredPickupTime(val ? new Date(val) : null)}
+                                    <Input
+                                        component="input"
+                                        type="datetime-local"
+                                        value={toDateTimeLocalString(editPreferredPickupTime)}
+                                        onChange={(e) => {
+                                            const val = e.currentTarget.value;
+                                            setEditPreferredPickupTime(val ? fromDateTimeLocalString(val) : null);
+                                        }}
                                         placeholder={t('tripDetails.rider.labels.preferredPickup')}
-                                        minDate={getChicagoNow()}
-                                        clearable
-                                        valueFormat="MM/DD/YYYY HH:mm"
+                                        min={toDateTimeLocalString(getChicagoNow())}
                                         leftSection={<IconCalendar size={16} stroke={1.5} />}
                                     />
                                     {editPreferredPickupTime && (

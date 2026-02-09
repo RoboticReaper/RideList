@@ -27,7 +27,8 @@ export async function POST(req: Request) {
         const stats = {
             pay_timeouts: 0,
             checkins_started: 0, // Includes auto-depart etc processed by checkIn check
-            cutoffs: 0
+            cutoffs: 0,
+            ride_requests_expired: 0
         };
 
         // ------------------------------------------------------------------
@@ -143,6 +144,19 @@ export async function POST(req: Request) {
             await checkAndProcessCheckInStart(client, row.id);
             stats.checkins_started++;
         }
+
+        // ------------------------------------------------------------------
+        // 4. Expire Ride Requests
+        // ------------------------------------------------------------------
+        // Set ride requests to 'expired' if now() > expires_at and status is 'active'
+        const expiredRequestsResult = await client.query(`
+            UPDATE ride_requests
+            SET status = 'expired'
+            WHERE status = 'active'
+              AND NOW() > expires_at
+            RETURNING id
+        `);
+        stats.ride_requests_expired = expiredRequestsResult.rowCount ?? 0;
 
         await client.query('COMMIT');
 

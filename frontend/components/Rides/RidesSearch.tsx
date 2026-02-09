@@ -26,7 +26,7 @@ import {
     SimpleGrid,
     TagsInput
 } from '@mantine/core';
-import { DateTimePicker } from '@mantine/dates';
+import { toDateTimeLocalString, fromDateTimeLocalString } from '@/utils/dateUtils';
 import { IconMapPin, IconCalendar, IconX, IconSearch, IconAdjustments, IconCurrencyDollar, IconLuggage, IconCreditCard, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { notifications } from '@mantine/notifications';
@@ -521,23 +521,20 @@ export function RidesSearch({ onSearch }: RidesSearchProps) {
 
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 3 }}>
-                        <DateTimePicker
-                            dropdownType="modal"
-                            label={t('rides.search.dateLabel')}
-                            placeholder={t('rides.search.datePlaceholder')}
-                            value={startTime}
-                            valueFormat="MM/DD/YYYY HH:mm"
-                            onChange={(val) => {
-                                if (typeof val === 'string') {
-                                    setStartTime(new Date(val));
-                                } else {
-                                    setStartTime(val);
-                                }
-                            }}
-                            leftSection={<IconCalendar size={16} />}
-                            minDate={getChicagoNow()}
-                            clearable
-                        />
+                        <Input.Wrapper label={t('rides.search.dateLabel')}>
+                            <Input
+                                component="input"
+                                type="datetime-local"
+                                placeholder={t('rides.search.datePlaceholder')}
+                                value={toDateTimeLocalString(startTime)}
+                                onChange={(e) => {
+                                    const val = e.currentTarget.value;
+                                    setStartTime(val ? fromDateTimeLocalString(val) : null);
+                                }}
+                                leftSection={<IconCalendar size={16} />}
+                                min={toDateTimeLocalString(getChicagoNow())}
+                            />
+                        </Input.Wrapper>
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 3 }}>
                         <Group grow gap="xs">

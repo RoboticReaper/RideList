@@ -57,7 +57,8 @@ export const NOTIFICATION_TYPES = {
             'picked_up',                        // rider picked up
             'driver_contact_changed',           // driver changed phone number
             'vehicle_updated',                  // driver updated vehicle information
-            'messages'                          // new message
+            'messages',                          // new message
+            'potential_match',                  // a trip that might match ride request is newly created
         ],
 
         // Informational / reminders

@@ -547,6 +547,92 @@ export async function POST(req: Request) {
 
         await client.query('COMMIT');
 
+        // --- FIND MATCHING RIDE REQUESTS AND NOTIFY ---
+        // This runs after commit to avoid blocking the trip creation
+        try {
+            const { createNotification } = await import('@/app/api/lib/createNotification');
+
+            // Query for matching ride requests:
+            // 1. Origin within pickup radius
+            // 2. Destination within dropoff radius
+            // 3. Time overlap: (preferred_time - flexibility, preferred_time + flexibility) overlaps with
+            //    (departure_time - trip_flexibility, departure_time + trip_flexibility)
+            const tripFlexibility = flexibility !== undefined && flexibility !== null ? flexibility : '15 minutes';
+
+            const matchingRequests = await client.query(`
+                SELECT 
+                    rr.requester_id,
+                    rr.from_text as request_from,
+                    rr.to_text as request_to,
+                    rr.preferred_time,
+                    rr.time_flexibility
+                FROM ride_requests rr
+                WHERE rr.status = 'active'
+                  AND rr.expires_at > NOW()
+                  -- Origin within pickup radius
+                  AND ST_DWithin(
+                      rr.origin_geog,
+                      ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
+                      $3::double precision
+                  )
+                  -- Destination within dropoff radius
+                  AND ST_DWithin(
+                      rr.destination_geog,
+                      ST_SetSRID(ST_MakePoint($4, $5), 4326)::geography,
+                      $6::double precision
+                  )
+                  -- Time overlap check:
+                  -- Request time range: (preferred_time - time_flexibility, preferred_time + time_flexibility)
+                  -- Trip time range: (departure_time - trip_flexibility, departure_time + trip_flexibility)
+                  -- Overlap exists if: request_start <= trip_end AND trip_start <= request_end
+                  AND (rr.preferred_time - rr.time_flexibility) <= ($7::timestamptz + $8::interval)
+                  AND ($7::timestamptz - $8::interval) <= (rr.preferred_time + rr.time_flexibility)
+                  -- Don't notify the driver about their own requests
+                  AND rr.requester_id != $9
+            `, [
+                startLng,
+                startLat,
+                pickupRadius,
+                endLng,
+                endLat,
+                dropoffRadius,
+                departureTime,
+                tripFlexibility,
+                user.uid
+            ]);
+
+            // Send notifications to matching requesters
+            for (const request of matchingRequests.rows) {
+                try {
+                    await createNotification({
+                        client,
+                        userId: request.requester_id,
+                        type: 'potential_match',
+                        titleKey: 'notifications.types.potential_match.title',
+                        messageKey: 'notifications.types.potential_match.message',
+                        variables: {
+                            from: fromText,
+                            to: toText
+                        },
+                        entityType: 'trips',
+                        entityId: tripId,
+                        openLink: `/rides/${tripId}`,
+                        role: 'rider'
+                    });
+                } catch (notifError) {
+                    // Don't fail the trip creation if notification fails
+                    console.error('Failed to send potential match notification:', notifError);
+                }
+            }
+
+            if (matchingRequests.rowCount && matchingRequests.rowCount > 0) {
+                console.log(`Sent potential match notifications to ${matchingRequests.rowCount} requesters for trip ${tripId}`);
+            }
+        } catch (matchError) {
+            // Don't fail the trip creation if matching/notification fails
+            console.error('Failed to process ride request matching:', matchError);
+        }
+
         return NextResponse.json({ success: true, tripId });
 
     } catch (error: any) {

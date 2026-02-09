@@ -558,6 +558,66 @@
             "paymentPlaceholder": "选择相关支付方式",
             "loadMore": "加载更多"
         },
+        "rideRequests": {
+            "myRequests": "我的拼车需求",
+            "postRequest": "发布拼车需求",
+            "noActiveRequests": "你目前没有活跃的拼车需求。",
+            "from": "出发地",
+            "to": "目的地",
+            "preferredTime": "期望时间",
+            "flexibility": "时间浮动",
+            "seats": "座位数",
+            "price": "价格",
+            "priceDesc": "选填 - 每个座位的预算",
+            "expiresAt": "过期时间",
+            "expiresAtLabel": "过期时间（选填，默认7天）",
+            "status": "状态",
+            "markFulfilled": "标记已完成",
+            "delete": "删除",
+            "origin": "出发地",
+            "destination": "目的地",
+            "timeFlexibility": "时间浮动",
+            "submit": "提交需求",
+            "success": "拼车需求提交成功！",
+            "updateSuccess": "拼车需求更新成功！",
+            "error": "提交拼车需求失败",
+            "maxRequestsReached": "最多只能有5个活跃的拼车需求",
+            "originRequired": "请选择有效的出发地点",
+            "destRequired": "请选择有效的目的地",
+            "timeRequired": "请选择期望时间",
+            "flexRequired": "请选择时间浮动范围",
+            "seatsRequired": "请至少填写1个座位",
+            "loginPrompt": "登录后可发布拼车需求或查看您的现有请求。"
+        },
+        "trends": {
+            "viewTrends": "查看拼车需求趋势",
+            "title": "热门路线与需求",
+            "description": "根据活跃的拼车需求，查看乘客在寻找什么。",
+            "noTrends": "暂无活跃的拼车需求趋势。",
+            "demand": "需求",
+            "seats": "个座位",
+            "requests": "个请求",
+            "priceRange": "价格范围",
+            "avg": "平均",
+            "popularTime": "热门时段",
+            "demandLevel": "需求水平",
+            "levels": {
+                "low": "低",
+                "medium": "中",
+                "high": "高"
+            },
+            "apply": "应用",
+            "applied": "路线已应用",
+            "dateTime": "日期和时间",
+            "tomorrow": "明天",
+            "time": {
+                "morning": "早上 (6AM-12PM)",
+                "afternoon": "下午 (12PM-6PM)",
+                "evening": "傍晚 (6PM-12AM)",
+                "night": "深夜 (12AM-6AM)"
+            },
+            "loginPrompt": "登录后可查看拼车需求趋势。"
+        },
         "card": {
             "today": "今天",
             "seatsAvailable": "剩余 {{count}} / {{total}} 个座位",
@@ -2442,6 +2502,10 @@
             "trip_completed": {
                 "title": "行程已完成",
                 "message": "行程已标记为完成。"
+            },
+            "potential_match": {
+                "title": "有行程符合您的需求！",
+                "message": "新发布的行程从 {{from}} 到 {{to}}，可能正是您需要的。"
             }
         },
         "messages": {

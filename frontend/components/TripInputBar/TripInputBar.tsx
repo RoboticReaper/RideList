@@ -4,11 +4,11 @@ import dayjs, { toChicagoISO, getChicagoNow } from '@/utils/dateUtils';
 
 import { useState, useRef, useEffect } from 'react';
 import {
-    ActionIcon, Autocomplete, Badge, Box, Button, Card, Checkbox, Collapse, Divider, FileButton, Grid, Group, Image, Loader as MantineLoader, Modal, NumberInput, Paper, Radio, Select, SimpleGrid, Stack, Stepper, Switch, TagsInput, Text, TextInput, Textarea, Title, Accordion, Anchor
+    ActionIcon, Autocomplete, Badge, Box, Button, Card, Checkbox, Collapse, Divider, FileButton, Grid, Group, Image, Input, Loader as MantineLoader, Modal, NumberInput, Paper, Radio, Select, SimpleGrid, Stack, Stepper, Switch, TagsInput, Text, TextInput, Textarea, Title, Accordion, Anchor
 } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'next/navigation';
-import { DateTimePicker } from '@mantine/dates';
+import { toDateTimeLocalString, fromDateTimeLocalString } from '@/utils/dateUtils';
 import { IconMapPin, IconCalendar, IconX, IconCar, IconCheck, IconUpload, IconTrash, IconQrcode } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useNotifications } from '../Notifications/NotificationContext';
@@ -47,7 +47,16 @@ interface Car {
     small_luggage?: number;
 }
 
-export function TripInputBar() {
+interface TripInputBarProps {
+    initialFrom?: string;
+    initialTo?: string;
+    initialFromCoords?: { lat: number; lng: number };
+    initialToCoords?: { lat: number; lng: number };
+    initialDateTime?: Date;
+    initialFlexibility?: number;
+}
+
+export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initialToCoords, initialDateTime, initialFlexibility }: TripInputBarProps = {}) {
     const { t } = useTranslation('common');
     const { user, handleProtectedAction } = useAuth();
     const { showPrompt, pushPermission } = useNotifications();
@@ -404,6 +413,61 @@ export function TripInputBar() {
             console.error("Failed to load draft", e);
         }
     }, []);
+
+    // --- Apply Initial Values from Props (e.g., from trends autofill) ---
+    useEffect(() => {
+        if (initialFrom) {
+            setStartLocation(initialFrom);
+            setIsStartSelected(true);
+            startLastSelection.current = initialFrom;
+
+            // Use provided coordinates directly if available
+            if (initialFromCoords) {
+                setStartCoords(initialFromCoords);
+            } else {
+                // Fallback: fetch place ID for the initial value
+                if (!startSessionToken.current) startSessionToken.current = crypto.randomUUID();
+                fetchPlaceIdFromQuery(initialFrom, startSessionToken.current).then(pid => {
+                    if (pid) {
+                        setStartPlaceId(pid);
+                        fetchPlaceDetails(pid, setStartCoords, startSessionToken.current);
+                    }
+                });
+            }
+        }
+    }, [initialFrom, initialFromCoords]);
+
+    useEffect(() => {
+        if (initialTo) {
+            setEndLocation(initialTo);
+            setIsEndSelected(true);
+            endLastSelection.current = initialTo;
+
+            // Use provided coordinates directly if available
+            if (initialToCoords) {
+                setEndCoords(initialToCoords);
+            } else {
+                // Fallback: fetch place ID for the initial value
+                if (!endSessionToken.current) endSessionToken.current = crypto.randomUUID();
+                fetchPlaceIdFromQuery(initialTo, endSessionToken.current).then(pid => {
+                    if (pid) {
+                        setEndPlaceId(pid);
+                        fetchPlaceDetails(pid, setEndCoords, endSessionToken.current);
+                    }
+                });
+            }
+        }
+    }, [initialTo, initialToCoords]);
+
+    // Apply initial date/time and flexibility
+    useEffect(() => {
+        if (initialDateTime) {
+            setStartTime(initialDateTime);
+        }
+        if (initialFlexibility !== undefined) {
+            setFlexibility(initialFlexibility);
+        }
+    }, [initialDateTime, initialFlexibility]);
 
     // --- Reset Logic ---
     const resetForm = () => {
@@ -1245,19 +1309,21 @@ export function TripInputBar() {
                             rightSection={renderRightSection(loadingEnd, endLocation, clearEnd)}
                         />
 
-                        <DateTimePicker
-                            dropdownType="modal"
-                            label={t('rides.create.labels.departure')}
-                            placeholder={t('rides.create.labels.pickDateTime')}
-                            leftSection={<IconCalendar size={16} />}
-                            value={startTime}
-                            required
-                            minDate={getChicagoNow()}
-                            valueFormat="MM/DD/YYYY HH:mm"
-                            onChange={(val) => {
-                                setStartTime(val as Date | null);
-                            }}
-                        />
+                        <Input.Wrapper label={t('rides.create.labels.departure')} required>
+                            <Input
+                                component="input"
+                                type="datetime-local"
+                                placeholder={t('rides.create.labels.pickDateTime')}
+                                value={toDateTimeLocalString(startTime)}
+                                required
+                                onChange={(e) => {
+                                    const val = e.currentTarget.value;
+                                    setStartTime(val ? fromDateTimeLocalString(val) : null);
+                                }}
+                                leftSection={<IconCalendar size={16} />}
+                                min={toDateTimeLocalString(getChicagoNow())}
+                            />
+                        </Input.Wrapper>
 
                         <NumberInput
                             label={<Group gap="xs">{t('rides.create.labels.flexibility')} {renderSourceBadge('flexibility')}</Group>}
