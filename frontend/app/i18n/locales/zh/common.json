@@ -556,7 +556,8 @@
             "maxPrice": "最高价格",
             "autoAcceptOnly": "仅显示自动接受",
             "paymentPlaceholder": "选择相关支付方式",
-            "loadMore": "加载更多"
+            "loadMore": "加载更多",
+            "postRequestPrompt": "找不到理想的行程？"
         },
         "rideRequests": {
             "myRequests": "我的拼车需求",

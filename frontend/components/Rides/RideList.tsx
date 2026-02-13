@@ -10,9 +10,10 @@ type Ride = ComponentProps<typeof RideCard>['ride'];
 interface RideListProps {
     initialRides: Ride[];
     searchParams: { [key: string]: string | string[] | undefined };
+    onPostRequest: () => void;
 }
 
-export function RideList({ initialRides, searchParams }: RideListProps) {
+export function RideList({ initialRides, searchParams, onPostRequest }: RideListProps) {
     const { t } = useTranslation('common');
     const [rides, setRides] = useState<Ride[]>(initialRides);
     const [page, setPage] = useState(1);
@@ -63,7 +64,7 @@ export function RideList({ initialRides, searchParams }: RideListProps) {
     return (
         <Stack>
             {rides.length === 0 ? (
-                <Text c="dimmed" fs="italic">{t('rides.search.noResults')}</Text>
+                <Text c="dimmed" fs="italic" ta="center" py="xl">{t('rides.search.noResults')}</Text>
             ) : (
                 <>
                     <Stack>
@@ -85,6 +86,20 @@ export function RideList({ initialRides, searchParams }: RideListProps) {
                     )}
                 </>
             )}
+
+            {/* Post Request Prompt */}
+            <Stack align="center" gap={4} py="xl" mt="md">
+                <Text size="sm" c="dimmed">
+                    {t('rides.search.postRequestPrompt')}
+                </Text>
+                <Button
+                    variant="subtle"
+                    size="sm"
+                    onClick={onPostRequest}
+                >
+                    {t('rides.rideRequests.postRequest')}
+                </Button>
+            </Stack>
         </Stack>
     );
 }

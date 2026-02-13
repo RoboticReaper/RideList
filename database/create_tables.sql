@@ -595,7 +595,7 @@ BEGIN
         WHERE requester_id = NEW.requester_id
           AND status = 'active';
 
-        IF active_count > 5 THEN
+        IF active_count >= 5 THEN
             RAISE EXCEPTION 'Maximum of 5 active ride requests allowed per user';
         END IF;
 

@@ -66,7 +66,7 @@ export function AuthForm(props: PaperProps) {
   }, [user, router, params, returnUrl])
 
   return (
-    <Paper radius="md" p="lg" withBorder {...props} maw={400}>
+    <Paper radius="md" p="lg" withBorder {...props} maw={400} mt="xl">
       <Text size="lg" fw={500}>
         {t('auth.loginWelcome')}
       </Text>

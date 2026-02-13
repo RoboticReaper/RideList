@@ -39,7 +39,7 @@ interface PlacePrediction {
 export function SearchContent() {
     const { t } = useTranslation('common');
     const searchParams = useSearchParams();
-    const { user } = useAuth();
+    const { user, handleProtectedAction } = useAuth();
     const { showPrompt } = useNotifications();
     const [rides, setRides] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -441,29 +441,24 @@ export function SearchContent() {
         <Container size="lg" py="xl" w="100%">
             <Title order={2} mb="md">{t('rides.search.title')}</Title>
 
-            {/* Ride Request Buttons - Only show when signed in */}
-            {mounted && user && (
+            {/* Ride Request Buttons - Always show, handle auth internally */}
+            {mounted && (
                 <Group mb="md" gap="sm">
                     <Button
                         variant="light"
                         leftSection={<IconListCheck size={18} />}
-                        onClick={openMyRequests}
+                        onClick={() => handleProtectedAction(openMyRequests)}
                     >
                         {t('rides.rideRequests.myRequests')}
                     </Button>
                     <Button
                         variant="light"
                         leftSection={<IconPlus size={18} />}
-                        onClick={handleOpenPostRequest}
+                        onClick={() => handleProtectedAction(handleOpenPostRequest)}
                     >
                         {t('rides.rideRequests.postRequest')}
                     </Button>
                 </Group>
-            )}
-            {mounted && !user && (
-                <Text size="sm" c="dimmed" mb="md">
-                    {t('rides.rideRequests.loginPrompt')}
-                </Text>
             )}
 
             <Box mb="md" w="100%">
@@ -479,6 +474,7 @@ export function SearchContent() {
                     <RideList
                         initialRides={rides}
                         searchParams={rideListSearchParams}
+                        onPostRequest={() => handleProtectedAction(handleOpenPostRequest)}
                     />
                 )}
             </Box>

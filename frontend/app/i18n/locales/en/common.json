@@ -556,7 +556,8 @@
             "maxPrice": "Max Price",
             "autoAcceptOnly": "Auto Accept Only",
             "paymentPlaceholder": "Select relevant methods",
-            "loadMore": "Load More"
+            "loadMore": "Load More",
+            "postRequestPrompt": "Can't find an ideal ride?"
         },
         "rideRequests": {
             "myRequests": "My Ride Requests",

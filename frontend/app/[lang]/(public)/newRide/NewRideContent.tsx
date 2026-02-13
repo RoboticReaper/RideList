@@ -34,7 +34,7 @@ interface TrendData {
 
 export default function NewRidePage() {
     const { t } = useTranslation('common');
-    const { user } = useAuth();
+    const { user, handleProtectedAction } = useAuth();
     const [trendsOpened, { toggle: toggleTrends, close: closeTrends }] = useDisclosure(false);
     const [trends, setTrends] = useState<TrendData[]>([]);
     const [loadingTrends, setLoadingTrends] = useState(false);
@@ -157,14 +157,14 @@ export default function NewRidePage() {
         <Container size="xl" py="xl">
             <Title order={2} mb="lg">{t('rides.create.title')}</Title>
 
-            {/* Trends Button - Only show when signed in */}
-            {mounted && user && (
+            {/* Trends Button - Always show, handle auth internally */}
+            {mounted && (
                 <Box mb="md">
                     <Button
                         variant="light"
                         leftSection={<IconTrendingUp size={18} />}
                         rightSection={trendsOpened ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
-                        onClick={toggleTrends}
+                        onClick={() => handleProtectedAction(toggleTrends)}
                     >
                         {t('rides.trends.viewTrends')}
                     </Button>
@@ -263,11 +263,6 @@ export default function NewRidePage() {
                         </Card>
                     </Collapse>
                 </Box>
-            )}
-            {mounted && !user && (
-                <Text size="sm" c="dimmed" mb="md">
-                    {t('rides.trends.loginPrompt')}
-                </Text>
             )}
 
             <TripInputBar
