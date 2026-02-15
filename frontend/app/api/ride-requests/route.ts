@@ -161,10 +161,10 @@ export async function POST(req: Request) {
             console.warn('Geocoding failed, using full address:', geocodeError);
         }
 
-        // Calculate expires_at (default to 7 days from now if not provided)
+        // Calculate expires_at (default to preferredTime if not provided)
         const expiresAtDate = expiresAt
             ? dayjs.tz(expiresAt, CHICAGO_TZ).toISOString()
-            : dayjs().tz(CHICAGO_TZ).add(7, 'day').toISOString();
+            : preferredDate.toISOString();
 
         // 3. Database Insert
         await client.query('BEGIN');

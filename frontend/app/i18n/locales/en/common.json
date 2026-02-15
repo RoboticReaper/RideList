@@ -571,7 +571,7 @@
             "price": "Price",
             "priceDesc": "Optional - your budget per seat",
             "expiresAt": "Expires At",
-            "expiresAtLabel": "Expires At (Optional, defaults to 7 days)",
+            "expiresAtLabel": "Expires At (Optional, defaults to preferred time)",
             "status": "Status",
             "markFulfilled": "Mark Fulfilled",
             "delete": "Delete",
