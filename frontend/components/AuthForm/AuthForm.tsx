@@ -54,12 +54,12 @@ export function AuthForm(props: PaperProps) {
     }
 
     if (!email.trim()) {
-      setEmailError('Email is required');
+      setEmailError(t('auth.emailRequired'));
       return;
     }
 
     if (!password) {
-      setPasswordError('Password is required');
+      setPasswordError(t('auth.passwordRequired'));
       return;
     }
 
@@ -76,15 +76,15 @@ export function AuthForm(props: PaperProps) {
     } catch (err: any) {
       const code = err?.code || '';
       if (code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
-        setEmailError('Invalid email or password. Students should use Microsoft login.');
+        setEmailError(t('auth.invalidCredentials'));
       } else if (code === 'auth/wrong-password') {
-        setPasswordError('Invalid email or password. Students should use Microsoft login.');
+        setPasswordError(t('auth.invalidCredentials'));
       } else if (code === 'auth/invalid-email') {
-        setEmailError('Invalid email address. Students should use Microsoft login.');
+        setEmailError(t('auth.invalidEmail'));
       } else if (code === 'auth/too-many-requests') {
-        setEmailError('Too many attempts. Please try again later.');
+        setEmailError(t('auth.tooManyAttempts'));
       } else {
-        setEmailError('Login failed. Please try again.');
+        setEmailError(t('auth.loginFailed'));
       }
     } finally {
       setEmailLoading(false);
@@ -187,7 +187,7 @@ export function AuthForm(props: PaperProps) {
       </Text>
 
       <Divider
-        label="Community drivers only"
+        label={t('auth.communityDriversOnly')}
         labelPosition="center"
         my="lg"
         styles={{ label: { color: 'var(--mantine-color-dimmed)', fontSize: 'var(--mantine-font-size-xs)' } }}
@@ -197,8 +197,8 @@ export function AuthForm(props: PaperProps) {
         <Stack gap="xs">
           <TextInput
             required
-            label="Email"
-            placeholder="you@example.com"
+            label={t('auth.emailLabel')}
+            placeholder={t('auth.emailPlaceholder')}
             value={email}
             onChange={(e) => { setEmail(e.currentTarget.value); setEmailError(null); }}
             error={emailError}
@@ -208,8 +208,8 @@ export function AuthForm(props: PaperProps) {
 
           <PasswordInput
             required
-            label="Password"
-            placeholder="Your password"
+            label={t('auth.passwordLabel')}
+            placeholder={t('auth.passwordPlaceholder')}
             value={password}
             onChange={(e) => { setPassword(e.currentTarget.value); setPasswordError(null); }}
             error={passwordError}
@@ -225,7 +225,7 @@ export function AuthForm(props: PaperProps) {
             variant="light"
             size="sm"
           >
-            Log in with email
+            {t('auth.loginWithEmail')}
           </Button>
         </Stack>
       </form>

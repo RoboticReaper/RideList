@@ -103,7 +103,7 @@
         "list1": "Compare price, time, and pickup easily",
         "list2": "Live seat availability — no more guessing",
         "list3": "Clear driver info with ride history",
-        "actionTxt": "Browse rides →",
+        "actionTxt": "Find rides →",
         "dashboardBtn": "Go to Dashboard"
     },
     "settings": {
@@ -468,7 +468,19 @@
         "phonePlaceholder": "Optional",
         "saveProfile": "Save Profile",
         "saveProfileError": "Failed to save profile",
-        "testerLogin": "Tester login"
+        "testerLogin": "Tester login",
+        "communityDriversOnly": "Community drivers only",
+        "emailLabel": "Email",
+        "emailPlaceholder": "you@example.com",
+        "passwordLabel": "Password",
+        "passwordPlaceholder": "Your password",
+        "emailRequired": "Email is required",
+        "passwordRequired": "Password is required",
+        "invalidCredentials": "Invalid email or password. Students should use Microsoft login.",
+        "invalidEmail": "Invalid email address. Students should use Microsoft login.",
+        "tooManyAttempts": "Too many attempts. Please try again later.",
+        "loginFailed": "Login failed. Please try again.",
+        "loginWithEmail": "Log in with email"
     },
     "rides": {
         "errors": {
