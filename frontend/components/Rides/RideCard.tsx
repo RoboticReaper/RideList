@@ -29,6 +29,8 @@ interface RideCardProps {
 
         // Driver
         driver_name: string;
+        driver_verified: boolean;
+        driver_community_driver: boolean;
         driver_photo_url: string | null;
         driver_rating: number | null;
         driver_completed_trips: number | null;
@@ -156,7 +158,11 @@ export function RideCard({ ride }: RideCardProps) {
                     <Group gap="xs">
                         <Avatar src={ride.driver_photo_url} radius="xl" size="md" />
                         <Stack gap={0}>
-                            <Text size="sm" fw={600}>{ride.driver_name}</Text>
+                            <Group gap={6}>
+                                <Text size="sm" fw={600}>{ride.driver_name}</Text>
+                                {ride.driver_verified && <Badge color="green" size="xs" leftSection={<IconCheck size={10} />}>{t('rides.detail.driver.verifiedStudent')}</Badge>}
+                                {ride.driver_community_driver && <Badge color="blue" size="xs" leftSection={<IconCheck size={10} />}>{t('rides.detail.driver.communityDriver')}</Badge>}
+                            </Group>
                             <Group gap={6}>
                                 <Text size="xs" c="dimmed">★ {ride.driver_rating?.toFixed(1) || 'New'}</Text>
                                 <Text size="xs" c="dimmed">•</Text>

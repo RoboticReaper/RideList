@@ -683,6 +683,7 @@
             "driver": {
                 "title": "Your Driver",
                 "verifiedStudent": "UIUC Student",
+                "communityDriver": "Community Driver",
                 "memberSince": "Member since {{year}}",
                 "phoneNotProvided": "Not provided by driver",
                 "bookToView": "Book ride to view",
@@ -2311,6 +2312,7 @@
         "changePhoto": "Change Photo",
         "removePhoto": "Remove Photo",
         "verifiedStudent": "UIUC Student",
+        "communityDriver": "Community Driver",
         "joined": "Joined",
         "phone": "Phone",
         "phonePlaceholder": "Used for coordination",

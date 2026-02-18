@@ -683,6 +683,7 @@
             "driver": {
                 "title": "司机信息",
                 "verifiedStudent": "UIUC 学生",
+                "communityDriver": "社区司机",
                 "memberSince": "加入于 {{year}} 年",
                 "phoneNotProvided": "司机未提供",
                 "bookToView": "预约后可查看",
@@ -2311,6 +2312,7 @@
         "changePhoto": "更换头像",
         "removePhoto": "移除照片",
         "verifiedStudent": "UIUC 学生",
+        "communityDriver": "社区司机",
         "joined": "加入时间",
         "phone": "手机号",
         "phonePlaceholder": "用于行程协调",

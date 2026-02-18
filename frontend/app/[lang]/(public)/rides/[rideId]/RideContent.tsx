@@ -58,6 +58,7 @@ interface RideDetails {
         id: string;
         name: string;
         verified: boolean;
+        community_driver: boolean;
         photo_url: string | null;
         member_since: string;
         rating: number | null;
@@ -661,6 +662,9 @@ export default function RidePage() {
                                             </LocalizedLink>
                                             {ride.driver.verified && (
                                                 <Badge color="green" leftSection={<IconCheck size={12} />}>{t('rides.detail.driver.verifiedStudent')}</Badge>
+                                            )}
+                                            {ride.driver.community_driver && (
+                                                <Badge color="blue" leftSection={<IconCheck size={12} />}>{t('rides.detail.driver.communityDriver')}</Badge>
                                             )}
                                         </Group>
                                         <Text size="sm" c="dimmed">{t('rides.detail.driver.memberSince', { year: memberSinceYear })}</Text>

@@ -29,7 +29,7 @@ export async function GET(
         // 2. Fetch Public Profile Stats
         const profileRes = await pool.query(
             `SELECT 
-                pg.id, pg.name, pg.verified, pg.created_at, pg.phone, pg.photo_url,
+                pg.id, pg.name, pg.verified, pg.community_driver, pg.created_at, pg.phone, pg.photo_url,
                 pr.default_big_luggage, pr.default_small_luggage, pr.rating_cached as rider_rating, pr.completed_rides,
                 pd.rating_cached as driver_rating, pd.completed_trips
              FROM profile_global pg
@@ -157,6 +157,7 @@ export async function GET(
             id: profile.id,
             name: displayName,
             verified: profile.verified,
+            community_driver: profile.community_driver,
             created_at: profile.created_at, // Public info (member since) is usually safe
             phone: displayPhone,
             photo_url: displayPhoto,
@@ -313,7 +314,7 @@ export async function PATCH(
             `UPDATE profile_global 
              SET name = $1, phone = $2, photo_url = $3
              WHERE id = $4 
-             RETURNING id, name, phone, verified, created_at, photo_url`,
+             RETURNING id, name, phone, verified, community_driver, created_at, photo_url`,
             [name, phone || null, photoUrlToSave, targetUserId]
         );
 
@@ -377,7 +378,7 @@ export async function PATCH(
         // We could reuse the GET logic but simpler to just fetch again to ensure consistency
         const profileRes = await client.query(
             `SELECT 
-                pg.id, pg.name, pg.verified, pg.created_at, pg.phone, pg.photo_url,
+                pg.id, pg.name, pg.verified, pg.community_driver, pg.created_at, pg.phone, pg.photo_url,
                 pr.default_big_luggage, pr.default_small_luggage, pr.rating_cached as rider_rating, pr.completed_rides,
                 pd.rating_cached as driver_rating, pd.completed_trips
              FROM profile_global pg
@@ -392,6 +393,7 @@ export async function PATCH(
             id: profile.id,
             name: profile.name,
             verified: profile.verified,
+            community_driver: profile.community_driver,
             created_at: profile.created_at,
             phone: profile.phone,
             photo_url: profile.photo_url,

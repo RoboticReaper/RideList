@@ -13,6 +13,7 @@ interface UserProfile {
     id: string;
     name: string;
     verified: boolean;
+    community_driver: boolean;
     created_at: string;
     phone: string | null;
     photo_url: string | null;
@@ -244,6 +245,7 @@ export default function ProfilePage() {
                                     <Group>
                                         <Title order={2}>{profile.name}</Title>
                                         {profile.verified && <Badge color="green" leftSection={<IconCheck size={12} />}>{t('profile.verifiedStudent')}</Badge>}
+                                        {profile.community_driver && <Badge color="blue" leftSection={<IconCheck size={12} />}>{t('profile.communityDriver')}</Badge>}
                                     </Group>
                                 )}
                             </Box>

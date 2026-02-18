@@ -1,4 +1,11 @@
+-- V4
+alter table profile_global add community_driver bool not null default false;
 
+alter table profile_global
+add constraint only_one_driver_type
+check (
+  NOT (verified = true AND community_driver = true)
+);
 
 
 

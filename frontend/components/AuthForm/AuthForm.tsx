@@ -10,6 +10,7 @@ import {
   PasswordInput,
   Stack,
   Text,
+  TextInput,
   Input,
 } from '@mantine/core';
 import { useTranslation, Trans } from 'react-i18next';
@@ -36,6 +37,59 @@ export function AuthForm(props: PaperProps) {
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get('returnUrl');
   const auth = getAuth(app);
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [emailLoading, setEmailLoading] = useState(false);
+
+  const emailLogin = async () => {
+    setEmailError(null);
+    setPasswordError(null);
+
+    if (!checked) {
+      setError(t('auth.agreementsError'));
+      return;
+    }
+
+    if (!email.trim()) {
+      setEmailError('Email is required');
+      return;
+    }
+
+    if (!password) {
+      setPasswordError('Password is required');
+      return;
+    }
+
+    setEmailLoading(true);
+    try {
+      const result = await signInWithEmailAndPassword(auth, email.trim(), password);
+      if (result) {
+        if (returnUrl) {
+          router.push(getLocalizedHref(params, returnUrl));
+        } else {
+          router.push(getLocalizedHref(params, "/dashboard"));
+        }
+      }
+    } catch (err: any) {
+      const code = err?.code || '';
+      if (code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
+        setEmailError('Invalid email or password. Students should use Microsoft login.');
+      } else if (code === 'auth/wrong-password') {
+        setPasswordError('Invalid email or password. Students should use Microsoft login.');
+      } else if (code === 'auth/invalid-email') {
+        setEmailError('Invalid email address. Students should use Microsoft login.');
+      } else if (code === 'auth/too-many-requests') {
+        setEmailError('Too many attempts. Please try again later.');
+      } else {
+        setEmailError('Login failed. Please try again.');
+      }
+    } finally {
+      setEmailLoading(false);
+    }
+  };
 
   const msLogin = () => {
     if (!checked) {
@@ -132,7 +186,51 @@ export function AuthForm(props: PaperProps) {
         {t('auth.uiucOnly')}
       </Text>
 
-      <Input.Wrapper label={t('auth.agreementsLabel')} withAsterisk error={error}>
+      <Divider
+        label="Community drivers only"
+        labelPosition="center"
+        my="lg"
+        styles={{ label: { color: 'var(--mantine-color-dimmed)', fontSize: 'var(--mantine-font-size-xs)' } }}
+      />
+
+      <form onSubmit={(e) => { e.preventDefault(); emailLogin(); }}>
+        <Stack gap="xs">
+          <TextInput
+            required
+            label="Email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => { setEmail(e.currentTarget.value); setEmailError(null); }}
+            error={emailError}
+            radius="md"
+            size="sm"
+          />
+
+          <PasswordInput
+            required
+            label="Password"
+            placeholder="Your password"
+            value={password}
+            onChange={(e) => { setPassword(e.currentTarget.value); setPasswordError(null); }}
+            error={passwordError}
+            radius="md"
+            size="sm"
+          />
+
+          <Button
+            type="submit"
+            radius="xl"
+            loading={emailLoading}
+            fullWidth
+            variant="light"
+            size="sm"
+          >
+            Log in with email
+          </Button>
+        </Stack>
+      </form>
+
+      <Input.Wrapper label={t('auth.agreementsLabel')} withAsterisk error={error} mt="md">
         <Checkbox
           label={
             <Trans

@@ -59,7 +59,7 @@ create table users (
 create table profile_global (
   id text primary key references users(id) on delete cascade,
   name text not null,               -- preferred_name
-  verified bool not null default false,
+  verified bool not null default false, -- UIUC student verified
   created_at timestamptz not null default now(),
   phone text,                       -- relationship-gated in app layer
   photo_url text
