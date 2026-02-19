@@ -62,7 +62,11 @@ create table profile_global (
   verified bool not null default false, -- UIUC student verified
   created_at timestamptz not null default now(),
   phone text,                       -- relationship-gated in app layer
-  photo_url text
+  photo_url text,
+  community_driver bool not null default false,
+  constraint only_one_driver_type check (
+    NOT (verified = true AND community_driver = true)
+  )
 );
 
 create table profile_rider (
