@@ -282,7 +282,7 @@
                 "questions": [
                     {
                         "q": "Who can use this platform?",
-                        "a": "This platform is currently available to users with a valid UIUC Microsoft account. This helps keep the community accountable, though we perform no background checks for riders and drivers."
+                        "a": "This platform is available to users with a UIUC Microsoft account, and community drivers that are not students but operate frequent routes to increase ride availability for the community. RideList does not perform background checks, license verification, or safety screening on any drivers. Community Driver is only a category label and does not imply endorsement, certification, or guarantee by the platform."
                     },
                     {
                         "q": "Do I need to create a profile?",
@@ -448,7 +448,7 @@
                     },
                     {
                         "q": "Who do I contact if something goes wrong?",
-                        "a": "Use the contact button in the footer"
+                        "a": "Use the contact button in the footer for platform-related issues. For safety concerns, please contact the police."
                     }
                 ]
             }
@@ -1835,10 +1835,10 @@
         "who": {
             "title": "Who Can Use This Platform",
             "access": {
-                "title": "University-only access",
-                "p1": "Access is restricted to users who sign in with a UIUC Microsoft account.",
-                "p2": "This ensures everyone on the platform belongs to the same university community.",
-                "p3": "There are no guest accounts and no public posting without login."
+                "title": "University students and community drivers",
+                "p1": "Students who sign-in with UIUC Microsoft account can create an account and use the platform.",
+                "p2": "Community drivers are non-UIUC users that operate frequent routes to increase ride availability for the community. They can only join upon platform manual approval, although RideList does not perform background checks, license verification, or safety screening on any drivers. Community Driver is only a category label and does not imply endorsement, certification, or guarantee by the platform.",
+                "p3": "Ensuring everyone on the platform belongs to the same university community is important to us."
             }
         },
         "profile": {
@@ -2145,7 +2145,7 @@
             "title": "Safety & Trust Principles",
             "anonymous": {
                 "title": "No fake accounts",
-                "p1": "All users must use university login."
+                "p1": "All users must use university login or through manual registration for community drivers"
             },
             "sensitive": {
                 "title": "Limited exposure of sensitive info",
@@ -2178,7 +2178,9 @@
             "list": [
                 "Does not provide insurance",
                 "Does not guarantee trip completion",
-                "Does not mediate payments"
+                "Does not mediate payments",
+                "Does not perform background checks",
+                "Is not responsible for any incidents that may occur"
             ],
             "p2": "It exists to coordinate, not enforce real-world behavior."
         },
@@ -2199,17 +2201,12 @@
         "toc": "On this page",
         "intro": {
             "title": "Our goal",
-            "p1": "This platform is designed to help UIUC students coordinate rides convenient, transparently, and with clear expectations. While no system can eliminate all risk, we’ve built the system with privacy and trip coordination as priority."
+            "p1": "This platform is designed to help UIUC students coordinate rides conveniently, transparently, and with clear expectations. While no system can eliminate all risk, we’ve built the system with privacy and trip coordination as priority."
         },
         "who": {
             "title": "Who is allowed on this platform",
-            "p1": "Only users authenticated through UIUC Microsoft login can create an account.",
-            "list": [
-                "No anonymous accounts",
-                "No external signups",
-                "Each account is tied to a real university identity"
-            ],
-            "p2": "Disclaimer: we do not screen or perform safety checks. Use caution when meeting people",
+            "p1": "Users authenticated through UIUC Microsoft login can create an account, or community drivers that are non-UIUC with manual approval by the platform.",
+            "p2": "Disclaimer: we do not screen or perform safety checks. Use caution when meeting people. RideList does not perform background checks, license verification, or safety screening on any drivers. Community Driver is only a category label and does not imply endorsement, certification, or guarantee by the platform.",
             "link": "Learn more about account creation in How it works → Getting started"
         },
         "identity": {
@@ -2717,6 +2714,7 @@
                                 "type": "list",
                                 "items": [
                                     "Sign in using an approved university Microsoft account (e.g., UIUC)",
+                                    "For community drivers, you must be acknowledged by the platform",
                                     "Provide accurate and truthful information",
                                     "Maintain only one account"
                                 ]
