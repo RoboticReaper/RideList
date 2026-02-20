@@ -1585,7 +1585,7 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
                         <TagsInput
                             label={<Group gap="xs">{t('rides.create.labels.paymentMethods')} {renderSourceBadge('paymentMethods')}</Group>}
                             placeholder={t('rides.create.labels.paymentMethodsPlaceholder')}
-                            data={['Cash', 'Venmo', 'Zelle', 'WeChat', 'CashApp']}
+                            data={['Cash', 'Venmo', 'Zelle', 'WeChat', 'Alipay (支付宝)', 'PayPal', 'CashApp']}
                             value={paymentMethods}
                             onChange={(val) => {
                                 setPaymentMethods(val);

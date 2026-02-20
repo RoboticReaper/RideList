@@ -261,7 +261,7 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
 
                     <TagsInput
                         label={t('templates.rules.form.paymentMethods')}
-                        data={['Cash', 'Venmo', 'Zelle', 'WeChat', 'CashApp']}
+                        data={['Cash', 'Venmo', 'Zelle', 'WeChat', 'Alipay (支付宝)', 'PayPal', 'CashApp']}
                         value={paymentMethods}
                         onChange={setPaymentMethods}
                         clearable
