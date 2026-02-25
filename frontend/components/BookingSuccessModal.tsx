@@ -128,6 +128,13 @@ export function BookingSuccessModal({ opened, onClose, status, payWindow, paymen
                     </Paper>
                 )}
 
+                {/* Payment reminder */}
+                {isPayWindow && (
+                    <Text ta="center" size="xs" c="dimmed" style={{ lineHeight: 1.4 }}>
+                        {t('rides.detail.bookingSuccess.paymentReminder' as any)}
+                    </Text>
+                )}
+
                 {/* PUSH UPDATES UPSELL (Only if default) */}
                 {pushPermission === 'default' && (
                     <div

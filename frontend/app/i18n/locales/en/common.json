@@ -790,7 +790,8 @@
                 "enablePushMessage": "Don't miss updates on your ride request.",
                 "enablePushBtn": "Enable",
                 "closeBtn": "Close",
-                "totalToPay": "Total to Pay"
+                "totalToPay": "Total to Pay",
+                "paymentReminder": "When transferring money, add a note with your name on RideList so the driver knows who paid. Take a screenshot of the payment as proof."
             },
             "notifications": {
                 "ownTripError": {

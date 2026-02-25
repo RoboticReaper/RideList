@@ -790,7 +790,8 @@
                 "enablePushMessage": "及时获取行程相关更新。",
                 "enablePushBtn": "开启通知",
                 "closeBtn": "关闭",
-                "totalToPay": "总计需支付"
+                "totalToPay": "总计需支付",
+                "paymentReminder": "转账时请在备注中注明你在 RideList 上的名字，以便司机确认付款人。请截图保存付款凭证。"
             },
             "notifications": {
                 "ownTripError": {
