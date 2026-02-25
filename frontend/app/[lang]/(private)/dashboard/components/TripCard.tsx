@@ -5,6 +5,7 @@ import { notifications } from '@mantine/notifications';
 import dayjs, { CHICAGO_TZ } from '@/utils/dateUtils';
 import { LocalizedLink } from '@/components/LocalizedLink';
 import { useTranslation, Trans } from 'react-i18next';
+import CarPicsDisplay from '@/components/CarPicsDisplay/CarPicsDisplay';
 
 interface Trip {
     // ... existing interface
@@ -27,6 +28,10 @@ interface Trip {
     from_input_text?: string;
     to_input_text?: string;
     car_id?: string;
+    pic1?: string;
+    pic2?: string;
+    pic3?: string;
+    pic4?: string;
 }
 
 interface TripCardProps {
@@ -93,7 +98,8 @@ export function TripCard({ trip }: TripCardProps) {
 
                 {/* Car Info */}
                 {(trip.make || trip.model) && (
-                    <Group gap="xs" c="dimmed">
+                    <Group gap="xs" c="dimmed" align="center">
+                        <CarPicsDisplay pics={[trip.pic1, trip.pic2, trip.pic3, trip.pic4]} thumbnailHeight={48} thumbnailWidth={64} />
                         <IconSteeringWheel size={16} />
                         <Text size="sm">
                             {trip.color} {trip.make} {trip.model} • {trip.plate}
@@ -110,7 +116,7 @@ export function TripCard({ trip }: TripCardProps) {
                             </Alert>
                         )}
                         {!trip.car_id && (
-                            <Alert color="red" variant="light" title={t('dashboard.tripCard.actionRequired')} icon={<IconAlertTriangle size={16} />}>
+                            <Alert color="orange" variant="light" title={t('dashboard.tripCard.actionRequired')} icon={<IconAlertTriangle size={16} />}>
                                 <Trans i18nKey="dashboard.tripCard.carRequired" components={{ 1: <Anchor component={LocalizedLink} href={`/dashboard/${trip.id}?tab=edit`} style={{ textDecoration: 'underline' }} /> }} />
                             </Alert>
                         )}

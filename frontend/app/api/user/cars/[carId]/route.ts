@@ -3,6 +3,7 @@ import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { createNotification } from '@/app/api/lib/createNotification';
 import { getTranslationForUser } from '@/app/api/lib/i18n';
+import { processCarImage, deleteCarImage } from '@/app/api/lib/processCarImage';
 
 export async function GET(req: Request, { params }: { params: Promise<{ carId: string }> }) {
     const { carId } = await params;
@@ -54,7 +55,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ carId: s
         const t = await getTranslationForUser(user.uid, client);
 
         const body = await req.json();
-        const { make, model, color, year, plate, seats, big_luggage, small_luggage } = body;
+        const { make, model, color, year, plate, seats, big_luggage, small_luggage, pic1, pic2, pic3, pic4 } = body;
 
         // Fetch current car details to check for changes
         const currentCarRes = await client.query(
@@ -67,12 +68,34 @@ export async function PUT(req: Request, { params }: { params: Promise<{ carId: s
             return NextResponse.json({ error: t('api.errors.carNotFoundExact') }, { status: 404 });
         }
 
+        // Process car images: upload new, delete replaced/removed
+        const picFields = ['pic1', 'pic2', 'pic3', 'pic4'] as const;
+        const picInputs = [pic1, pic2, pic3, pic4];
+        const picUrls: (string | null)[] = [];
+        for (let i = 0; i < 4; i++) {
+            const newVal = picInputs[i];
+            const oldVal = currentCar[picFields[i]];
+            if (newVal && typeof newVal === 'string' && newVal.startsWith('data:')) {
+                // New image uploaded — delete old if exists, upload new
+                if (oldVal) await deleteCarImage(oldVal);
+                picUrls.push(await processCarImage(newVal, user.uid));
+            } else if (newVal && typeof newVal === 'string' && newVal.startsWith('https://')) {
+                // Existing URL kept
+                picUrls.push(newVal);
+            } else {
+                // Removed or not provided — delete old if exists
+                if (oldVal) await deleteCarImage(oldVal);
+                picUrls.push(null);
+            }
+        }
+
         const res = await client.query(
             `UPDATE cars 
-             SET make = $1, model = $2, color = $3, year = $4, plate = $5, seats = $6, big_luggage = $7, small_luggage = $8
-             WHERE id = $9 AND owner = $10 AND deleted = false
+             SET make = $1, model = $2, color = $3, year = $4, plate = $5, seats = $6, big_luggage = $7, small_luggage = $8,
+                 pic1 = $9, pic2 = $10, pic3 = $11, pic4 = $12
+             WHERE id = $13 AND owner = $14 AND deleted = false
              RETURNING *`,
-            [make, model, color, year, plate, seats, big_luggage, small_luggage, carId, user.uid]
+            [make, model, color, year, plate, seats, big_luggage, small_luggage, picUrls[0], picUrls[1], picUrls[2], picUrls[3], carId, user.uid]
         );
 
         if (res.rowCount === 0) {

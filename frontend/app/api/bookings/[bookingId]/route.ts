@@ -171,8 +171,8 @@ export async function PATCH(
                 // Validate Luggage Limits
                 // Limits are per PERSON (based on assumption in prompt "limit per person")
 
-                const maxBig = (booking.big_luggage_lim || 0) * newSeats;
-                const maxSmall = (booking.small_luggage_lim || 0) * newSeats;
+                const maxBig = ((booking.big_luggage_lim || 0) + (booking.big_luggage_paid || 0)) * newSeats;
+                const maxSmall = ((booking.small_luggage_lim || 0) + (booking.small_luggage_paid || 0)) * newSeats;
 
                 if (newBig > maxBig) {
                     await client.query('ROLLBACK');

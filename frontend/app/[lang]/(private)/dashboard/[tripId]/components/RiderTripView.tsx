@@ -1,15 +1,17 @@
 import { useState, useRef } from 'react';
 import { Paper, Title, Text, Group, Stack, Alert, Box, SimpleGrid, Button, Flex, Badge, Modal, Switch, Textarea, Select, Autocomplete, ActionIcon, Loader, Avatar, NumberInput, Image, Input } from '@mantine/core';
-import { IconAlertTriangle, IconInfoCircle, IconCash, IconUserCheck, IconCalendar, IconLuggage, IconArmchair, IconClock, IconCreditCard, IconSteeringWheel, IconPhone, IconNote, IconMapPin, IconEdit, IconX, IconExclamationCircle } from '@tabler/icons-react';
+import { IconAlertTriangle, IconInfoCircle, IconCash, IconUserCheck, IconCalendar, IconLuggage, IconArmchair, IconClock, IconCreditCard, IconSteeringWheel, IconPhone, IconNote, IconMapPin, IconEdit, IconX, IconExclamationCircle, IconEye } from '@tabler/icons-react';
 import dayjs, { CHICAGO_TZ, getChicagoNow, fromChicagoISO, toChicagoISO } from '@/utils/dateUtils';
 import { toDateTimeLocalString, fromDateTimeLocalString } from '@/utils/dateUtils';
 import { useTranslation, Trans } from 'react-i18next';
+import CarPicsDisplay from '@/components/CarPicsDisplay/CarPicsDisplay';
 import { LocalizedLink } from '@/components/LocalizedLink';
 import { FuzzyRadiusMap } from '@/components/Rides/FuzzyRadiusMap';
 import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { intervalToHours } from '@/utils/intervalParsers';
 import { getTripStatusConfig, getBookingStatusConfig } from '@/utils/statusUtils';
+import { PaymentEvidenceModal } from '@/components/PaymentEvidenceModal';
 
 interface RiderTripViewProps {
     trip: any;
@@ -46,6 +48,8 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
     const [viewingSnapshot, setViewingSnapshot] = useState(false);
     const [qrModalOpen, setQrModalOpen] = useState(false);
     const [qrModalData, setQrModalData] = useState<{ method: string; url: string } | null>(null);
+    const [payEvidenceModalOpen, setPayEvidenceModalOpen] = useState(false);
+    const [viewEvidenceModalOpen, setViewEvidenceModalOpen] = useState(false);
 
     // Edit mode state
     const [isEditing, setIsEditing] = useState(false);
@@ -56,8 +60,6 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
     const [editSeats, setEditSeats] = useState(1);
     const [editBigLuggage, setEditBigLuggage] = useState(0);
     const [editSmallLuggage, setEditSmallLuggage] = useState(0);
-    const [editBigLuggagePaid, setEditBigLuggagePaid] = useState(0);
-    const [editSmallLuggagePaid, setEditSmallLuggagePaid] = useState(0);
 
     // Pickup location autocomplete state
     const [pickupLocation, setPickupLocation] = useState('');
@@ -150,10 +152,8 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
         setPickupCoords(null); // Will be set if user changes location
         setEditPreferredPickupTime(trip.user_booking?.preferred_pickup_time ? fromChicagoISO(trip.user_booking.preferred_pickup_time) : null);
         setEditSeats(trip.user_booking?.seats_booked || 1);
-        setEditBigLuggage(trip.user_booking?.big_luggage || 0);
-        setEditSmallLuggage(trip.user_booking?.small_luggage || 0);
-        setEditBigLuggagePaid(trip.user_booking?.big_luggage_paid || 0);
-        setEditSmallLuggagePaid(trip.user_booking?.small_luggage_paid || 0);
+        setEditBigLuggage((trip.user_booking?.big_luggage || 0) + (trip.user_booking?.big_luggage_paid || 0));
+        setEditSmallLuggage((trip.user_booking?.small_luggage || 0) + (trip.user_booking?.small_luggage_paid || 0));
         setIsEditing(true);
     };
 
@@ -200,10 +200,8 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
 
             if (canEditSeating) {
                 if (editSeats !== trip.user_booking?.seats_booked) payload.seats_booked = editSeats;
-                if (editBigLuggage !== trip.user_booking?.big_luggage) payload.big_luggage = editBigLuggage;
-                if (editSmallLuggage !== trip.user_booking?.small_luggage) payload.small_luggage = editSmallLuggage;
-                if (editBigLuggagePaid !== trip.user_booking?.big_luggage_paid) payload.big_luggage_paid = editBigLuggagePaid;
-                if (editSmallLuggagePaid !== trip.user_booking?.small_luggage_paid) payload.small_luggage_paid = editSmallLuggagePaid;
+                payload.big_luggage = editBigLuggage;
+                payload.small_luggage = editSmallLuggage;
             }
 
             const res = await fetch(`/api/bookings/${bookingId}`, {
@@ -235,7 +233,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
         }
     };
 
-    const handleMarkPaymentSent = async () => {
+    const handleMarkPaymentSent = async (evidenceImage: string, evidenceText: string) => {
         const bookingId = trip.user_booking?.id;
         if (!user || !bookingId) return;
         setMarkingPaid(true);
@@ -243,7 +241,14 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
             const token = await user.getIdToken();
             const res = await fetch(`/api/bookings/${bookingId}/pay`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    payment_evidence_image: evidenceImage,
+                    payment_evidence_text: evidenceText
+                })
             });
 
             if (!res.ok) {
@@ -256,6 +261,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                 message: t('tripDetails.rider.notifications.markedPaid.message'),
                 color: 'green'
             });
+            setPayEvidenceModalOpen(false);
             onRefresh();
 
         } catch (error: any) {
@@ -519,35 +525,46 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                             label={t('dashboard.common.big')}
                                             value={editBigLuggage}
                                             onChange={(val) => setEditBigLuggage(Number(val))}
+                                            min={0}
+                                            max={((trip.rules?.luggage?.big || 0) + (trip.rules?.luggage?.big_paid || 0)) * (editSeats || 1)}
+                                            description={
+                                                (trip.rules?.luggage?.big_paid || 0) > 0
+                                                    ? `${t('tripDetails.rider.labels.freeLimit')}: ${(trip.rules?.luggage?.big || 0)} ${t('tripDetails.rider.labels.perPerson')}. ${t('tripDetails.rider.labels.extraBag')}: $${trip.rules?.luggage?.big_paid_price || 0} ${t('tripDetails.rider.labels.each')}`
+                                                    : `${t('tripDetails.rider.labels.limit')}: ${(trip.rules?.luggage?.big || 0)} ${t('tripDetails.rider.labels.perPerson')}`
+                                            }
                                         />
                                         <NumberInput
                                             label={t('dashboard.common.small')}
                                             value={editSmallLuggage}
                                             onChange={(val) => setEditSmallLuggage(Number(val))}
+                                            min={0}
+                                            max={((trip.rules?.luggage?.small || 0) + (trip.rules?.luggage?.small_paid || 0)) * (editSeats || 1)}
+                                            description={
+                                                (trip.rules?.luggage?.small_paid || 0) > 0
+                                                    ? `${t('tripDetails.rider.labels.freeLimit')}: ${(trip.rules?.luggage?.small || 0)} ${t('tripDetails.rider.labels.perPerson')}. ${t('tripDetails.rider.labels.extraBag')}: $${trip.rules?.luggage?.small_paid_price || 0} ${t('tripDetails.rider.labels.each')}`
+                                                    : `${t('tripDetails.rider.labels.limit')}: ${(trip.rules?.luggage?.small || 0)} ${t('tripDetails.rider.labels.perPerson')}`
+                                            }
                                         />
                                     </Group>
-                                    {((trip.rules?.luggage?.big_paid || 0) > 0 || (trip.rules?.luggage?.small_paid || 0) > 0) && (
-                                        <Group grow mt="sm">
-                                            {(trip.rules?.luggage?.big_paid || 0) > 0 && (
-                                                <NumberInput
-                                                    label={`${t('dashboard.common.big')} (${t('rides.detail.rules.paidLuggage')})`}
-                                                    value={editBigLuggagePaid}
-                                                    onChange={(val) => setEditBigLuggagePaid(Number(val))}
-                                                    min={0}
-                                                    max={trip.rules?.luggage?.big_paid || 0}
-                                                />
-                                            )}
-                                            {(trip.rules?.luggage?.small_paid || 0) > 0 && (
-                                                <NumberInput
-                                                    label={`${t('dashboard.common.small')} (${t('rides.detail.rules.paidLuggage')})`}
-                                                    value={editSmallLuggagePaid}
-                                                    onChange={(val) => setEditSmallLuggagePaid(Number(val))}
-                                                    min={0}
-                                                    max={trip.rules?.luggage?.small_paid || 0}
-                                                />
-                                            )}
-                                        </Group>
-                                    )}
+                                    {(() => {
+                                        const freeBigLim = (trip.rules?.luggage?.big || 0) * (editSeats || 1);
+                                        const freeSmallLim = (trip.rules?.luggage?.small || 0) * (editSeats || 1);
+                                        const paidBig = Math.max(0, editBigLuggage - freeBigLim);
+                                        const paidSmall = Math.max(0, editSmallLuggage - freeSmallLim);
+                                        const bigCost = paidBig * (trip.rules?.luggage?.big_paid_price || 0);
+                                        const smallCost = paidSmall * (trip.rules?.luggage?.small_paid_price || 0);
+                                        const totalCost = bigCost + smallCost;
+                                        if (totalCost > 0) {
+                                            return (
+                                                <Text size="xs" c="orange" fw={500} mt="xs">
+                                                    {t('tripDetails.rider.labels.extraLuggageCost')}: ${totalCost.toFixed(2)}
+                                                    {paidBig > 0 && ` (${paidBig} ${t('dashboard.common.big')} × $${Number(trip.rules?.luggage?.big_paid_price || 0)})`}
+                                                    {paidSmall > 0 && ` (${paidSmall} ${t('dashboard.common.small')} × $${Number(trip.rules?.luggage?.small_paid_price || 0)})`}
+                                                </Text>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
                                 </Box>
                             ) : (
                                 <InfoItem
@@ -556,9 +573,11 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                         <Group gap="xs">
                                             <IconLuggage size={16} style={{ opacity: 0.7 }} />
                                             <span>
-                                                {trip.user_booking?.big_luggage || 0} {t('dashboard.common.big')}, {trip.user_booking?.small_luggage || 0} {t('dashboard.common.small')}
+                                                {(trip.user_booking?.big_luggage || 0) + (trip.user_booking?.big_luggage_paid || 0)} {t('dashboard.common.big')}, {(trip.user_booking?.small_luggage || 0) + (trip.user_booking?.small_luggage_paid || 0)} {t('dashboard.common.small')}
                                                 {((trip.user_booking?.big_luggage_paid || 0) > 0 || (trip.user_booking?.small_luggage_paid || 0) > 0) && (
-                                                    <> | {t('rides.detail.rules.paidLuggage')}: {trip.user_booking?.big_luggage_paid || 0} {t('dashboard.common.big')}, {trip.user_booking?.small_luggage_paid || 0} {t('dashboard.common.small')}</>
+                                                    <Text component="span" size="xs" c="orange" ml={4}>
+                                                        ({t('tripDetails.rider.labels.includesPaid')})
+                                                    </Text>
                                                 )}
                                             </span>
                                         </Group>
@@ -580,6 +599,70 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                     label={t('tripDetails.rider.labels.intendedPayment')}
                                     value={trip.user_booking?.intended_payment_method || t('dashboard.common.none')}
                                 />
+                            )}
+                            {['joined_with_pay_window', 'pending_pay_confirmation_from_driver'].includes(trip.user_booking?.status) && (() => {
+                                const seats = trip.user_booking?.seats_booked || 1;
+                                const basePrice = Number(trip.price || 0) * seats;
+                                const totalBig = (trip.user_booking?.big_luggage || 0) + (trip.user_booking?.big_luggage_paid || 0);
+                                const totalSmall = (trip.user_booking?.small_luggage || 0) + (trip.user_booking?.small_luggage_paid || 0);
+                                const freeBigLim = (trip.rules?.luggage?.big || 0) * seats;
+                                const freeSmallLim = (trip.rules?.luggage?.small || 0) * seats;
+                                const paidBig = Math.max(0, totalBig - freeBigLim);
+                                const paidSmall = Math.max(0, totalSmall - freeSmallLim);
+                                const luggageFee = paidBig * Number(trip.rules?.luggage?.big_paid_price || 0) + paidSmall * Number(trip.rules?.luggage?.small_paid_price || 0);
+                                const total = basePrice + luggageFee;
+                                return (
+                                    <InfoItem
+                                        label={t('rides.detail.bookingSuccess.totalToPay')}
+                                        value={
+                                            <Text fw={700} c="blue" size="sm">
+                                                ${total.toFixed(2)}
+                                                {luggageFee > 0 && (
+                                                    <Text component="span" size="xs" c="dimmed" ml={4}>
+                                                        (${basePrice.toFixed(2)} + ${luggageFee.toFixed(2)} {t('tripDetails.rider.labels.extraLuggageCost').toLowerCase()})
+                                                    </Text>
+                                                )}
+                                            </Text>
+                                        }
+                                    />
+                                );
+                            })()}
+                            {trip.user_booking?.payment_evidence_url && (
+                                <>
+                                    <Button
+                                        size="compact-xs"
+                                        variant="light"
+                                        color="blue"
+                                        leftSection={<IconEye size={14} />}
+                                        onClick={() => setViewEvidenceModalOpen(true)}
+                                    >
+                                        {t('paymentEvidence.viewPaymentEvidence') || 'View Payment Evidence'}
+                                    </Button>
+                                    <Modal
+                                        opened={viewEvidenceModalOpen}
+                                        onClose={() => setViewEvidenceModalOpen(false)}
+                                        title={t('paymentEvidence.title') || 'Payment Evidence'}
+                                        centered
+                                        size="md"
+                                    >
+                                        <Stack gap="md">
+                                            <div>
+                                                <Text size="sm" fw={500} mb={4}>{t('paymentEvidence.handleLabel') || 'Payer Username / Handle'}</Text>
+                                                <Text size="sm" p="xs" bg="gray.0" style={{ borderRadius: 6 }}>{trip.user_booking?.payment_evidence_text || ''}</Text>
+                                            </div>
+                                            <div>
+                                                <Text size="sm" fw={500} mb={4}>{t('paymentEvidence.screenshotLabel') || 'Payment Screenshot'}</Text>
+                                                <Image
+                                                    src={trip.user_booking?.payment_evidence_url}
+                                                    alt="Payment evidence"
+                                                    mah={400}
+                                                    fit="contain"
+                                                    radius="sm"
+                                                />
+                                            </div>
+                                        </Stack>
+                                    </Modal>
+                                </>
                             )}
                             <InfoItem
                                 label={t('tripDetails.rider.labels.paymentStatus')}
@@ -776,7 +859,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                         {showPayButton && (
                             <Button
                                 color="orange"
-                                onClick={handleMarkPaymentSent}
+                                onClick={() => setPayEvidenceModalOpen(true)}
                                 loading={markingPaid}
                                 leftSection={<IconCash size={16} />}
                                 fullWidth
@@ -784,6 +867,13 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                 {t('tripDetails.manage.actions.markPaymentSent')}
                             </Button>
                         )}
+
+                        <PaymentEvidenceModal
+                            opened={payEvidenceModalOpen}
+                            onClose={() => setPayEvidenceModalOpen(false)}
+                            onSubmit={handleMarkPaymentSent}
+                            loading={markingPaid}
+                        />
 
                         {showReadyButton && (
                             <Button
@@ -837,6 +927,34 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                         </SimpleGrid>
 
                         <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                            <InfoItem
+                                label={t('tripDetails.rider.labels.luggageLimits')}
+                                value={
+                                    <Stack gap={2}>
+                                        <Group gap="xs">
+                                            <IconLuggage size={16} style={{ opacity: 0.7 }} />
+                                            <Text size="sm">
+                                                {t('dashboard.common.big')}: {rulesToDisplay?.luggage?.big || 0} {t('tripDetails.rider.labels.perPerson')}
+                                                {(rulesToDisplay?.luggage?.big_paid || 0) > 0 && (
+                                                    <Text component="span" c="orange" size="sm"> + {rulesToDisplay?.luggage?.big_paid} {t('tripDetails.rider.labels.paid')} (${rulesToDisplay?.luggage?.big_paid_price}/{t('tripDetails.rider.labels.each')})</Text>
+                                                )}
+                                            </Text>
+                                        </Group>
+                                        <Group gap="xs">
+                                            <IconLuggage size={16} style={{ opacity: 0.7 }} />
+                                            <Text size="sm">
+                                                {t('dashboard.common.small')}: {rulesToDisplay?.luggage?.small || 0} {t('tripDetails.rider.labels.perPerson')}
+                                                {(rulesToDisplay?.luggage?.small_paid || 0) > 0 && (
+                                                    <Text component="span" c="orange" size="sm"> + {rulesToDisplay?.luggage?.small_paid} {t('tripDetails.rider.labels.paid')} (${rulesToDisplay?.luggage?.small_paid_price}/{t('tripDetails.rider.labels.each')})</Text>
+                                                )}
+                                            </Text>
+                                        </Group>
+                                    </Stack>
+                                }
+                            />
+                        </SimpleGrid>
+
+                        <SimpleGrid cols={{ base: 1, sm: 2 }}>
                             <InfoItem label={t('tripDetails.rider.labels.cancellationPolicy')} value={rulesToDisplay?.cancellation_policy || t('dashboard.common.standard')} />
                             <InfoItem label={t('tripDetails.rider.labels.pickupInstructions')} value={rulesToDisplay?.pickup?.rules || t('dashboard.common.noneProvided')} />
                         </SimpleGrid>
@@ -870,6 +988,7 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                 value={
                                     trip.car ? (
                                         <Group gap="xs" align="start">
+                                            <CarPicsDisplay pics={[trip.car.pic1, trip.car.pic2, trip.car.pic3, trip.car.pic4]} thumbnailHeight={48} thumbnailWidth={64} />
                                             <IconSteeringWheel size={16} style={{ opacity: 0.7, marginTop: 3 }} />
                                             <Stack gap={2}>
                                                 <Text size="sm" fw={500}>{trip.car.color} {trip.car.year} {trip.car.make} {trip.car.model}</Text>

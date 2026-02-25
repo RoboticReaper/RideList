@@ -1,9 +1,10 @@
 'use client';
 
-import { Paper, Group, Avatar, Text, Stack, UnstyledButton, Badge } from '@mantine/core';
-import { IconMessage, IconMessageCircleQuestion, IconChevronRight } from '@tabler/icons-react';
+import { Paper, Group, Avatar, Text, Stack, UnstyledButton, Badge, Button, Modal, Image } from '@mantine/core';
+import { IconMessage, IconMessageCircleQuestion, IconChevronRight, IconEye } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import dayjs from '@/utils/dateUtils';
+import { useState } from 'react';
 
 interface Message {
     id: string;
@@ -30,10 +31,13 @@ interface ThreadListViewProps {
     threads: Thread[];
     onSelectThread: (thread: Thread) => void;
     onBack: () => void;
+    paymentEvidenceUrl?: string | null;
+    paymentEvidenceText?: string | null;
 }
 
-export function ThreadListView({ riderName, riderPhotoUrl, threads, onSelectThread, onBack }: ThreadListViewProps) {
+export function ThreadListView({ riderName, riderPhotoUrl, threads, onSelectThread, onBack, paymentEvidenceUrl, paymentEvidenceText }: ThreadListViewProps) {
     const { t } = useTranslation('common');
+    const [evidenceModal, setEvidenceModal] = useState(false);
 
     const dmThread = threads.find(th => th.type === 'dm');
     const questionThreads = threads.filter(th => th.type === 'question');
@@ -54,6 +58,49 @@ export function ThreadListView({ riderName, riderPhotoUrl, threads, onSelectThre
             </Paper>
 
             <Stack gap={0} p="md">
+                {/* Payment Evidence Button */}
+                {paymentEvidenceUrl && (
+                    <>
+                        <Button
+                            size="xs"
+                            variant="light"
+                            color="blue"
+                            leftSection={<IconEye size={14} />}
+                            fullWidth
+                            mb="sm"
+                            onClick={() => setEvidenceModal(true)}
+                        >
+                            {t('paymentEvidence.viewPaymentEvidence') || 'View Payment Evidence'}
+                        </Button>
+
+                        <Modal
+                            opened={evidenceModal}
+                            onClose={() => setEvidenceModal(false)}
+                            title={t('paymentEvidence.title') || 'Payment Evidence'}
+                            centered
+                            size="md"
+                            zIndex={300}
+                        >
+                            <Stack gap="md">
+                                <div>
+                                    <Text size="sm" fw={500} mb={4}>{t('paymentEvidence.handleLabel') || 'Payer Username / Handle'}</Text>
+                                    <Text size="sm" p="xs" bg="gray.0" style={{ borderRadius: 6 }}>{paymentEvidenceText || ''}</Text>
+                                </div>
+                                <div>
+                                    <Text size="sm" fw={500} mb={4}>{t('paymentEvidence.screenshotLabel') || 'Payment Screenshot'}</Text>
+                                    <Image
+                                        src={paymentEvidenceUrl}
+                                        alt="Payment evidence"
+                                        mah={400}
+                                        fit="contain"
+                                        radius="sm"
+                                    />
+                                </div>
+                            </Stack>
+                        </Modal>
+                    </>
+                )}
+
                 <Text size="xs" c="dimmed" tt="uppercase" fw={600} mb="xs">
                     {t('tripDetails.chat.threads') || 'Conversations'}
                 </Text>

@@ -34,6 +34,7 @@ export async function GET(req: Request) {
                 c.model,
                 c.plate,
                 c.color,
+                c.pic1, c.pic2, c.pic3, c.pic4,
                 pg.phone as driver_phone
             FROM trips t
             LEFT JOIN cars c ON t.car = c.id

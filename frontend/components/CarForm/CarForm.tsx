@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { getChicagoNow } from '@/utils/dateUtils';
 import {
-    TextInput, NumberInput, Button, Group, Stack, Container, Title, Paper, LoadingOverlay, ColorInput, SimpleGrid, Text, Modal
+    TextInput, NumberInput, Button, Group, Stack, Container, Title, Paper, LoadingOverlay, ColorInput, SimpleGrid, Text, Modal, FileButton, Image, ActionIcon, Box
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconCar, IconDeviceFloppy, IconTrash } from '@tabler/icons-react';
+import { IconCar, IconDeviceFloppy, IconTrash, IconPhoto, IconX } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
 
@@ -32,6 +32,35 @@ export default function CarForm({ initialData, isEditing = false, carId }: CarFo
     const [bigLuggage, setBigLuggage] = useState<number | ''>(initialData?.big_luggage || 2);
     const [smallLuggage, setSmallLuggage] = useState<number | ''>(initialData?.small_luggage || 2);
 
+    // Car pictures: store as base64 (new upload) or URL string (existing)
+    const [carPics, setCarPics] = useState<(string | null)[]>([
+        initialData?.pic1 || null,
+        initialData?.pic2 || null,
+        initialData?.pic3 || null,
+        initialData?.pic4 || null,
+    ]);
+
+    const handleCarPicUpload = (file: File | null, index: number) => {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            setCarPics(prev => {
+                const next = [...prev];
+                next[index] = reader.result as string;
+                return next;
+            });
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const removeCarPic = (index: number) => {
+        setCarPics(prev => {
+            const next = [...prev];
+            next[index] = null;
+            return next;
+        });
+    };
+
     const handleSubmit = async () => {
         if (!user) return;
 
@@ -53,6 +82,10 @@ export default function CarForm({ initialData, isEditing = false, carId }: CarFo
                 seats: Number(seats),
                 big_luggage: Number(bigLuggage),
                 small_luggage: Number(smallLuggage),
+                pic1: carPics[0],
+                pic2: carPics[1],
+                pic3: carPics[2],
+                pic4: carPics[3],
             };
 
             const url = isEditing ? `/api/user/cars/${carId}` : '/api/user/cars';
@@ -179,6 +212,53 @@ export default function CarForm({ initialData, isEditing = false, carId }: CarFo
                             onChange={(v) => setSmallLuggage(v === '' ? '' : Number(v))}
                             min={0}
                         />
+                    </SimpleGrid>
+
+                    <Text fw={600} mt="md">{t('cars.form.photos')}</Text>
+                    <Text size="xs" c="dimmed">{t('cars.form.photosDesc')}</Text>
+                    <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+                        {[0, 1, 2, 3].map((i) => (
+                            <Box key={i} style={{ position: 'relative' }}>
+                                {carPics[i] ? (
+                                    <>
+                                        <Image
+                                            src={carPics[i]!}
+                                            alt={`Car photo ${i + 1}`}
+                                            radius="md"
+                                            h={120}
+                                            fit="cover"
+                                        />
+                                        <ActionIcon
+                                            size="sm"
+                                            color="red"
+                                            variant="filled"
+                                            style={{ position: 'absolute', top: 4, right: 4 }}
+                                            onClick={() => removeCarPic(i)}
+                                        >
+                                            <IconX size={12} />
+                                        </ActionIcon>
+                                    </>
+                                ) : (
+                                    <FileButton onChange={(file) => handleCarPicUpload(file, i)} accept="image/*">
+                                        {(props) => (
+                                            <Button
+                                                {...props}
+                                                variant="light"
+                                                color="gray"
+                                                h={120}
+                                                w="100%"
+                                                styles={{ root: { border: '1px dashed var(--mantine-color-gray-4)' } }}
+                                            >
+                                                <Stack align="center" gap={4}>
+                                                    <IconPhoto size={24} />
+                                                    <Text size="xs">{t('cars.form.addPhoto')}</Text>
+                                                </Stack>
+                                            </Button>
+                                        )}
+                                    </FileButton>
+                                )}
+                            </Box>
+                        ))}
                     </SimpleGrid>
 
                     <Group justify="flex-end" mt="xl">

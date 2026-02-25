@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Table, Avatar, Text, Group, Badge, Loader, Stack, Alert, Button, ActionIcon, Tooltip, Modal, Select, Textarea, Collapse, UnstyledButton, Anchor } from '@mantine/core';
+import { Table, Avatar, Text, Group, Badge, Loader, Stack, Alert, Button, ActionIcon, Tooltip, Modal, Select, Textarea, Collapse, UnstyledButton, Anchor, Image } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
-import { IconInfoCircle, IconCheck, IconX, IconTrash, IconCurrencyDollar, IconChevronRight, IconChevronDown, IconLock, IconLockOpen, IconUserCheck, IconSortAscending, IconSortDescending, IconPencil, IconExternalLink } from '@tabler/icons-react';
+import { IconInfoCircle, IconCheck, IconX, IconTrash, IconCurrencyDollar, IconChevronRight, IconChevronDown, IconLock, IconLockOpen, IconUserCheck, IconSortAscending, IconSortDescending, IconPencil, IconExternalLink, IconEye } from '@tabler/icons-react';
 import dayjs, { CHICAGO_TZ } from '@/utils/dateUtils';
 import { notifications } from '@mantine/notifications';
 import { useTranslation, Trans } from 'react-i18next';
@@ -35,6 +35,8 @@ interface Booking {
     rider_note?: string | null;
     preferred_pickup_time?: string | null;
     pickup_info_visible?: 'VISIBLE' | 'REDACTED';
+    payment_evidence_url?: string | null;
+    payment_evidence_text?: string | null;
 }
 
 interface ManageTripViewProps {
@@ -188,6 +190,7 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
     const [editNoteModalOpen, setEditNoteModalOpen] = useState(false);
     const [bookingToEdit, setBookingToEdit] = useState<Booking | null>(null);
     const [noteLoading, setNoteLoading] = useState(false);
+    const [evidenceModal, setEvidenceModal] = useState<{ url: string; text: string } | null>(null);
 
     // Delays
     const departConfirmDisabled = useDelayedConfirm(departModalOpen);
@@ -841,6 +844,19 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                         {t(getBookingStatusConfig(b.status).labelKey)}
                         {b.status === 'removed' && b.removal_reason && `, (${t('tripDetails.manage.reasons.reason')}: ${b.removal_reason})`}
                         {b.picked_up && t('tripDetails.manage.status.pickedUpSuffix')}
+                        {b.status === 'pending_pay_confirmation_from_driver' && b.payment_evidence_url && (
+                            <Button
+                                size="compact-xs"
+                                variant="subtle"
+                                color="blue"
+                                ml={4}
+                                leftSection={<IconEye size={12} />}
+                                onClick={() => setEvidenceModal({ url: b.payment_evidence_url!, text: b.payment_evidence_text || '' })}
+                                styles={{ root: { padding: '0 4px', height: 20 } }}
+                            >
+                                {t('paymentEvidence.viewBtn' as any) || 'View'}
+                            </Button>
+                        )}
                     </Text>
                 </Table.Td>
                 <Table.Td>
@@ -1038,6 +1054,34 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                 onSave={handleSaveNote}
                 loading={noteLoading}
             />
+
+            {/* Payment Evidence Modal */}
+            <Modal
+                opened={!!evidenceModal}
+                onClose={() => setEvidenceModal(null)}
+                title={t('paymentEvidence.title' as any) || 'Payment Evidence'}
+                centered
+                size="md"
+            >
+                {evidenceModal && (
+                    <Stack gap="md">
+                        <div>
+                            <Text size="sm" fw={500} mb={4}>{t('paymentEvidence.handleLabel' as any) || 'Payer Username / Handle'}</Text>
+                            <Text size="sm" p="xs" bg="gray.0" style={{ borderRadius: 6 }}>{evidenceModal.text}</Text>
+                        </div>
+                        <div>
+                            <Text size="sm" fw={500} mb={4}>{t('paymentEvidence.screenshotLabel' as any) || 'Payment Screenshot'}</Text>
+                            <Image
+                                src={evidenceModal.url}
+                                alt="Payment evidence"
+                                mah={400}
+                                fit="contain"
+                                radius="sm"
+                            />
+                        </div>
+                    </Stack>
+                )}
+            </Modal>
 
             {/* Active Bookings Section */}
             <div>

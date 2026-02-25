@@ -783,7 +783,8 @@
                 "enablePushTitle": "接收通知？",
                 "enablePushMessage": "及时获取行程相关更新。",
                 "enablePushBtn": "开启通知",
-                "closeBtn": "关闭"
+                "closeBtn": "关闭",
+                "totalToPay": "总计需支付"
             },
             "notifications": {
                 "ownTripError": {
@@ -1259,7 +1260,7 @@
                     "title": "{{name}} 的备注",
                     "privateReminder": "此备注为私密备注，仅对你可见。",
                     "viewProfile": "查看资料",
-                    "label": "私密备注",
+                    "label": "本次行程的私密备注",
                     "placeholder": "添加关于该乘客的私密备注..."
                 },
                 "abortTrip": {
@@ -1476,7 +1477,16 @@
                 "paymentHandle": "收款账号",
                 "driverNotes": "司机备注",
                 "pickupLocation": "期望上车地点",
-                "riderNote": "上车备注"
+                "riderNote": "上车备注",
+                "luggageLimits": "行李限制",
+                "freeLimit": "免费",
+                "perPerson": "每人",
+                "extraBag": "额外行李",
+                "each": "每件",
+                "limit": "限制",
+                "extraLuggageCost": "额外行李费用",
+                "includesPaid": "含付费行李",
+                "paid": "付费"
             },
             "values": {
                 "paid": "已付款",
@@ -1648,6 +1658,9 @@
             "seats": "乘客座位数",
             "bigLuggage": "大件行李容量",
             "smallLuggage": "小件行李容量",
+            "photos": "车辆照片",
+            "photosDesc": "最多添加 4 张车辆照片（可选）",
+            "addPhoto": "添加照片",
             "notifications": {
                 "seatsError": "乘客座位数必须大于 0",
                 "saveSuccess": "车辆保存成功",
@@ -2612,6 +2625,8 @@
             "bookingAlreadyInactive": "该预约已处于非活跃状态。",
             "cannotLeaveDeparted": "行程出发后无法退出。",
             "bookingNotPaymentReady": "该预约当前不处于待付款状态。",
+            "paymentEvidenceRequired": "请上传付款截图。",
+            "paymentEvidenceTextRequired": "请填写付款账号/用户名。",
             "notConfirmedOrPending": "预约未确认或未处于待付款确认状态。",
             "checkInNotStarted": "该行程尚未开启行前确认。",
             "alreadyReady": "你已标记为就绪。",
@@ -3481,6 +3496,21 @@
                     }
                 ]
             }
+        }
+    },
+    "paymentEvidence": {
+        "title": "付款凭证",
+        "description": "请上传付款截图并填写您在支付平台的用户名/账号，以便司机核实。",
+        "screenshotLabel": "付款截图",
+        "screenshotPlaceholder": "点击上传付款截图",
+        "handleLabel": "付款人用户名/账号",
+        "handlePlaceholder": "您在支付平台的用户名",
+        "submitBtn": "提交付款",
+        "viewBtn": "查看",
+        "viewPaymentEvidence": "查看付款凭证",
+        "errors": {
+            "invalidImage": "请上传图片文件。",
+            "imageTooLarge": "图片大小不能超过10MB。"
         }
     }
 }

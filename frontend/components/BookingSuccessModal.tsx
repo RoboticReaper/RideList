@@ -17,9 +17,10 @@ interface BookingSuccessModalProps {
     paymentHandle?: string | null;
     paymentQRCode?: string | null;
     selectedPaymentMethod?: string;
+    totalPrice?: number | null;
 }
 
-export function BookingSuccessModal({ opened, onClose, status, payWindow, paymentHandle, paymentQRCode, selectedPaymentMethod }: BookingSuccessModalProps) {
+export function BookingSuccessModal({ opened, onClose, status, payWindow, paymentHandle, paymentQRCode, selectedPaymentMethod, totalPrice }: BookingSuccessModalProps) {
     const { t } = useTranslation('common');
     const { pushPermission, showPrompt } = useNotifications();
     const { isIOS, isStandalone } = usePWAInstall();
@@ -114,6 +115,16 @@ export function BookingSuccessModal({ opened, onClose, status, payWindow, paymen
                                 />
                             </>
                         )}
+                    </Paper>
+                )}
+
+                {/* Total Price */}
+                {totalPrice != null && totalPrice > 0 && (
+                    <Paper withBorder p="sm" radius="md" w="100%" bg="blue.0">
+                        <Group justify="space-between">
+                            <Text size="sm" fw={500}>{t('rides.detail.bookingSuccess.totalToPay')}</Text>
+                            <Text size="lg" fw={700} c="blue">${Number(totalPrice).toFixed(2)}</Text>
+                        </Group>
                     </Paper>
                 )}
 

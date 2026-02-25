@@ -80,6 +80,10 @@ export async function GET(
         CASE WHEN (t.status in ('departed', 'done', 'aborted')) THEN cs.seats ELSE c.seats END as car_seats,
         CASE WHEN (t.status in ('departed', 'done', 'aborted')) THEN cs.big_luggage ELSE c.big_luggage END as car_big_luggage,
         CASE WHEN (t.status in ('departed', 'done', 'aborted')) THEN cs.small_luggage ELSE c.small_luggage END as car_small_luggage,
+        CASE WHEN (t.status in ('departed', 'done', 'aborted')) THEN cs.pic1 ELSE c.pic1 END as car_pic1,
+        CASE WHEN (t.status in ('departed', 'done', 'aborted')) THEN cs.pic2 ELSE c.pic2 END as car_pic2,
+        CASE WHEN (t.status in ('departed', 'done', 'aborted')) THEN cs.pic3 ELSE c.pic3 END as car_pic3,
+        CASE WHEN (t.status in ('departed', 'done', 'aborted')) THEN cs.pic4 ELSE c.pic4 END as car_pic4,
         
         -- Driver Info
         pg.id as driver_id,
@@ -108,11 +112,28 @@ export async function GET(
         ub.intended_payment_method as user_intended_payment_method,
         ub.pickup_location_text as user_pickup_location_text,
         ub.rider_note as user_rider_note,
+        ub.payment_evidence_url as user_payment_evidence_url,
+        ub.payment_evidence_text as user_payment_evidence_text,
 
         -- Snapshot Rules
         brs.payment_handle as snapshot_payment_handle,
         brs.payment_methods as snapshot_payment_methods,
-        brs.payment_qr_codes as snapshot_payment_qr_codes
+        brs.payment_qr_codes as snapshot_payment_qr_codes,
+        brs.big_luggage_lim as snapshot_big_luggage_lim,
+        brs.small_luggage_lim as snapshot_small_luggage_lim,
+        brs.big_luggage_paid as snapshot_big_luggage_paid,
+        brs.small_luggage_paid as snapshot_small_luggage_paid,
+        brs.big_luggage_paid_price as snapshot_big_luggage_paid_price,
+        brs.small_luggage_paid_price as snapshot_small_luggage_paid_price,
+        brs.pickup_rules as snapshot_pickup_rules,
+        brs.pickup_radius_meters as snapshot_pickup_radius_meters,
+        brs.drop_off_radius_meters as snapshot_drop_off_radius_meters,
+        brs.departure_time_flexibility as snapshot_departure_time_flexibility,
+        brs.cancellation_policy as snapshot_cancellation_policy,
+        brs.auto_accept as snapshot_auto_accept,
+        brs.cutoff_time as snapshot_cutoff_time,
+        brs.pay_window as snapshot_pay_window,
+        brs.start_check_in_hrs_before_departure as snapshot_start_check_in_hrs
 
       FROM trips t
       LEFT JOIN trip_rules tr ON t.id = tr.id
@@ -121,7 +142,7 @@ export async function GET(
       LEFT JOIN profile_global pg ON t.driver = pg.id
       LEFT JOIN profile_driver pd ON t.driver = pd.id
       LEFT JOIN LATERAL (
-        SELECT id, status, seats_booked, big_luggage, small_luggage, paid, ready, ready_at, preferred_pickup_time, created_at, picked_up_at, intended_payment_method, pickup_location_text, rider_note
+        SELECT id, status, seats_booked, big_luggage, small_luggage, paid, ready, ready_at, preferred_pickup_time, created_at, picked_up_at, intended_payment_method, pickup_location_text, rider_note, payment_evidence_url, payment_evidence_text
         FROM bookings b 
         WHERE b.trip = t.id AND b.rider = $2 
         ORDER BY b.created_at DESC 
@@ -268,6 +289,10 @@ export async function GET(
                 color: row.car_color,
                 year: row.car_year,
                 plate: vehiclePlate,
+                pic1: row.car_pic1 || null,
+                pic2: row.car_pic2 || null,
+                pic3: row.car_pic3 || null,
+                pic4: row.car_pic4 || null,
             } : null,
 
             driver: {
@@ -325,15 +350,36 @@ export async function GET(
                 picked_up_at: row.user_picked_up_at,
                 intended_payment_method: row.user_intended_payment_method,
                 pickup_location_text: row.user_pickup_location_text || null,
-                rider_note: row.user_rider_note || null
+                rider_note: row.user_rider_note || null,
+                payment_evidence_url: row.user_payment_evidence_url || null,
+                payment_evidence_text: row.user_payment_evidence_text || null
             } : null,
             user_booking_status: row.user_booking_status || null,
             snapshot_rules: {
+                luggage: {
+                    big: row.snapshot_big_luggage_lim,
+                    small: row.snapshot_small_luggage_lim,
+                    big_paid: row.snapshot_big_luggage_paid,
+                    small_paid: row.snapshot_small_luggage_paid,
+                    big_paid_price: row.snapshot_big_luggage_paid_price,
+                    small_paid_price: row.snapshot_small_luggage_paid_price
+                },
+                pickup: {
+                    rules: row.snapshot_pickup_rules,
+                    radius: row.snapshot_pickup_radius_meters,
+                    dropoff_radius: row.snapshot_drop_off_radius_meters
+                },
+                flexibility: row.snapshot_departure_time_flexibility,
                 payment: {
                     methods: row.snapshot_payment_methods,
                     handle: row.snapshot_payment_handle,
                     qr_codes: row.snapshot_payment_qr_codes || {}
-                }
+                },
+                auto_accept: row.snapshot_auto_accept,
+                cancellation_policy: row.snapshot_cancellation_policy,
+                cutoff_time: row.snapshot_cutoff_time,
+                pay_window: row.snapshot_pay_window,
+                start_check_in_hrs: row.snapshot_start_check_in_hrs
             }
         };
 
@@ -883,7 +929,11 @@ export async function PATCH(
                         small_luggage, 
                         plate, 
                         color, 
-                        year
+                        year,
+                        pic1,
+                        pic2,
+                        pic3,
+                        pic4
                     )
                     SELECT 
                         $1, 
@@ -895,7 +945,11 @@ export async function PATCH(
                         small_luggage, 
                         plate, 
                         color, 
-                        year
+                        year,
+                        pic1,
+                        pic2,
+                        pic3,
+                        pic4
                     FROM cars 
                     WHERE id = $2
                  `, [rideId, carIdToSnapshot]);

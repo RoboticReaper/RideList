@@ -86,6 +86,8 @@ export async function GET(
             b.driver_note,
             b.rider_note,
             b.preferred_pickup_time,
+            b.payment_evidence_url,
+            b.payment_evidence_text,
 
             pg.name as rider_name,
             pg.photo_url as rider_photo_url,
@@ -207,6 +209,8 @@ export async function GET(
                 driver_note: row.driver_note || null,
                 rider_note: phoneVisible ? (row.rider_note || null) : null,
                 preferred_pickup_time: row.preferred_pickup_time || null,
+                payment_evidence_url: row.payment_evidence_url || null,
+                payment_evidence_text: row.payment_evidence_text || null,
                 // Status to help frontend distinguish between redacted and not provided
                 pickup_info_visible: phoneVisible ? 'VISIBLE' : 'REDACTED'
             };
@@ -368,8 +372,8 @@ export async function POST(
 
         // 3. Check luggage limits
         // Limits are PER PERSON (per seat booked)
-        const totalBigAllowed = (trip.big_luggage_lim || 0) * seats_booked;
-        const totalSmallAllowed = (trip.small_luggage_lim || 0) * seats_booked;
+        const totalBigAllowed = (trip.big_luggage_lim + trip.big_luggage_paid) * seats_booked;
+        const totalSmallAllowed = (trip.small_luggage_lim + trip.small_luggage_paid) * seats_booked;
 
 
         if (big_luggage > totalBigAllowed) {

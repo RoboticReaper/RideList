@@ -783,7 +783,8 @@
                 "enablePushTitle": "Get Notified?",
                 "enablePushMessage": "Don't miss updates on your ride request.",
                 "enablePushBtn": "Enable",
-                "closeBtn": "Close"
+                "closeBtn": "Close",
+                "totalToPay": "Total to Pay"
             },
             "notifications": {
                 "ownTripError": {
@@ -1259,7 +1260,7 @@
                     "title": "Note for {{name}}",
                     "privateReminder": "This note is private and only visible to you.",
                     "viewProfile": "View Profile",
-                    "label": "Private Note",
+                    "label": "Private Note For This Trip",
                     "placeholder": "Add a private note regarding this rider..."
                 },
                 "abortTrip": {
@@ -1476,7 +1477,16 @@
                 "paymentHandle": "Payment Handle",
                 "driverNotes": "Driver's Notes",
                 "pickupLocation": "Preferred Pickup Location",
-                "riderNote": "Pickup Notes"
+                "riderNote": "Pickup Notes",
+                "luggageLimits": "Luggage Limits",
+                "freeLimit": "Free",
+                "perPerson": "per person",
+                "extraBag": "Extra bag",
+                "each": "each",
+                "limit": "Limit",
+                "extraLuggageCost": "Extra luggage cost",
+                "includesPaid": "includes paid bags",
+                "paid": "paid"
             },
             "values": {
                 "paid": "Paid",
@@ -1648,6 +1658,9 @@
             "seats": "Passenger Seats",
             "bigLuggage": "Big Luggage Capacity",
             "smallLuggage": "Small Luggage Capacity",
+            "photos": "Vehicle Photos",
+            "photosDesc": "Add up to 4 photos of your vehicle (optional)",
+            "addPhoto": "Add Photo",
             "notifications": {
                 "seatsError": "Passenger Seats must be greater than 0",
                 "saveSuccess": "Car saved successfully",
@@ -2612,6 +2625,8 @@
             "bookingAlreadyInactive": "Booking is already inactive.",
             "cannotLeaveDeparted": "Cannot leave trip after it has departed.",
             "bookingNotPaymentReady": "Booking is not awaiting payment.",
+            "paymentEvidenceRequired": "Payment receipt screenshot is required.",
+            "paymentEvidenceTextRequired": "Payment username/handle is required.",
             "notConfirmedOrPending": "Booking is not confirmed or pending payment confirmation.",
             "checkInNotStarted": "Check-in has not started for this trip.",
             "alreadyReady": "You are already marked as ready.",
@@ -3481,6 +3496,21 @@
                     }
                 ]
             }
+        }
+    },
+    "paymentEvidence": {
+        "title": "Payment Evidence",
+        "description": "Please upload a screenshot of your payment receipt and enter your payment username/handle for the driver to verify.",
+        "screenshotLabel": "Payment Screenshot",
+        "screenshotPlaceholder": "Click to upload receipt screenshot",
+        "handleLabel": "Payer Username / Handle",
+        "handlePlaceholder": "Your username on the payment platform",
+        "submitBtn": "Submit Payment",
+        "viewBtn": "View",
+        "viewPaymentEvidence": "View Payment Evidence",
+        "errors": {
+            "invalidImage": "Please upload an image file.",
+            "imageTooLarge": "Image must be under 10MB."
         }
     }
 }

@@ -16,6 +16,18 @@ alter table booking_rule_snapshot
     add big_luggage_paid_price int,
     add small_luggage_paid_price int;
 
+alter table cars add pic1 text,
+    add pic2 text,
+    add pic3 text,
+    add pic4 text;
+
+alter table car_snapshots add pic1 text,
+    add pic2 text,
+    add pic3 text,
+    add pic4 text;
+
+alter table bookings add payment_evidence_url text,
+    add payment_evidence_text text;
 
 
 -- V4

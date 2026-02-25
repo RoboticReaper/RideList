@@ -18,6 +18,7 @@ import { FuzzyRadiusMap } from '@/components/Rides/FuzzyRadiusMap';
 import dayjs, { toChicagoISO, fromChicagoISO, getChicagoNow, CHICAGO_TZ } from '@/utils/dateUtils';
 import { getBookingStatusConfig, getTripStatusConfig } from '@/utils/statusUtils';
 import { useTranslation } from 'react-i18next';
+import CarPicsDisplay from '@/components/CarPicsDisplay/CarPicsDisplay';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useNotifications } from '@/components/Notifications/NotificationContext';
 
@@ -53,6 +54,10 @@ interface RideDetails {
         color: string;
         year: string;
         plate: string | null;
+        pic1?: string | null;
+        pic2?: string | null;
+        pic3?: string | null;
+        pic4?: string | null;
     } | null;
     driver: {
         id: string;
@@ -121,8 +126,6 @@ export default function RidePage() {
         seats: number;
         bigLuggage: number;
         smallLuggage: number;
-        bigLuggagePaid: number;
-        smallLuggagePaid: number;
         pickupTime: Date | null;
         intendedPaymentMethod: string;
         riderNote: string;
@@ -130,8 +133,6 @@ export default function RidePage() {
         seats: 1,
         bigLuggage: 0,
         smallLuggage: 0,
-        bigLuggagePaid: 0,
-        smallLuggagePaid: 0,
         pickupTime: null,
         intendedPaymentMethod: '',
         riderNote: '',
@@ -223,8 +224,8 @@ export default function RidePage() {
 
                 setBookingData(prev => ({
                     ...prev,
-                    bigLuggage: Math.min(profileDefaults.default_big_luggage || 0, maxBig),
-                    smallLuggage: Math.min(profileDefaults.default_small_luggage || 0, maxSmall),
+                    bigLuggage: Math.min(profileDefaults.default_big_luggage || 0, maxBig + (ride.rules.luggage.big_paid || 0)),
+                    smallLuggage: Math.min(profileDefaults.default_small_luggage || 0, maxSmall + (ride.rules.luggage.small_paid || 0)),
                     pickupTime: fromChicagoISO(ride.departure_time),
                     intendedPaymentMethod: (ride.rules.payment.methods && ride.rules.payment.methods.length > 0) ? '' : 'None'
                 }));
@@ -235,8 +236,8 @@ export default function RidePage() {
             // Re-clamp in case rules changed
             setBookingData(prev => ({
                 ...prev,
-                bigLuggage: Math.min(prev.bigLuggage, maxBig),
-                smallLuggage: Math.min(prev.smallLuggage, maxSmall),
+                bigLuggage: Math.min(prev.bigLuggage, (maxBig + (ride.rules.luggage.big_paid || 0)) * prev.seats),
+                smallLuggage: Math.min(prev.smallLuggage, (maxSmall + (ride.rules.luggage.small_paid || 0)) * prev.seats),
             }));
         }
     }, [user, ride, isDriver]);
@@ -383,8 +384,6 @@ export default function RidePage() {
                     seats_booked: bookingData.seats,
                     big_luggage: bookingData.bigLuggage,
                     small_luggage: bookingData.smallLuggage,
-                    big_luggage_paid: bookingData.bigLuggagePaid,
-                    small_luggage_paid: bookingData.smallLuggagePaid,
                     preferred_pickup_time: preferredIso,
                     intended_payment_method: bookingData.intendedPaymentMethod,
                     pickup_location_text: pickupLocation || null,
@@ -450,6 +449,15 @@ export default function RidePage() {
                 paymentHandle={ride?.rules.payment.handle || null}
                 paymentQRCode={bookingSuccessPaymentMethod && ride?.rules.payment.qr_codes?.[bookingSuccessPaymentMethod] || null}
                 selectedPaymentMethod={bookingSuccessPaymentMethod}
+                totalPrice={(() => {
+                    const basePrice = Number(ride?.price || 0) * bookingData.seats;
+                    const freeBigLim = (ride?.rules.luggage.big || 0) * bookingData.seats;
+                    const freeSmallLim = (ride?.rules.luggage.small || 0) * bookingData.seats;
+                    const paidBig = Math.max(0, bookingData.bigLuggage - freeBigLim);
+                    const paidSmall = Math.max(0, bookingData.smallLuggage - freeSmallLim);
+                    const luggageFee = paidBig * (ride?.rules.luggage.big_paid_price || 0) + paidSmall * (ride?.rules.luggage.small_paid_price || 0);
+                    return basePrice + luggageFee;
+                })()}
             />
             <Modal
                 opened={qrModalOpen}
@@ -722,9 +730,13 @@ export default function RidePage() {
                                 <Paper shadow="sm" radius="md" p="lg" withBorder>
                                     <Title order={4} mb="md">{t('rides.detail.vehicle.title')}</Title>
                                     <Group>
-                                        <ThemeIcon variant="light" size={48} radius="md" color="gray">
-                                            <IconCar size={28} />
-                                        </ThemeIcon>
+                                        {(ride.car.pic1 || ride.car.pic2 || ride.car.pic3 || ride.car.pic4) ? (
+                                            <CarPicsDisplay pics={[ride.car.pic1, ride.car.pic2, ride.car.pic3, ride.car.pic4]} thumbnailHeight={64} thumbnailWidth={90} />
+                                        ) : (
+                                            <ThemeIcon variant="light" size={48} radius="md" color="gray">
+                                                <IconCar size={28} />
+                                            </ThemeIcon>
+                                        )}
                                         <div>
                                             <Text fw={600} size="lg">{ride.car.year} {ride.car.make} {ride.car.model}</Text>
                                             <Badge color="gray" variant="outline">{ride.car.color}</Badge>
@@ -1028,56 +1040,49 @@ export default function RidePage() {
                         <Group grow>
                             <NumberInput
                                 label={t('rides.detail.booking.bigLuggage')}
-                                description={t('rides.detail.booking.maxLuggage', { count: ride.rules.luggage.big * bookingData.seats })}
                                 min={0}
-                                max={(ride.rules.luggage.big * bookingData.seats)}
+                                max={((ride.rules.luggage.big || 0) + (ride.rules.luggage.big_paid || 0)) * bookingData.seats}
                                 value={bookingData.bigLuggage}
                                 onChange={(v) => setBookingData({ ...bookingData, bigLuggage: Number(v) })}
+                                description={
+                                    (ride.rules.luggage.big_paid || 0) > 0
+                                        ? `${t('tripDetails.rider.labels.freeLimit')}: ${ride.rules.luggage.big} ${t('tripDetails.rider.labels.perPerson')}. ${t('tripDetails.rider.labels.extraBag')}: $${ride.rules.luggage.big_paid_price || 0} ${t('tripDetails.rider.labels.each')}`
+                                        : t('rides.detail.booking.maxLuggage', { count: ride.rules.luggage.big * bookingData.seats })
+                                }
                             />
                             <NumberInput
                                 label={t('rides.detail.booking.smallLuggage')}
-                                description={t('rides.detail.booking.maxLuggage', { count: ride.rules.luggage.small * bookingData.seats })}
                                 min={0}
-                                max={(ride.rules.luggage.small * bookingData.seats)}
+                                max={((ride.rules.luggage.small || 0) + (ride.rules.luggage.small_paid || 0)) * bookingData.seats}
                                 value={bookingData.smallLuggage}
                                 onChange={(v) => setBookingData({ ...bookingData, smallLuggage: Number(v) })}
+                                description={
+                                    (ride.rules.luggage.small_paid || 0) > 0
+                                        ? `${t('tripDetails.rider.labels.freeLimit')}: ${ride.rules.luggage.small} ${t('tripDetails.rider.labels.perPerson')}. ${t('tripDetails.rider.labels.extraBag')}: $${ride.rules.luggage.small_paid_price || 0} ${t('tripDetails.rider.labels.each')}`
+                                        : t('rides.detail.booking.maxLuggage', { count: ride.rules.luggage.small * bookingData.seats })
+                                }
                             />
                         </Group>
 
-                        {((ride.rules.luggage.big_paid || 0) > 0 || (ride.rules.luggage.small_paid || 0) > 0) && (
-                            <>
-                                <Group grow>
-                                    {(ride.rules.luggage.big_paid || 0) > 0 && (
-                                        <NumberInput
-                                            label={t('rides.detail.booking.paidBigLuggage')}
-                                            description={t('rides.detail.booking.maxPaidLuggage', { count: ride.rules.luggage.big_paid * bookingData.seats, price: ride.rules.luggage.big_paid_price })}
-                                            min={0}
-                                            max={(ride.rules.luggage.big_paid * bookingData.seats)}
-                                            value={bookingData.bigLuggagePaid}
-                                            onChange={(v) => setBookingData({ ...bookingData, bigLuggagePaid: Number(v) })}
-                                        />
-                                    )}
-                                    {(ride.rules.luggage.small_paid || 0) > 0 && (
-                                        <NumberInput
-                                            label={t('rides.detail.booking.paidSmallLuggage')}
-                                            description={t('rides.detail.booking.maxPaidLuggage', { count: ride.rules.luggage.small_paid * bookingData.seats, price: ride.rules.luggage.small_paid_price })}
-                                            min={0}
-                                            max={(ride.rules.luggage.small_paid * bookingData.seats)}
-                                            value={bookingData.smallLuggagePaid}
-                                            onChange={(v) => setBookingData({ ...bookingData, smallLuggagePaid: Number(v) })}
-                                        />
-                                    )}
-                                </Group>
-                                {(bookingData.bigLuggagePaid > 0 || bookingData.smallLuggagePaid > 0) && (
-                                    <Text size="sm" c="blue" fw={500}>
-                                        {t('rides.detail.booking.paidLuggageTotalCost', {
-                                            cost: (bookingData.bigLuggagePaid * (ride.rules.luggage.big_paid_price || 0)) +
-                                                (bookingData.smallLuggagePaid * (ride.rules.luggage.small_paid_price || 0))
-                                        })}
+                        {(() => {
+                            const freeBigLim = (ride.rules.luggage.big || 0) * bookingData.seats;
+                            const freeSmallLim = (ride.rules.luggage.small || 0) * bookingData.seats;
+                            const paidBig = Math.max(0, bookingData.bigLuggage - freeBigLim);
+                            const paidSmall = Math.max(0, bookingData.smallLuggage - freeSmallLim);
+                            const bigCost = paidBig * (ride.rules.luggage.big_paid_price || 0);
+                            const smallCost = paidSmall * (ride.rules.luggage.small_paid_price || 0);
+                            const totalCost = bigCost + smallCost;
+                            if (totalCost > 0) {
+                                return (
+                                    <Text size="xs" c="orange" fw={500}>
+                                        {t('tripDetails.rider.labels.extraLuggageCost')}: ${totalCost.toFixed(2)}
+                                        {paidBig > 0 && ` (${paidBig} ${t('dashboard.common.big')} × $${Number(ride.rules.luggage.big_paid_price || 0)})`}
+                                        {paidSmall > 0 && ` (${paidSmall} ${t('dashboard.common.small')} × $${Number(ride.rules.luggage.small_paid_price || 0)})`}
                                     </Text>
-                                )}
-                            </>
-                        )}
+                                );
+                            }
+                            return null;
+                        })()}
 
                         {/* Payment Method Selection */}
                         {ride.rules.payment.methods && ride.rules.payment.methods.length > 0 ? (

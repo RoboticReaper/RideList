@@ -146,10 +146,12 @@ export async function markTripAsDeparted(client: PoolClient, rideId: string, act
     if (oldTripState.car) {
         await client.query(`
             INSERT INTO car_snapshots (
-                id, original_car_id, make, model, seats, big_luggage, small_luggage, plate, color, year
+                id, original_car_id, make, model, seats, big_luggage, small_luggage, plate, color, year,
+                pic1, pic2, pic3, pic4
             )
             SELECT 
-                $1, id, make, model, seats, big_luggage, small_luggage, plate, color, year
+                $1, id, make, model, seats, big_luggage, small_luggage, plate, color, year,
+                pic1, pic2, pic3, pic4
             FROM cars 
             WHERE id = $2
         `, [rideId, oldTripState.car]);

@@ -9,7 +9,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'next/navigation';
 import { toDateTimeLocalString, fromDateTimeLocalString } from '@/utils/dateUtils';
-import { IconMapPin, IconCalendar, IconX, IconCar, IconCheck, IconUpload, IconTrash, IconQrcode } from '@tabler/icons-react';
+import { IconMapPin, IconCalendar, IconX, IconCar, IconCheck, IconUpload, IconTrash, IconQrcode, IconPhoto } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useNotifications } from '../Notifications/NotificationContext';
 import { useRouter } from 'next/navigation';
@@ -114,6 +114,28 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
     const [carBigLuggage, setCarBigLuggage] = useState<number | ''>('');
     const [carSmallLuggage, setCarSmallLuggage] = useState<number | ''>('');
     const [carSeats, setCarSeats] = useState<number | ''>('');
+    const [carPics, setCarPics] = useState<(string | null)[]>([null, null, null, null]);
+
+    const handleCarPicUpload = (file: File | null, index: number) => {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            setCarPics(prev => {
+                const next = [...prev];
+                next[index] = reader.result as string;
+                return next;
+            });
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const removeCarPic = (index: number) => {
+        setCarPics(prev => {
+            const next = [...prev];
+            next[index] = null;
+            return next;
+        });
+    };
 
     const hasFetchedCars = useRef(false);
 
@@ -506,6 +528,7 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
         setCarBigLuggage('');
         setCarSmallLuggage('');
         setCarSeats('');
+        setCarPics([null, null, null, null]);
         setPaymentMethods([]);
         setPaymentQRCodes({});
         setPaymentHandle('');
@@ -1082,6 +1105,10 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
                     big_luggage: carBigLuggage !== '' ? carBigLuggage : null,
                     small_luggage: carSmallLuggage !== '' ? carSmallLuggage : null,
                     seats: carSeats !== '' ? Number(carSeats) : null,
+                    pic1: carPics[0],
+                    pic2: carPics[1],
+                    pic3: carPics[2],
+                    pic4: carPics[3],
                 };
             } else {
                 // Treat as "No Vehicle" if all fields are empty
@@ -1522,6 +1549,52 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
                                         min={1}
                                         required
                                     />
+
+                                    <Text size="sm" fw={500} mt="sm">{t('cars.form.photos')}</Text>
+                                    <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+                                        {[0, 1, 2, 3].map((i) => (
+                                            <Box key={i} style={{ position: 'relative' }}>
+                                                {carPics[i] ? (
+                                                    <>
+                                                        <Image
+                                                            src={carPics[i]!}
+                                                            alt={`Car photo ${i + 1}`}
+                                                            radius="md"
+                                                            h={100}
+                                                            fit="cover"
+                                                        />
+                                                        <ActionIcon
+                                                            size="xs"
+                                                            color="red"
+                                                            variant="filled"
+                                                            style={{ position: 'absolute', top: 4, right: 4 }}
+                                                            onClick={() => removeCarPic(i)}
+                                                        >
+                                                            <IconX size={10} />
+                                                        </ActionIcon>
+                                                    </>
+                                                ) : (
+                                                    <FileButton onChange={(file) => handleCarPicUpload(file, i)} accept="image/*">
+                                                        {(props) => (
+                                                            <Button
+                                                                {...props}
+                                                                variant="light"
+                                                                color="gray"
+                                                                h={100}
+                                                                w="100%"
+                                                                styles={{ root: { border: '1px dashed var(--mantine-color-gray-4)' } }}
+                                                            >
+                                                                <Stack align="center" gap={4}>
+                                                                    <IconPhoto size={20} />
+                                                                    <Text size="xs">{t('cars.form.addPhoto')}</Text>
+                                                                </Stack>
+                                                            </Button>
+                                                        )}
+                                                    </FileButton>
+                                                )}
+                                            </Box>
+                                        ))}
+                                    </SimpleGrid>
                                 </Stack>
                             </Box>
                         )}

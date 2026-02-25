@@ -22,6 +22,8 @@ interface Rider {
     rider_name: string;
     rider_photo_url: string | null;
     status: string; // active booking status
+    payment_evidence_url?: string | null;
+    payment_evidence_text?: string | null;
 }
 
 export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps) {
@@ -73,7 +75,9 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
                 rider_name: b.rider_name,
                 rider_photo_url: b.rider_photo_url,
                 status: b.status,
-                created_at: b.created_at
+                created_at: b.created_at,
+                payment_evidence_url: b.payment_evidence_url,
+                payment_evidence_text: b.payment_evidence_text
             }));
 
             // Sort by created_at ascending so newest booking comes last (wins in dedup)
@@ -692,6 +696,8 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
                     threads={threads}
                     onSelectThread={handleSelectThread}
                     onBack={handleBackFromThreadList}
+                    paymentEvidenceUrl={activeRider.payment_evidence_url}
+                    paymentEvidenceText={activeRider.payment_evidence_text}
                 />
             </Box>
         );

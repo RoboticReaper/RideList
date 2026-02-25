@@ -9,6 +9,7 @@ import { LocalizedLink } from '@/components/LocalizedLink';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'react-i18next';
+import { PaymentEvidenceModal } from '@/components/PaymentEvidenceModal';
 
 interface Trip {
     id: string; // trip_id
@@ -37,17 +38,25 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
     const [markingPaid, setMarkingPaid] = useState(false);
 
     const [cancelling, setCancelling] = useState(false);
+    const [payEvidenceModalOpen, setPayEvidenceModalOpen] = useState(false);
 
 
 
-    const handleMarkPaymentSent = async () => {
+    const handleMarkPaymentSent = async (evidenceImage: string, evidenceText: string) => {
         if (!user) return;
         setMarkingPaid(true);
         try {
             const token = await user.getIdToken();
             const res = await fetch(`/api/bookings/${trip.booking_id}/pay`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    payment_evidence_image: evidenceImage,
+                    payment_evidence_text: evidenceText
+                })
             });
 
             if (!res.ok) {
@@ -60,6 +69,7 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
                 message: t('dashboard.tripCard.paymentSuccess'),
                 color: 'green'
             });
+            setPayEvidenceModalOpen(false);
             onRefresh();
 
         } catch (error: any) {
@@ -231,7 +241,7 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
                     {showPayButton && (
                         <Button
                             color="orange"
-                            onClick={handleMarkPaymentSent}
+                            onClick={() => setPayEvidenceModalOpen(true)}
                             loading={markingPaid}
                             leftSection={<IconCash size={16} />}
                             fullWidth
@@ -239,6 +249,13 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
                             {t('dashboard.tripCard.markPayment')}
                         </Button>
                     )}
+
+                    <PaymentEvidenceModal
+                        opened={payEvidenceModalOpen}
+                        onClose={() => setPayEvidenceModalOpen(false)}
+                        onSubmit={handleMarkPaymentSent}
+                        loading={markingPaid}
+                    />
                 </Flex>
             </Stack>
         </Card>

@@ -6,6 +6,7 @@ import { checkAndProcessCheckInStart } from '@/app/api/lib/checkIn';
 import { extractPublicArea } from '@/app/api/lib/extractPublicArea';
 import { getTranslationForUser } from '@/app/api/lib/i18n';
 import { processPaymentQRCode } from '@/app/api/lib/processQRCode';
+import { processCarImage } from '@/app/api/lib/processCarImage';
 
 // Helper to fetch Place Details from Google (New API)
 async function fetchPlaceDetails(placeId: string, sessionToken: string) {
@@ -302,10 +303,22 @@ export async function POST(req: Request) {
             if (existingCar) {
                 resolvedCarId = existingCar.id;
             } else {
+                // Process car images if provided
+                const picUrls: (string | null)[] = [];
+                for (const picData of [car.pic1, car.pic2, car.pic3, car.pic4]) {
+                    if (picData && typeof picData === 'string' && picData.startsWith('data:')) {
+                        picUrls.push(await processCarImage(picData, user.uid));
+                    } else if (picData && typeof picData === 'string' && picData.startsWith('https://')) {
+                        picUrls.push(picData);
+                    } else {
+                        picUrls.push(null);
+                    }
+                }
+
                 // Create New Car
                 const newCarRes = await client.query(
-                    `INSERT INTO cars (owner, make, model, color, year, plate, seats, big_luggage, small_luggage) 
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+                    `INSERT INTO cars (owner, make, model, color, year, plate, seats, big_luggage, small_luggage, pic1, pic2, pic3, pic4) 
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
                      RETURNING id`,
                     [
                         user.uid,
@@ -314,9 +327,13 @@ export async function POST(req: Request) {
                         carColor,
                         carYear,
                         carPlate,
-                        car.seats,  // Use CAR seats
+                        car.seats,
                         car.big_luggage || null,
-                        car.small_luggage || null
+                        car.small_luggage || null,
+                        picUrls[0],
+                        picUrls[1],
+                        picUrls[2],
+                        picUrls[3]
                     ]
                 );
                 resolvedCarId = newCarRes.rows[0].id;
