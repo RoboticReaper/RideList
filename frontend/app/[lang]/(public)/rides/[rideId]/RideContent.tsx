@@ -10,7 +10,7 @@ import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { useMediaQuery, useIntersection, useInterval, useWindowEvent } from '@mantine/hooks';
 import {
-    IconMapPin, IconCalendar, IconArmchair, IconCoin, IconInfoCircle, IconLuggage, IconClock, IconCar, IconStar, IconCheck, IconUser, IconAlertCircle, IconDashboard, IconPhone, IconRefresh, IconX, IconShare
+    IconMapPin, IconCalendar, IconArmchair, IconCoin, IconInfoCircle, IconLuggage, IconClock, IconCar, IconStar, IconCheck, IconUser, IconAlertCircle, IconDashboard, IconPhone, IconRefresh, IconX, IconShare, IconMessage
 } from '@tabler/icons-react';
 import { LocalizedLink } from '@/components/LocalizedLink';
 import { BookingSuccessModal } from '@/components/BookingSuccessModal';
@@ -721,6 +721,17 @@ export default function RidePage() {
                                                 <Text size="xs" c="dimmed">{t('rides.detail.driver.tripsCompleted')}</Text>
                                             </div>
                                         </Group>
+                                        {user && !isDriver && (
+                                            <Button
+                                                mt="sm"
+                                                variant="light"
+                                                size="sm"
+                                                leftSection={<IconMessage size={16} />}
+                                                onClick={() => router.push(`/messages?userId=${ride.driver.id}`)}
+                                            >
+                                                {t('rides.detail.driver.messageDriver') || 'Message Driver'}
+                                            </Button>
+                                        )}
                                     </div>
                                 </Group>
                             </Paper>

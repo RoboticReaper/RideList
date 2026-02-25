@@ -22,6 +22,7 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: 'Missing other_user_id' }, { status: 400 });
         }
 
+        // Fetch messages (only non-deleted visible)
         const query = `
             SELECT 
                 id, sender_id, receiver_id, message_type, content, parent_message_id, created_at, deleted
@@ -32,7 +33,42 @@ export async function GET(req: Request) {
         `;
         const res = await client.query(query, [userId, otherUserId]);
 
-        return NextResponse.json({ messages: res.rows });
+        // Check if users share a booking
+        const bookingCheck = await client.query(`
+            SELECT 1 FROM bookings b
+            JOIN trips t ON b.trip = t.id
+            WHERE ((t.driver = $1 AND b.rider = $2) OR (t.driver = $2 AND b.rider = $1))
+              AND b.status != 'removed'
+            LIMIT 1
+        `, [userId, otherUserId]);
+        const hasBooking = (bookingCheck.rowCount || 0) > 0;
+
+        let permissions;
+        if (hasBooking) {
+            permissions = { hasBooking: true, canSend: true, otherHasReplied: true, messagesSent: 0, limit: 0 };
+        } else {
+            // Count ALL messages sent by current user (including deleted) for quota
+            const sentCount = await client.query(`
+                SELECT COUNT(*)::int as count FROM dm_messages
+                WHERE sender_id = $1 AND receiver_id = $2
+            `, [userId, otherUserId]);
+            const messagesSent = sentCount.rows[0].count;
+
+            // Check if other user has ever replied
+            const replyCheck = await client.query(`
+                SELECT 1 FROM dm_messages
+                WHERE sender_id = $1 AND receiver_id = $2
+                LIMIT 1
+            `, [otherUserId, userId]);
+            const otherHasReplied = (replyCheck.rowCount || 0) > 0;
+
+            const limit = 3;
+            const canSend = otherHasReplied || messagesSent < limit;
+
+            permissions = { hasBooking: false, canSend, otherHasReplied, messagesSent, limit };
+        }
+
+        return NextResponse.json({ messages: res.rows, permissions });
     } catch (error) {
         console.error('Error fetching DM messages:', error);
         const t = await getTranslation('en');
@@ -58,6 +94,44 @@ export async function POST(req: Request) {
 
         if (!receiver_id) {
             return NextResponse.json({ error: t('api.errors.missingReceiver') || 'Missing receiver' }, { status: 400 });
+        }
+
+        // ── DM Permission Check ──
+        if (!context_trip_id) {
+            const bookingCheck = await client.query(`
+                SELECT 1 FROM bookings b
+                JOIN trips t ON b.trip = t.id
+                WHERE ((t.driver = $1 AND b.rider = $2) OR (t.driver = $2 AND b.rider = $1))
+                  AND b.status != 'removed'
+                LIMIT 1
+            `, [userId, receiver_id]);
+            const hasBooking = (bookingCheck.rowCount || 0) > 0;
+
+            if (!hasBooking) {
+                // Check reply from receiver
+                const replyCheck = await client.query(`
+                    SELECT 1 FROM dm_messages
+                    WHERE sender_id = $1 AND receiver_id = $2
+                    LIMIT 1
+                `, [receiver_id, userId]);
+                const otherHasReplied = (replyCheck.rowCount || 0) > 0;
+
+                if (!otherHasReplied) {
+                    // Count ALL messages sent (including deleted) for quota
+                    const sentCount = await client.query(`
+                        SELECT COUNT(*)::int as count FROM dm_messages
+                        WHERE sender_id = $1 AND receiver_id = $2
+                    `, [userId, receiver_id]);
+                    const messagesSent = sentCount.rows[0].count;
+
+                    if (messagesSent >= 3) {
+                        return NextResponse.json({
+                            error: 'Message limit reached. The other person must reply before you can send more messages.',
+                            code: 'DM_LIMIT_REACHED'
+                        }, { status: 403 });
+                    }
+                }
+            }
         }
 
         let finalContent = content;
@@ -89,7 +163,7 @@ export async function POST(req: Request) {
         if (userId !== receiver_id) {
             const messagePreview = type === 'image' ? '📷 Image' : (finalContent.length > 50 ? finalContent.substring(0, 50) + '...' : finalContent);
 
-            let openLink = '/dashboard';
+            let openLink = `/messages?userId=${userId}`;
             let notifyRole: 'rider' | 'driver' | 'global' = 'rider'; // Default
 
             if (context_trip_id) {

@@ -710,7 +710,8 @@
                 "contactExpired": "Contact info expired",
                 "bookingNotActive": "Booking not active",
                 "rating": "Rating",
-                "tripsCompleted": "Trips Completed"
+                "tripsCompleted": "Trips Completed",
+                "messageDriver": "Message Driver"
             },
             "vehicle": {
                 "title": "Vehicle",
@@ -2385,6 +2386,7 @@
         "bigLuggageDesc": "Suitcases, large duffels, etc.",
         "tripsCompleted": "Trips Completed",
         "driverStatsDesc": "Driver stats cannot be edited directly.",
+        "message": "Message",
         "errors": {
             "nameRequired": "Name is required",
             "saveFailed": "Failed to save profile",
@@ -3519,5 +3521,9 @@
             "invalidImage": "Please upload an image file.",
             "imageTooLarge": "Image must be under 10MB."
         }
+    },
+    "dm": {
+        "limitNotice": "You can send up to {{limit}} messages. The other person must reply before you can send more. ({{sent}}/{{limit}})",
+        "limitReached": "Message limit reached. Wait for a reply to continue the conversation."
     }
 }

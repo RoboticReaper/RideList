@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Stack, Group, Textarea, ActionIcon, Text, Paper, ScrollArea, Avatar, Box, LoadingOverlay, Switch, Modal, Button, FileButton, Image, CloseButton } from '@mantine/core';
-import { IconSend, IconArrowLeft, IconWorld, IconTrash, IconPhoto, IconArrowBackUp, IconArrowBack, IconArrowNarrowUp } from '@tabler/icons-react';
+import { Stack, Group, Textarea, ActionIcon, Text, Paper, ScrollArea, Avatar, Box, LoadingOverlay, Switch, Modal, Button, FileButton, Image, CloseButton, Alert } from '@mantine/core';
+import { IconSend, IconArrowLeft, IconWorld, IconTrash, IconPhoto, IconArrowBackUp, IconArrowBack, IconArrowNarrowUp, IconInfoCircle } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import dayjs from '@/utils/dateUtils';
 
@@ -32,11 +32,14 @@ interface ChatInterfaceProps {
     showPublicToggle?: boolean;
     publicReplyEnabled?: boolean;
     onPublicReplyToggle?: (enabled: boolean) => void;
+    disableSend?: boolean;
+    permissionNotice?: string;
 }
 
 export function ChatInterface({
     messages, onSend, onDelete, recipientName, recipientPhotoUrl, onBack, loading, sending,
-    showPublicToggle, publicReplyEnabled, onPublicReplyToggle
+    showPublicToggle, publicReplyEnabled, onPublicReplyToggle,
+    disableSend, permissionNotice
 }: ChatInterfaceProps) {
     const { t } = useTranslation('common');
     const [inputValue, setInputValue] = useState('');
@@ -101,7 +104,7 @@ export function ChatInterface({
     };
 
     const handleSend = async () => {
-        if ((!inputValue.trim() && !attachedImage) || !onSend) return;
+        if ((!inputValue.trim() && !attachedImage) || !onSend || disableSend) return;
         const temp = inputValue.trim();
         const replyTo = replyToMessageId;
         const img = attachedImage;
@@ -264,6 +267,11 @@ export function ChatInterface({
             {/* Input Area - only show if onSend is provided */}
             {onSend && (
                 <Paper p="sm" shadow="xs" radius={0} withBorder>
+                    {permissionNotice && (
+                        <Alert variant="light" color={disableSend ? 'orange' : 'blue'} icon={<IconInfoCircle size={16} />} mb="xs" py="xs" px="sm">
+                            <Text size="xs">{permissionNotice}</Text>
+                        </Alert>
+                    )}
                     {/* Public Reply Toggle - shown above input when applicable */}
                     {showPublicToggle && (
                         <Group gap="xs" mb="xs" justify="flex-end">
@@ -343,7 +351,7 @@ export function ChatInterface({
                                 size="lg"
                                 type="submit"
                                 loading={sending}
-                                disabled={!inputValue.trim() && !attachedImage}
+                                disabled={(!inputValue.trim() && !attachedImage) || disableSend}
                                 mb={4}
                             >
                                 <IconSend size={18} />

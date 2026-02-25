@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Container, Paper, Center, Loader, Text } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { ChatInterface } from '@/app/[lang]/(private)/dashboard/[tripId]/components/ChatInterface';
+import { useTranslation } from 'react-i18next';
 
 interface GlobalChatViewProps {
     otherUserId: string;
@@ -22,19 +23,28 @@ interface Message {
     is_global_dm?: boolean;
 }
 
+interface DMPermissions {
+    hasBooking: boolean;
+    canSend: boolean;
+    otherHasReplied: boolean;
+    messagesSent: number;
+    limit: number;
+}
+
 export function GlobalChatView({ otherUserId, onBack }: GlobalChatViewProps) {
     const { user } = useAuth();
+    const { t } = useTranslation('common');
     const [messages, setMessages] = useState<Message[]>([]);
     const [otherUser, setOtherUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [permissions, setPermissions] = useState<DMPermissions | null>(null);
 
     useEffect(() => {
         if (!user || !otherUserId) return;
 
         const fetchData = async () => {
-            setLoading(true);
             try {
                 const token = await user.getIdToken();
                 const headers = { 'Authorization': `Bearer ${token}` };
@@ -46,7 +56,7 @@ export function GlobalChatView({ otherUserId, onBack }: GlobalChatViewProps) {
                     setOtherUser(profileData);
                 }
 
-                // Fetch messages
+                // Fetch messages + permissions
                 const msgRes = await fetch(`/api/user/chat?other_user_id=${otherUserId}`, { headers });
                 if (msgRes.ok) {
                     const msgData = await msgRes.json();
@@ -56,6 +66,9 @@ export function GlobalChatView({ otherUserId, onBack }: GlobalChatViewProps) {
                         is_global_dm: true
                     }));
                     setMessages(formattedMsgs);
+                    if (msgData.permissions) {
+                        setPermissions(msgData.permissions);
+                    }
                 } else {
                     setError('Failed to load messages');
                 }
@@ -79,28 +92,54 @@ export function GlobalChatView({ otherUserId, onBack }: GlobalChatViewProps) {
         setSending(true);
         try {
             const token = await user.getIdToken();
-            const res = await fetch('/api/user/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    receiver_id: otherUserId,
-                    content,
-                    message_type: imageData ? 'image' : 'text',
-                    image_data: imageData,
-                    parent_message_id: replyToMessageId
-                })
-            });
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
 
-            if (res.ok) {
-                const newMsg = await res.json();
-                setMessages(prev => [...prev, {
-                    ...newMsg,
-                    is_me: true,
-                    is_global_dm: true
-                }]);
+            // Send image first if present
+            if (imageData) {
+                const imgRes = await fetch('/api/user/chat', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        receiver_id: otherUserId,
+                        content: '',
+                        message_type: 'image',
+                        image_data: imageData,
+                        parent_message_id: replyToMessageId
+                    })
+                });
+                if (imgRes.ok) {
+                    const newMsg = await imgRes.json();
+                    setMessages(prev => [...prev, { ...newMsg, is_me: true, is_global_dm: true }]);
+                    // Update permission state optimistically
+                    if (permissions && !permissions.hasBooking && !permissions.otherHasReplied) {
+                        setPermissions(prev => prev ? { ...prev, messagesSent: prev.messagesSent + 1, canSend: prev.messagesSent + 1 < prev.limit } : prev);
+                    }
+                }
+            }
+
+            // Send text separately if present
+            if (content.trim()) {
+                const txtRes = await fetch('/api/user/chat', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        receiver_id: otherUserId,
+                        content,
+                        message_type: 'text',
+                        parent_message_id: replyToMessageId
+                    })
+                });
+                if (txtRes.ok) {
+                    const newMsg = await txtRes.json();
+                    setMessages(prev => [...prev, { ...newMsg, is_me: true, is_global_dm: true }]);
+                    // Update permission state optimistically
+                    if (permissions && !permissions.hasBooking && !permissions.otherHasReplied) {
+                        setPermissions(prev => prev ? { ...prev, messagesSent: prev.messagesSent + 1, canSend: prev.messagesSent + 1 < prev.limit } : prev);
+                    }
+                }
             }
         } catch (err) {
             console.error('Failed to send message', err);
@@ -125,6 +164,15 @@ export function GlobalChatView({ otherUserId, onBack }: GlobalChatViewProps) {
             console.error('Failed to delete message', err);
         }
     };
+
+    // Compute permission notice and disable state
+    const showPermissionNotice = permissions && !permissions.hasBooking && !permissions.otherHasReplied;
+    const disableSend = permissions ? !permissions.canSend : false;
+    const permissionNotice = showPermissionNotice
+        ? (disableSend
+            ? ((t as any)('dm.limitReached') || 'Message limit reached. Wait for a reply to continue the conversation.')
+            : ((t as any)('dm.limitNotice', { limit: permissions?.limit || 3, sent: permissions?.messagesSent || 0 }) || `You can send up to ${permissions?.limit || 3} messages. The other person must reply before you can send more. (${permissions?.messagesSent || 0}/${permissions?.limit || 3})`))
+        : undefined;
 
     if (loading && !otherUser) {
         return (
@@ -155,6 +203,8 @@ export function GlobalChatView({ otherUserId, onBack }: GlobalChatViewProps) {
                     recipientPhotoUrl={otherUser?.photo_url || null}
                     onBack={onBack}
                     sending={sending}
+                    disableSend={disableSend}
+                    permissionNotice={permissionNotice}
                 />
             </Paper>
         </Container>

@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { Container, Paper, Avatar, Text, Group, Stack, Badge, Loader, Center, Title, Button, TextInput, ActionIcon, Box, Tabs, NumberInput, Divider } from '@mantine/core';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { updateProfile } from "firebase/auth";
 import { useTranslation } from 'react-i18next';
-import { IconCheck, IconPhone, IconCalendar, IconPencil, IconX, IconDeviceFloppy, IconCar, IconSteeringWheel, IconCamera } from '@tabler/icons-react';
+import { IconCheck, IconPhone, IconCalendar, IconPencil, IconX, IconDeviceFloppy, IconCar, IconSteeringWheel, IconCamera, IconMessage } from '@tabler/icons-react';
 import dayjs, { CHICAGO_TZ } from '@/utils/dateUtils';
 
 interface UserProfile {
@@ -34,6 +34,7 @@ export default function ProfilePage() {
     const { t, i18n } = useTranslation('common');
     const params = useParams();
     const uid = params.uid as string;
+    const router = useRouter();
     const searchParams = useSearchParams();
 
     const { user, refreshUser } = useAuth();
@@ -306,6 +307,17 @@ export default function ProfilePage() {
                                 <Button leftSection={<IconDeviceFloppy size={16} />} onClick={saveProfile} loading={saving}>{t('profile.save')}</Button>
                                 <Button leftSection={<IconX size={16} />} variant="default" onClick={cancelEditing} disabled={saving}>{t('profile.cancel')}</Button>
                             </Group>
+                        )}
+
+                        {!isOwner && user && !isEditing && (
+                            <Button
+                                mt="md"
+                                variant="light"
+                                leftSection={<IconMessage size={16} />}
+                                onClick={() => router.push(`/messages?userId=${uid}`)}
+                            >
+                                {t('profile.message') || 'Message'}
+                            </Button>
                         )}
 
                     </Stack>

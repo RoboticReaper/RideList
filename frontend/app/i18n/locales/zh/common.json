@@ -710,7 +710,8 @@
                 "contactExpired": "联系方式已过期",
                 "bookingNotActive": "预约未生效",
                 "rating": "评分",
-                "tripsCompleted": "已完成行程"
+                "tripsCompleted": "已完成行程",
+                "messageDriver": "发消息给司机"
             },
             "vehicle": {
                 "title": "车辆信息",
@@ -2385,6 +2386,7 @@
         "bigLuggageDesc": "行李箱、大号旅行包等",
         "tripsCompleted": "已完成行程",
         "driverStatsDesc": "司机统计数据无法直接编辑。",
+        "message": "发消息",
         "errors": {
             "nameRequired": "姓名为必填项",
             "saveFailed": "保存个人资料失败",
@@ -3519,5 +3521,9 @@
             "invalidImage": "请上传图片文件。",
             "imageTooLarge": "图片大小不能超过10MB。"
         }
+    },
+    "dm": {
+        "limitNotice": "你最多可以发送 {{limit}} 条消息。对方回复后才能继续发送。({{sent}}/{{limit}})",
+        "limitReached": "已达消息上限。请等待对方回复后继续对话。"
     }
 }
