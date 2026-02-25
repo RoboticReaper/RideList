@@ -85,6 +85,7 @@ export async function checkAndProcessCheckInStart(client: PoolClient, tripId: st
         }
 
         // 3. Auto-Depart Check (Tardy > 15m)
+        // DO NOT AUTO DEPART FOR NOW
         const allowedStatuses = ['bookable', 'locked', 'full'];
         if (allowedStatuses.includes(status) && car) {
             const flexMs = (departure_time_flexibility === null || departure_time_flexibility === undefined)
@@ -95,18 +96,19 @@ export async function checkAndProcessCheckInStart(client: PoolClient, tripId: st
 
             if (now > autoDepartCutoff) {
                 // Check for active bookings
-                const activeBookingsCount = await client.query(`
-                    SELECT 1 FROM bookings 
-                    WHERE trip = $1 
-                    AND status IN ('confirmed', 'pending_pay_confirmation_from_driver')
-                    LIMIT 1
-                `, [tripId]);
+                // DO NOT AUTO DEPART FOR NOW
+                // const activeBookingsCount = await client.query(`
+                //     SELECT 1 FROM bookings 
+                //     WHERE trip = $1 
+                //     AND status IN ('confirmed', 'pending_pay_confirmation_from_driver')
+                //     LIMIT 1
+                // `, [tripId]);
 
-                if ((activeBookingsCount.rowCount ?? 0) > 0) {
-                    console.log(`[Lazy Check-in] Auto-departing trip ${tripId} (Tardy > 15m)`);
-                    await markTripAsDeparted(client, tripId, null);
-                    return true;
-                }
+                // if ((activeBookingsCount.rowCount ?? 0) > 0) {
+                //     console.log(`[Lazy Check-in] Auto-departing trip ${tripId} (Tardy > 15m)`);
+                //     await markTripAsDeparted(client, tripId, null);
+                //     return true;
+                // }
             } else if (now > new Date(new Date(departure_time).getTime() + flexMs)) {
                 // Tardy Grace Period Warning (0 < Lateness < 15m)
                 // Check if we already warned for this specific lateness to avoid spam

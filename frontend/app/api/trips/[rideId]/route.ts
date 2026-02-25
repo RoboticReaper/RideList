@@ -530,6 +530,15 @@ export async function PATCH(
 
                 updates.push(`car = $${idx++}`);
                 values.push(body.car);
+                console.log("car is set")
+                console.log(body.car)
+
+            } else if (body.car === undefined || body.car === null) {
+                // Car has been removed or not set
+                updates.push(`car = $${idx++}`);
+                values.push(null);
+                console.log("car is null")
+                console.log(body.car)
             }
             if (body.departure_time !== undefined) {
                 const departureDate = dayjs.tz(body.departure_time, CHICAGO_TZ);
@@ -859,6 +868,8 @@ export async function PATCH(
             // but we can trust `body.car` ?? `oldTripState.car`.
 
             const carIdToSnapshot = body.car ?? oldTripState.car;
+            console.log("carIdToSnapshot")
+            console.log(carIdToSnapshot)
 
             if (carIdToSnapshot) {
                 await client.query(`

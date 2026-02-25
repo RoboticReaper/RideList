@@ -131,7 +131,6 @@ export async function POST(req: Request) {
                     )
 
                 ORDER BY t.departure_time
-                LIMIT 50
                 FOR UPDATE SKIP LOCKED
             )
 

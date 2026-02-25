@@ -1074,14 +1074,15 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                                     });
                                     return;
                                 }
-                                if (!trip.car) {
-                                    notifications.show({
-                                        title: t('tripDetails.manage.notifications.noVehicle.title'),
-                                        message: t('tripDetails.manage.notifications.noVehicle.message'),
-                                        color: 'red'
-                                    });
-                                    return;
-                                }
+                                // if (!trip.car) {
+                                //     // No longer require a car for departure
+                                //     notifications.show({
+                                //         title: t('tripDetails.manage.notifications.noVehicle.title'),
+                                //         message: t('tripDetails.manage.notifications.noVehicle.message'),
+                                //         color: 'red'
+                                //     });
+                                //     return;
+                                // }
                                 setDepartModalOpen(true);
                             }}
                             loading={statusLoading}

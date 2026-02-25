@@ -33,7 +33,8 @@ export async function checkDriverRequirementsForDeparture(
         throw new Error(t('api.errors.tripNotFound'));
     }
 
-    if (!tripRes.rows[0].car) {
-        throw new Error(t('api.errors.carRequiredForDeparture'));
-    }
+    // No longer require a car for trip departure
+    // if (!tripRes.rows[0].car) {
+    //     throw new Error(t('api.errors.carRequiredForDeparture'));
+    // }
 }
