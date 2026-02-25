@@ -53,6 +53,10 @@ export async function POST(req: Request) {
             name,
             big_luggage_lim,
             small_luggage_lim,
+            big_luggage_paid,
+            small_luggage_paid,
+            big_luggage_paid_price,
+            small_luggage_paid_price,
             pickup_rules,
             pickup_radius_meters,
             drop_off_radius_meters,
@@ -73,6 +77,14 @@ export async function POST(req: Request) {
             }
         }
 
+        // Validate paid luggage: price must be > 0 if count > 0
+        if ((big_luggage_paid || 0) > 0 && !(big_luggage_paid_price > 0)) {
+            return NextResponse.json({ error: 'Paid big luggage price must be greater than 0 when paid big luggage count is set.' }, { status: 400 });
+        }
+        if ((small_luggage_paid || 0) > 0 && !(small_luggage_paid_price > 0)) {
+            return NextResponse.json({ error: 'Paid small luggage price must be greater than 0 when paid small luggage count is set.' }, { status: 400 });
+        }
+
         // Process QR codes
         const processedQRCodes: Record<string, string> = {};
         if (payment_qr_codes && payment_methods) {
@@ -91,18 +103,24 @@ export async function POST(req: Request) {
 
         const insertRes = await client.query(
             `INSERT INTO rule_templates (
-                driver, name, big_luggage_lim, small_luggage_lim, pickup_rules,
+                driver, name, big_luggage_lim, small_luggage_lim,
+                big_luggage_paid, small_luggage_paid,
+                big_luggage_paid_price, small_luggage_paid_price,
+                pickup_rules,
                 pickup_radius_meters, drop_off_radius_meters, departure_time_flexibility,
                 payment_methods, cancellation_policy, auto_accept, cutoff_time, payment_handle,
                     pay_window,
                     start_check_in_hrs_before_departure,
                     payment_qr_codes
                 ) VALUES (
-                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-                    $14, $15, $16
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
+                    $18, $19, $20
                 ) RETURNING *`,
             [
-                user.uid, name, big_luggage_lim, small_luggage_lim, pickup_rules,
+                user.uid, name, big_luggage_lim, small_luggage_lim,
+                big_luggage_paid, small_luggage_paid,
+                big_luggage_paid_price, small_luggage_paid_price,
+                pickup_rules,
                 pickup_radius_meters, drop_off_radius_meters, departure_time_flexibility,
                 payment_methods, cancellation_policy, auto_accept, cutoff_time, payment_handle,
                 pay_window, start_check_in_hrs_before_departure, processedQRCodes

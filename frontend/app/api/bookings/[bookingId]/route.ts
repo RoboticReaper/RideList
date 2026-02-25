@@ -58,6 +58,10 @@ export async function PATCH(
                 tr.payment_methods,
                 tr.big_luggage_lim,
                 tr.small_luggage_lim,
+                tr.big_luggage_paid,
+                tr.small_luggage_paid,
+                tr.big_luggage_paid_price,
+                tr.small_luggage_paid_price,
                 tr.pickup_radius_meters
             FROM bookings b
             JOIN trips t ON b.trip = t.id

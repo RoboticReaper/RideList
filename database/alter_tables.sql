@@ -1,3 +1,23 @@
+-- V5
+alter table trip_rules add big_luggage_paid int not null default 0 check ( big_luggage_paid >= 0 ),
+    add small_luggage_paid int not null default 0 check ( small_luggage_paid >= 0 ),
+    add big_luggage_paid_price int not null default 0 check ( big_luggage_paid_price >= 0),
+    add small_luggage_paid_price int not null default 0 check (small_luggage_paid_price >= 0);
+
+alter table rule_templates
+    add big_luggage_paid int,
+    add small_luggage_paid int,
+    add big_luggage_paid_price int,
+    add small_luggage_paid_price int;
+
+alter table booking_rule_snapshot
+    add big_luggage_paid int,
+    add small_luggage_paid int,
+    add big_luggage_paid_price int,
+    add small_luggage_paid_price int;
+
+
+
 -- V4
 -- alter table profile_global add community_driver bool not null default false;
 --

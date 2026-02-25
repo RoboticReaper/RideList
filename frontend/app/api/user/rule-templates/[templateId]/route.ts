@@ -51,6 +51,10 @@ export async function PUT(
             name,
             big_luggage_lim,
             small_luggage_lim,
+            big_luggage_paid,
+            small_luggage_paid,
+            big_luggage_paid_price,
+            small_luggage_paid_price,
             pickup_rules,
             pickup_radius_meters,
             drop_off_radius_meters,
@@ -64,6 +68,14 @@ export async function PUT(
             start_check_in_hrs_before_departure,
             payment_qr_codes
         } = body;
+
+        // Validate paid luggage: price must be > 0 if count > 0
+        if ((big_luggage_paid || 0) > 0 && !(big_luggage_paid_price > 0)) {
+            return NextResponse.json({ error: 'Paid big luggage price must be greater than 0 when paid big luggage count is set.' }, { status: 400 });
+        }
+        if ((small_luggage_paid || 0) > 0 && !(small_luggage_paid_price > 0)) {
+            return NextResponse.json({ error: 'Paid small luggage price must be greater than 0 when paid small luggage count is set.' }, { status: 400 });
+        }
 
         // Process QR codes
         const processedQRCodes: Record<string, string> = {};
@@ -86,22 +98,29 @@ export async function PUT(
                 name = COALESCE($1, name),
                 big_luggage_lim = $2,
                 small_luggage_lim = $3,
-                pickup_rules = $4,
-                pickup_radius_meters = $5,
-                drop_off_radius_meters = $6,
-                departure_time_flexibility = $7,
-                payment_methods = $8,
-                cancellation_policy = $9,
-                auto_accept = $10,
-                cutoff_time = $11,
-                payment_handle = $12,
-                pay_window = $13,
-                start_check_in_hrs_before_departure = $14,
-                payment_qr_codes = $15
-             WHERE id = $16 AND driver = $17
+                big_luggage_paid = $4,
+                small_luggage_paid = $5,
+                big_luggage_paid_price = $6,
+                small_luggage_paid_price = $7,
+                pickup_rules = $8,
+                pickup_radius_meters = $9,
+                drop_off_radius_meters = $10,
+                departure_time_flexibility = $11,
+                payment_methods = $12,
+                cancellation_policy = $13,
+                auto_accept = $14,
+                cutoff_time = $15,
+                payment_handle = $16,
+                pay_window = $17,
+                start_check_in_hrs_before_departure = $18,
+                payment_qr_codes = $19
+             WHERE id = $20 AND driver = $21
              RETURNING *`,
             [
-                name, big_luggage_lim, small_luggage_lim, pickup_rules,
+                name, big_luggage_lim, small_luggage_lim,
+                big_luggage_paid, small_luggage_paid,
+                big_luggage_paid_price, small_luggage_paid_price,
+                pickup_rules,
                 pickup_radius_meters, drop_off_radius_meters, departure_time_flexibility,
                 payment_methods, cancellation_policy, auto_accept, cutoff_time, payment_handle,
                 pay_window, start_check_in_hrs_before_departure, processedQRCodes,

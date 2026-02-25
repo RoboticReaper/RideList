@@ -61,6 +61,9 @@ export default function RuleTemplatesPage() {
                             <Group gap="xs" mb="sm">
                                 {template.auto_accept && <Badge color="green" variant="light">{t('templates.rules.form.autoAccept')}</Badge>}
                                 <Badge color="gray" variant="light">{t('templates.rules.luggageDisplay', { big: template.big_luggage_lim ?? '∞', small: template.small_luggage_lim ?? '∞' })}</Badge>
+                                {((template.big_luggage_paid || 0) > 0 || (template.small_luggage_paid || 0) > 0) && (
+                                    <Badge color="blue" variant="light">{t('templates.rules.paidLuggageDisplay', { big: template.big_luggage_paid ?? 0, bigPrice: template.big_luggage_paid_price ?? 0, small: template.small_luggage_paid ?? 0, smallPrice: template.small_luggage_paid_price ?? 0 })}</Badge>
+                                )}
                             </Group>
 
                             <Text size="sm" c="dimmed" lineClamp={2}>

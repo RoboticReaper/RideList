@@ -298,6 +298,10 @@ export async function POST(
                 ST_Y(t.origin_geog::geometry) as origin_lat,
                 tr.big_luggage_lim,
                 tr.small_luggage_lim,
+                tr.big_luggage_paid,
+                tr.small_luggage_paid,
+                tr.big_luggage_paid_price,
+                tr.small_luggage_paid_price,
                 tr.auto_accept,
                 tr.departure_time_flexibility,
                 tr.cutoff_time,
@@ -580,6 +584,10 @@ export async function POST(
                 id,
                 big_luggage_lim,
                 small_luggage_lim,
+                big_luggage_paid,
+                small_luggage_paid,
+                big_luggage_paid_price,
+                small_luggage_paid_price,
                 pickup_rules,
                 pickup_radius_meters,
                 drop_off_radius_meters,
@@ -592,13 +600,17 @@ export async function POST(
                 cutoff_time,
                 pay_window,
                 start_check_in_hrs_before_departure
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
         `;
 
         await client.query(snapshotQuery, [
             bookingId,
             trip.big_luggage_lim,
             trip.small_luggage_lim,
+            trip.big_luggage_paid,
+            trip.small_luggage_paid,
+            trip.big_luggage_paid_price,
+            trip.small_luggage_paid_price,
             trip.pickup_rules,
             trip.pickup_radius_meters,
             trip.drop_off_radius_meters,

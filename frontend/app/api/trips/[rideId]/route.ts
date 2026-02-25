@@ -62,6 +62,8 @@ export async function GET(
         
         -- Rule Info
         tr.big_luggage_lim, tr.small_luggage_lim, tr.pickup_rules,
+        tr.big_luggage_paid, tr.small_luggage_paid,
+        tr.big_luggage_paid_price, tr.small_luggage_paid_price,
         tr.pickup_radius_meters, tr.drop_off_radius_meters,
         tr.departure_time_flexibility, tr.payment_methods,
         tr.cancellation_policy, tr.payment_handle, tr.auto_accept,
@@ -284,7 +286,11 @@ export async function GET(
             rules: {
                 luggage: {
                     big: row.big_luggage_lim,
-                    small: row.small_luggage_lim
+                    small: row.small_luggage_lim,
+                    big_paid: row.big_luggage_paid,
+                    small_paid: row.small_luggage_paid,
+                    big_paid_price: row.big_luggage_paid_price,
+                    small_paid_price: row.small_luggage_paid_price
                 },
                 pickup: {
                     rules: row.pickup_rules,
@@ -751,6 +757,10 @@ export async function PATCH(
         const mapping: Record<string, string> = {
             bigLuggage: 'big_luggage_lim',
             smallLuggage: 'small_luggage_lim',
+            bigLuggagePaid: 'big_luggage_paid',
+            smallLuggagePaid: 'small_luggage_paid',
+            bigLuggagePaidPrice: 'big_luggage_paid_price',
+            smallLuggagePaidPrice: 'small_luggage_paid_price',
             pickupRules: 'pickup_rules',
             pickupRadius: 'pickup_radius_meters',
             dropoffRadius: 'drop_off_radius_meters',
@@ -765,6 +775,23 @@ export async function PATCH(
         };
 
         let rIdx = 1;
+
+        // Validate paid luggage: price must be > 0 if count > 0
+        // Use new values if provided, else fall back to old state
+        const effectiveBigPaid = body.bigLuggagePaid !== undefined ? body.bigLuggagePaid : (oldTripState.big_luggage_paid || 0);
+        const effectiveSmallPaid = body.smallLuggagePaid !== undefined ? body.smallLuggagePaid : (oldTripState.small_luggage_paid || 0);
+        const effectiveBigPaidPrice = body.bigLuggagePaidPrice !== undefined ? body.bigLuggagePaidPrice : (oldTripState.big_luggage_paid_price || 0);
+        const effectiveSmallPaidPrice = body.smallLuggagePaidPrice !== undefined ? body.smallLuggagePaidPrice : (oldTripState.small_luggage_paid_price || 0);
+
+        if (effectiveBigPaid > 0 && !(effectiveBigPaidPrice > 0)) {
+            await client.query('ROLLBACK');
+            return NextResponse.json({ error: 'Paid big luggage price must be greater than 0 when paid big luggage count is set.' }, { status: 400 });
+        }
+        if (effectiveSmallPaid > 0 && !(effectiveSmallPaidPrice > 0)) {
+            await client.query('ROLLBACK');
+            return NextResponse.json({ error: 'Paid small luggage price must be greater than 0 when paid small luggage count is set.' }, { status: 400 });
+        }
+
         for (const [key, col] of Object.entries(mapping)) {
             let val = body[key];
             if (val !== undefined) {
@@ -1114,6 +1141,10 @@ export async function PATCH(
         const ruleFieldsMap = {
             bigLuggage: 'big_luggage_lim',
             smallLuggage: 'small_luggage_lim',
+            bigLuggagePaid: 'big_luggage_paid',
+            smallLuggagePaid: 'small_luggage_paid',
+            bigLuggagePaidPrice: 'big_luggage_paid_price',
+            smallLuggagePaidPrice: 'small_luggage_paid_price',
             pickupRules: 'pickup_rules',
             pickupRadius: 'pickup_radius_meters',
             dropoffRadius: 'drop_off_radius_meters',

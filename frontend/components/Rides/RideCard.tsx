@@ -38,6 +38,10 @@ interface RideCardProps {
         // Rules
         big_luggage_lim: number;
         small_luggage_lim: number;
+        big_luggage_paid: number;
+        small_luggage_paid: number;
+        big_luggage_paid_price: number;
+        small_luggage_paid_price: number;
         auto_accept: boolean;
         payment_methods: string[];
         departure_time_flexibility?: string;
@@ -201,7 +205,7 @@ export function RideCard({ ride }: RideCardProps) {
                             <IconLuggage size={16} />
                         </ThemeIcon>
                         <Text size="xs" c="dimmed">
-                            {ride.big_luggage_lim}L / {ride.small_luggage_lim}S
+                            {(ride.big_luggage_lim + (ride.big_luggage_paid || 0))}L / {(ride.small_luggage_lim + (ride.small_luggage_paid || 0))}S
                         </Text>
                     </Group>
 

@@ -56,6 +56,8 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
     const [editSeats, setEditSeats] = useState(1);
     const [editBigLuggage, setEditBigLuggage] = useState(0);
     const [editSmallLuggage, setEditSmallLuggage] = useState(0);
+    const [editBigLuggagePaid, setEditBigLuggagePaid] = useState(0);
+    const [editSmallLuggagePaid, setEditSmallLuggagePaid] = useState(0);
 
     // Pickup location autocomplete state
     const [pickupLocation, setPickupLocation] = useState('');
@@ -150,6 +152,8 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
         setEditSeats(trip.user_booking?.seats_booked || 1);
         setEditBigLuggage(trip.user_booking?.big_luggage || 0);
         setEditSmallLuggage(trip.user_booking?.small_luggage || 0);
+        setEditBigLuggagePaid(trip.user_booking?.big_luggage_paid || 0);
+        setEditSmallLuggagePaid(trip.user_booking?.small_luggage_paid || 0);
         setIsEditing(true);
     };
 
@@ -198,6 +202,8 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                 if (editSeats !== trip.user_booking?.seats_booked) payload.seats_booked = editSeats;
                 if (editBigLuggage !== trip.user_booking?.big_luggage) payload.big_luggage = editBigLuggage;
                 if (editSmallLuggage !== trip.user_booking?.small_luggage) payload.small_luggage = editSmallLuggage;
+                if (editBigLuggagePaid !== trip.user_booking?.big_luggage_paid) payload.big_luggage_paid = editBigLuggagePaid;
+                if (editSmallLuggagePaid !== trip.user_booking?.small_luggage_paid) payload.small_luggage_paid = editSmallLuggagePaid;
             }
 
             const res = await fetch(`/api/bookings/${bookingId}`, {
@@ -520,6 +526,28 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                             onChange={(val) => setEditSmallLuggage(Number(val))}
                                         />
                                     </Group>
+                                    {((trip.rules?.luggage?.big_paid || 0) > 0 || (trip.rules?.luggage?.small_paid || 0) > 0) && (
+                                        <Group grow mt="sm">
+                                            {(trip.rules?.luggage?.big_paid || 0) > 0 && (
+                                                <NumberInput
+                                                    label={`${t('dashboard.common.big')} (${t('rides.detail.rules.paidLuggage')})`}
+                                                    value={editBigLuggagePaid}
+                                                    onChange={(val) => setEditBigLuggagePaid(Number(val))}
+                                                    min={0}
+                                                    max={trip.rules?.luggage?.big_paid || 0}
+                                                />
+                                            )}
+                                            {(trip.rules?.luggage?.small_paid || 0) > 0 && (
+                                                <NumberInput
+                                                    label={`${t('dashboard.common.small')} (${t('rides.detail.rules.paidLuggage')})`}
+                                                    value={editSmallLuggagePaid}
+                                                    onChange={(val) => setEditSmallLuggagePaid(Number(val))}
+                                                    min={0}
+                                                    max={trip.rules?.luggage?.small_paid || 0}
+                                                />
+                                            )}
+                                        </Group>
+                                    )}
                                 </Box>
                             ) : (
                                 <InfoItem
@@ -527,7 +555,12 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                     value={
                                         <Group gap="xs">
                                             <IconLuggage size={16} style={{ opacity: 0.7 }} />
-                                            <span>{trip.user_booking?.big_luggage || 0} {t('dashboard.common.big')}, {trip.user_booking?.small_luggage || 0} {t('dashboard.common.small')}</span>
+                                            <span>
+                                                {trip.user_booking?.big_luggage || 0} {t('dashboard.common.big')}, {trip.user_booking?.small_luggage || 0} {t('dashboard.common.small')}
+                                                {((trip.user_booking?.big_luggage_paid || 0) > 0 || (trip.user_booking?.small_luggage_paid || 0) > 0) && (
+                                                    <> | {t('rides.detail.rules.paidLuggage')}: {trip.user_booking?.big_luggage_paid || 0} {t('dashboard.common.big')}, {trip.user_booking?.small_luggage_paid || 0} {t('dashboard.common.small')}</>
+                                                )}
+                                            </span>
                                         </Group>
                                     }
                                 />

@@ -91,6 +91,10 @@ export async function POST(req: Request) {
             paymentQRCodes, // { "Venmo": "data:image/...", "Zelle": "data:image/..." }
             bigLuggage,
             smallLuggage,
+            bigLuggagePaid,
+            smallLuggagePaid,
+            bigLuggagePaidPrice,
+            smallLuggagePaidPrice,
             autoAccept,
             flexibility,
             pickupRadius,
@@ -115,6 +119,14 @@ export async function POST(req: Request) {
 
         if (!startValid || !endValid || price === undefined || price === null || !seats) {
             return NextResponse.json({ error: t('api.errors.missingRequiredFieldsLocation') }, { status: 400 });
+        }
+
+        // Validate paid luggage: price must be > 0 if count > 0
+        if ((bigLuggagePaid || 0) > 0 && !(bigLuggagePaidPrice > 0)) {
+            return NextResponse.json({ error: 'Paid big luggage price must be greater than 0 when paid big luggage count is set.' }, { status: 400 });
+        }
+        if ((smallLuggagePaid || 0) > 0 && !(smallLuggagePaidPrice > 0)) {
+            return NextResponse.json({ error: 'Paid small luggage price must be greater than 0 when paid small luggage count is set.' }, { status: 400 });
         }
 
         // Validate Departure Time (Must be in future relative to Chicago wall clock)
@@ -378,6 +390,10 @@ export async function POST(req: Request) {
                 id,
                 big_luggage_lim,
                 small_luggage_lim,
+                big_luggage_paid,
+                small_luggage_paid,
+                big_luggage_paid_price,
+                small_luggage_paid_price,
                 payment_methods,
                 payment_handle,
                 payment_qr_codes,
@@ -392,12 +408,16 @@ export async function POST(req: Request) {
                 start_check_in_hrs_before_departure
             ) VALUES(
                 $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-                $14, $15
+                $14, $15, $16, $17, $18, $19
             )`,
             [
                 tripId,
                 bigLuggage || 0,
                 smallLuggage || 0,
+                bigLuggagePaid || 0,
+                smallLuggagePaid || 0,
+                bigLuggagePaidPrice || 0,
+                smallLuggagePaidPrice || 0,
                 paymentMethods || [],
                 paymentHandle || null, // Optional now
                 processedQRCodes, // JSONB with payment method -> URL mapping
@@ -435,6 +455,10 @@ export async function POST(req: Request) {
                 name,
                 big_luggage_lim,
                 small_luggage_lim,
+                big_luggage_paid,
+                small_luggage_paid,
+                big_luggage_paid_price,
+                small_luggage_paid_price,
                 payment_methods,
                 payment_handle,
                 auto_accept,
@@ -448,13 +472,17 @@ export async function POST(req: Request) {
                 start_check_in_hrs_before_departure
             ) VALUES(
                 $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-                $14, $15
+                $14, $15, $16, $17, $18, $19
             ) RETURNING id`,
                     [
                         user.uid,
                         ruleTemplateName,
                         bigLuggage || 0,
                         smallLuggage || 0,
+                        bigLuggagePaid || 0,
+                        smallLuggagePaid || 0,
+                        bigLuggagePaidPrice || 0,
+                        smallLuggagePaidPrice || 0,
                         paymentMethods || [],
                         paymentHandle || null,
                         autoAccept,

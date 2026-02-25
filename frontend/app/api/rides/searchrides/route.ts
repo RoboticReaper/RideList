@@ -180,6 +180,10 @@ export async function GET(request: NextRequest) {
 
                 tr.big_luggage_lim,
                 tr.small_luggage_lim,
+                tr.big_luggage_paid,
+                tr.small_luggage_paid,
+                tr.big_luggage_paid_price,
+                tr.small_luggage_paid_price,
                 tr.auto_accept,
                 tr.payment_methods,
                 tr.departure_time_flexibility::text,

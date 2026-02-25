@@ -115,6 +115,10 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
 
         bigLuggage: Number(t.rules.luggage.big ?? 0),
         smallLuggage: Number(t.rules.luggage.small ?? 0),
+        bigLuggagePaid: Number(t.rules.luggage.big_paid ?? 0),
+        smallLuggagePaid: Number(t.rules.luggage.small_paid ?? 0),
+        bigLuggagePaidPrice: Number(t.rules.luggage.big_paid_price ?? 0),
+        smallLuggagePaidPrice: Number(t.rules.luggage.small_paid_price ?? 0),
 
         pickupRules: t.rules.pickup.rules || '',
         pickupRadius: Number(t.rules.pickup.radius ?? 5000),
@@ -879,6 +883,34 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                                 label={t('tripDetails.edit.labels.smallLuggageLimit')}
                                 min={0}
                                 {...form.getInputProps('smallLuggage')}
+                            />
+                        </SimpleGrid>
+
+                        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                            <NumberInput
+                                label={t('tripDetails.edit.labels.paidBigLuggageLimit')}
+                                min={0}
+                                {...form.getInputProps('bigLuggagePaid')}
+                            />
+                            <NumberInput
+                                label={t('tripDetails.edit.labels.paidSmallLuggageLimit')}
+                                min={0}
+                                {...form.getInputProps('smallLuggagePaid')}
+                            />
+                        </SimpleGrid>
+
+                        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                            <NumberInput
+                                label={t('tripDetails.edit.labels.paidBigLuggagePrice')}
+                                min={0}
+                                {...form.getInputProps('bigLuggagePaidPrice')}
+                                disabled={!form.values.bigLuggagePaid || form.values.bigLuggagePaid === 0}
+                            />
+                            <NumberInput
+                                label={t('tripDetails.edit.labels.paidSmallLuggagePrice')}
+                                min={0}
+                                {...form.getInputProps('smallLuggagePaidPrice')}
+                                disabled={!form.values.smallLuggagePaid || form.values.smallLuggagePaid === 0}
                             />
                         </SimpleGrid>
 

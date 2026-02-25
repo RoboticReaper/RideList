@@ -150,6 +150,10 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
     const [paymentQRCodes, setPaymentQRCodes] = useState<Record<string, string>>({});
     const [bigLuggage, setBigLuggage] = useState<number | ''>(0);
     const [smallLuggage, setSmallLuggage] = useState<number | ''>(0);
+    const [bigLuggagePaid, setBigLuggagePaid] = useState<number | ''>(0);
+    const [smallLuggagePaid, setSmallLuggagePaid] = useState<number | ''>(0);
+    const [bigLuggagePaidPrice, setBigLuggagePaidPrice] = useState<number | ''>(0);
+    const [smallLuggagePaidPrice, setSmallLuggagePaidPrice] = useState<number | ''>(0);
 
     // --- Step 5: Rules State ---
     const [autoAccept, setAutoAccept] = useState(true);
@@ -274,6 +278,10 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
         paymentHandle: string;
         bigLuggage: number | '';
         smallLuggage: number | '';
+        bigLuggagePaid: number | '';
+        smallLuggagePaid: number | '';
+        bigLuggagePaidPrice: number | '';
+        smallLuggagePaidPrice: number | '';
         autoAccept: boolean;
         flexibility: number | '';
 
@@ -330,6 +338,10 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
                 if (draft.paymentHandle) setPaymentHandle(draft.paymentHandle);
                 if (draft.bigLuggage !== undefined) setBigLuggage(draft.bigLuggage);
                 if (draft.smallLuggage !== undefined) setSmallLuggage(draft.smallLuggage);
+                if (draft.bigLuggagePaid !== undefined) setBigLuggagePaid(draft.bigLuggagePaid);
+                if (draft.smallLuggagePaid !== undefined) setSmallLuggagePaid(draft.smallLuggagePaid);
+                if (draft.bigLuggagePaidPrice !== undefined) setBigLuggagePaidPrice(draft.bigLuggagePaidPrice);
+                if (draft.smallLuggagePaidPrice !== undefined) setSmallLuggagePaidPrice(draft.smallLuggagePaidPrice);
 
                 if (draft.autoAccept !== undefined) setAutoAccept(draft.autoAccept);
                 if (draft.autoAccept !== undefined) setAutoAccept(draft.autoAccept);
@@ -499,6 +511,10 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
         setPaymentHandle('');
         setBigLuggage(0);
         setSmallLuggage(0);
+        setBigLuggagePaid(0);
+        setSmallLuggagePaid(0);
+        setBigLuggagePaidPrice(0);
+        setSmallLuggagePaidPrice(0);
         setAutoAccept(true);
         setFlexibility(0.25);
         setPickupRadius(10000);
@@ -589,6 +605,10 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
                 paymentHandle,
                 bigLuggage,
                 smallLuggage,
+                bigLuggagePaid,
+                smallLuggagePaid,
+                bigLuggagePaidPrice,
+                smallLuggagePaidPrice,
                 autoAccept,
                 flexibility,
                 pickupRadius,
@@ -614,7 +634,7 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
         active, startLocation, endLocation, startTime, price, seats,
         selectedCarId, carMake, carModel, carColor, carYear, carPlate,
         carBigLuggage, carSmallLuggage, carSeats, paymentMethods, paymentHandle,
-        bigLuggage, smallLuggage, autoAccept, flexibility, pickupRadius,
+        bigLuggage, smallLuggage, bigLuggagePaid, smallLuggagePaid, bigLuggagePaidPrice, smallLuggagePaidPrice, autoAccept, flexibility, pickupRadius,
         dropoffRadius, pickupRules, cancellationPolicy, cutoffEnabled,
         dropoffRadius, pickupRules, cancellationPolicy, cutoffEnabled,
         cutoffHours, payWindow, notes, startPlaceId, endPlaceId, startCheckInHrs,
@@ -1019,6 +1039,10 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
             paymentHandle,
             bigLuggage: Number(bigLuggage),
             smallLuggage: Number(smallLuggage),
+            bigLuggagePaid: Number(bigLuggagePaid),
+            smallLuggagePaid: Number(smallLuggagePaid),
+            bigLuggagePaidPrice: Number(bigLuggagePaidPrice),
+            smallLuggagePaidPrice: Number(smallLuggagePaidPrice),
             autoAccept,
             flexibility: (flexibility !== undefined) ? `${flexibility} hours` : '0 hours',
             pickupRadius: Number(pickupRadius),
@@ -1182,6 +1206,10 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
                                                 const r = tmpl.rule_details;
                                                 setBigLuggage(r.big_luggage_lim ?? '');
                                                 setSmallLuggage(r.small_luggage_lim ?? '');
+                                                setBigLuggagePaid(r.big_luggage_paid ?? 0);
+                                                setSmallLuggagePaid(r.small_luggage_paid ?? 0);
+                                                setBigLuggagePaidPrice(r.big_luggage_paid_price ?? 0);
+                                                setSmallLuggagePaidPrice(r.small_luggage_paid_price ?? 0);
                                                 setPaymentMethods(r.payment_methods || []);
                                                 setPaymentQRCodes(r.payment_qr_codes || {});
                                                 setPaymentHandle(r.payment_handle || '');
@@ -1530,6 +1558,10 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
                                             if (tmpl.auto_accept !== undefined) setAutoAccept(tmpl.auto_accept);
                                             if (tmpl.big_luggage_lim !== null) setBigLuggage(tmpl.big_luggage_lim);
                                             if (tmpl.small_luggage_lim !== null) setSmallLuggage(tmpl.small_luggage_lim);
+                                            if (tmpl.big_luggage_paid !== undefined && tmpl.big_luggage_paid !== null) setBigLuggagePaid(tmpl.big_luggage_paid);
+                                            if (tmpl.small_luggage_paid !== undefined && tmpl.small_luggage_paid !== null) setSmallLuggagePaid(tmpl.small_luggage_paid);
+                                            if (tmpl.big_luggage_paid_price !== undefined && tmpl.big_luggage_paid_price !== null) setBigLuggagePaidPrice(tmpl.big_luggage_paid_price);
+                                            if (tmpl.small_luggage_paid_price !== undefined && tmpl.small_luggage_paid_price !== null) setSmallLuggagePaidPrice(tmpl.small_luggage_paid_price);
                                             if (tmpl.pickup_radius_meters !== null) setPickupRadius(tmpl.pickup_radius_meters);
                                             if (tmpl.drop_off_radius_meters !== null) setDropoffRadius(tmpl.drop_off_radius_meters);
 
@@ -1709,6 +1741,50 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
                                     setFieldSourceManual(['smallLuggage']);
                                 }}
                                 min={0}
+                            />
+                        </SimpleGrid>
+
+                        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                            <NumberInput
+                                label={<Group gap="xs">{t('rides.create.labels.paidBigLuggageCap')} {renderSourceBadge('bigLuggagePaid')}</Group>}
+                                value={bigLuggagePaid}
+                                onChange={(val) => {
+                                    setBigLuggagePaid(val === '' ? '' : Number(val));
+                                    setFieldSourceManual(['bigLuggagePaid']);
+                                }}
+                                min={0}
+                            />
+                            <NumberInput
+                                label={<Group gap="xs">{t('rides.create.labels.paidSmallLuggageCap')} {renderSourceBadge('smallLuggagePaid')}</Group>}
+                                value={smallLuggagePaid}
+                                onChange={(val) => {
+                                    setSmallLuggagePaid(val === '' ? '' : Number(val));
+                                    setFieldSourceManual(['smallLuggagePaid']);
+                                }}
+                                min={0}
+                            />
+                        </SimpleGrid>
+
+                        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                            <NumberInput
+                                label={<Group gap="xs">{t('rides.create.labels.paidBigLuggagePrice')} {renderSourceBadge('bigLuggagePaidPrice')}</Group>}
+                                value={bigLuggagePaidPrice}
+                                onChange={(val) => {
+                                    setBigLuggagePaidPrice(val === '' ? '' : Number(val));
+                                    setFieldSourceManual(['bigLuggagePaidPrice']);
+                                }}
+                                min={0}
+                                disabled={!bigLuggagePaid || bigLuggagePaid === 0}
+                            />
+                            <NumberInput
+                                label={<Group gap="xs">{t('rides.create.labels.paidSmallLuggagePrice')} {renderSourceBadge('smallLuggagePaidPrice')}</Group>}
+                                value={smallLuggagePaidPrice}
+                                onChange={(val) => {
+                                    setSmallLuggagePaidPrice(val === '' ? '' : Number(val));
+                                    setFieldSourceManual(['smallLuggagePaidPrice']);
+                                }}
+                                min={0}
+                                disabled={!smallLuggagePaid || smallLuggagePaid === 0}
                             />
                         </SimpleGrid>
                         <Group justify="space-between" mt="md">

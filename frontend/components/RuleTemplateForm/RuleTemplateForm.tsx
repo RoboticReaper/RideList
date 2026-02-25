@@ -38,6 +38,10 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
     const [paymentHandle, setPaymentHandle] = useState(initialData?.payment_handle || '');
     const [bigLuggage, setBigLuggage] = useState<number | ''>(initialData?.big_luggage_lim ?? '');
     const [smallLuggage, setSmallLuggage] = useState<number | ''>(initialData?.small_luggage_lim ?? '');
+    const [bigLuggagePaid, setBigLuggagePaid] = useState<number | ''>(initialData?.big_luggage_paid ?? '');
+    const [smallLuggagePaid, setSmallLuggagePaid] = useState<number | ''>(initialData?.small_luggage_paid ?? '');
+    const [bigLuggagePaidPrice, setBigLuggagePaidPrice] = useState<number | ''>(initialData?.big_luggage_paid_price ?? '');
+    const [smallLuggagePaidPrice, setSmallLuggagePaidPrice] = useState<number | ''>(initialData?.small_luggage_paid_price ?? '');
 
     // Parse cutoff
     const [cutoffEnabled, setCutoffEnabled] = useState(!!initialData?.cutoff_time);
@@ -111,6 +115,10 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
                 payment_handle: paymentHandle || null,
                 big_luggage_lim: bigLuggage === '' ? null : bigLuggage,
                 small_luggage_lim: smallLuggage === '' ? null : smallLuggage,
+                big_luggage_paid: bigLuggagePaid === '' ? null : bigLuggagePaid,
+                small_luggage_paid: smallLuggagePaid === '' ? null : smallLuggagePaid,
+                big_luggage_paid_price: bigLuggagePaidPrice === '' ? null : bigLuggagePaidPrice,
+                small_luggage_paid_price: smallLuggagePaidPrice === '' ? null : smallLuggagePaidPrice,
                 cutoff_time: (cutoffEnabled && cutoffHours !== '') ? `${cutoffHours} hours` : null,
                 pay_window: (payWindow !== '' && payWindow !== undefined) ? `${payWindow} minutes` : null,
                 start_check_in_hrs_before_departure: (startCheckInHrs !== '' && startCheckInHrs !== undefined) ? `${startCheckInHrs} hours` : null,
@@ -192,6 +200,16 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
                     <Group grow>
                         <NumberInput label={t('templates.rules.form.bigLuggage')} value={bigLuggage} onChange={(val) => setBigLuggage(val === '' ? '' : Number(val))} min={0} />
                         <NumberInput label={t('templates.rules.form.smallLuggage')} value={smallLuggage} onChange={(val) => setSmallLuggage(val === '' ? '' : Number(val))} min={0} />
+                    </Group>
+
+                    <Group grow>
+                        <NumberInput label={t('templates.rules.form.paidBigLuggage')} value={bigLuggagePaid} onChange={(val) => setBigLuggagePaid(val === '' ? '' : Number(val))} min={0} />
+                        <NumberInput label={t('templates.rules.form.paidSmallLuggage')} value={smallLuggagePaid} onChange={(val) => setSmallLuggagePaid(val === '' ? '' : Number(val))} min={0} />
+                    </Group>
+
+                    <Group grow>
+                        <NumberInput label={t('templates.rules.form.paidBigLuggagePrice')} value={bigLuggagePaidPrice} onChange={(val) => setBigLuggagePaidPrice(val === '' ? '' : Number(val))} min={0} disabled={!bigLuggagePaid || bigLuggagePaid === 0} />
+                        <NumberInput label={t('templates.rules.form.paidSmallLuggagePrice')} value={smallLuggagePaidPrice} onChange={(val) => setSmallLuggagePaidPrice(val === '' ? '' : Number(val))} min={0} disabled={!smallLuggagePaid || smallLuggagePaid === 0} />
                     </Group>
 
                     <NumberInput
