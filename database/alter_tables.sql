@@ -29,6 +29,19 @@ alter table car_snapshots add pic1 text,
 alter table bookings add payment_evidence_url text,
     add payment_evidence_text text;
 
+create table dm_messages (
+    id uuid primary key default gen_random_uuid(),
+    sender_id text references users(id) not null,
+    receiver_id text references users(id) not null,
+    message_type text not null check (message_type in ('text', 'image', 'live_location')),
+    content text not null, -- content is message if type is text, url if image. live_location for later
+    parent_message_id uuid references dm_messages(id),
+    created_at timestamptz default now(),
+    deleted bool default false
+);
+
+alter table trip_messages add content_type text not null default 'text' check (content_type in ('text', 'image'));
+
 
 -- V4
 -- alter table profile_global add community_driver bool not null default false;

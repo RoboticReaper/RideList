@@ -441,7 +441,7 @@ create table trip_messages (
       'followup',       -- rider → driver (reply to an answer)
       'answer_public',   -- driver → all (public answer to a question)
       'answer_private',  -- driver → rider (private reply)
-      'dm_private',      -- driver initiated → rider
+      'dm_private',      -- driver initiated → rider. NO LONGER USED. REPLACED BY dm_messages
       'system'
     )
   ),

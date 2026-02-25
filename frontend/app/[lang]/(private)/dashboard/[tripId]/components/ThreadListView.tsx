@@ -175,29 +175,18 @@ export function ThreadListView({ riderName, riderPhotoUrl, threads, onSelectThre
 export function extractThreadsFromMessages(messages: Message[], riderId: string, driverId: string): Thread[] {
     const threads: Thread[] = [];
 
-    // Find DMs (messages between driver and rider that are not questions/answers)
-    const dmMessages = messages.filter(m =>
-        (m.message_type === 'dm_private') &&
-        (m.sender_id === riderId || m.receiver_id === riderId)
-    );
+    // Find DMs (populated with global is_global_dm)
+    const dmMessages = messages.filter(m => (m as any).is_global_dm);
 
     if (dmMessages.length > 0 || true) { // Always show DM thread
-        // Get all DM messages including followups to first DM
-        const firstDmId = dmMessages[0]?.id;
-        const allDmMessages = firstDmId
-            ? messages.filter(m =>
-                m.message_type === 'dm_private' ||
-                (m.message_type === 'followup' && m.parent_message_id === firstDmId)
-            )
-            : [];
-        const lastDmMessage = allDmMessages[allDmMessages.length - 1];
+        const lastDmMessage = dmMessages.length > 0 ? dmMessages[dmMessages.length - 1] : null;
         threads.push({
             type: 'dm',
-            id: firstDmId || 'dm',
+            id: 'dm',
             label: 'Direct Messages',
             preview: lastDmMessage?.content || '',
             timestamp: lastDmMessage?.created_at || new Date().toISOString(),
-            parentMessageId: firstDmId
+            parentMessageId: 'dm'
         });
     }
 

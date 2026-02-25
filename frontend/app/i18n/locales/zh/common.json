@@ -12,6 +12,7 @@
         "profile": "个人资料",
         "settings": "设置",
         "history": "历史记录",
+        "messages": "私信",
         "logout": "退出登录",
         "language": "语言",
         "roles": {
@@ -140,6 +141,10 @@
         "trust": {
             "title": "信任与安全",
             "description": "了解我们的信任与安全机制，以及如何维护社区秩序。"
+        },
+        "messages": {
+            "title": "私信",
+            "description": "查看你的所有私信与互动记录。"
         },
         "privacy": {
             "title": "隐私政策",
@@ -1028,6 +1033,8 @@
             "bookingDetails": "预约详情"
         },
         "chat": {
+            "addCaptionOptional": "添加图片说明（可选）",
+            "attachImage": "附加图片",
             "sendFailed": "发送失败",
             "title": "消息",
             "placeholder": "输入消息...",

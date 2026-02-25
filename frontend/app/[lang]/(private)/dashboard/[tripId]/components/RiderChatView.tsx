@@ -14,6 +14,7 @@ interface RiderChatViewProps {
     tripId: string;
     driverName?: string;
     driverPhotoUrl?: string | null;
+    driverId?: string;
 }
 
 interface Thread {
@@ -25,7 +26,7 @@ interface Thread {
     parentMessageId?: string;
 }
 
-export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatViewProps) {
+export function RiderChatView({ tripId, driverName, driverPhotoUrl, driverId }: RiderChatViewProps) {
     const { user } = useAuth();
     const { t } = useTranslation('common');
     const router = useRouter();
@@ -64,21 +65,39 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
         if (!user) return;
         try {
             const token = await user.getIdToken();
-            const res = await fetch(`/api/trips/${tripId}/chat`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!res.ok) throw new Error("Failed to load chat");
-            const data = await res.json();
+            const [tripRes, dmRes] = await Promise.all([
+                fetch(`/api/trips/${tripId}/chat`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                driverId ? fetch(`/api/user/chat?other_user_id=${driverId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }) : Promise.resolve(new Response(JSON.stringify({ messages: [] }), { status: 200 }))
+            ]);
 
-            const msgs = data.messages.map((m: any) => ({
+            if (!tripRes.ok) throw new Error("Failed to load chat");
+            const tripData = await tripRes.json();
+            const dmData = dmRes.ok ? await dmRes.json() : { messages: [] };
+
+            const tripMsgs = tripData.messages.map((m: any) => ({
                 ...m,
                 is_me: m.sender_id === user.uid
             }));
 
-            setMessages(msgs);
+            const globalDMs = dmData.messages.map((m: any) => ({
+                ...m,
+                is_me: m.sender_id === user.uid,
+                is_global_dm: true,
+                message_type: m.message_type || 'dm_private'
+            }));
+
+            const combinedMsgs = [...tripMsgs, ...globalDMs].sort((a, b) =>
+                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            );
+
+            setMessages(combinedMsgs);
 
             // Extract threads from messages
-            const extractedThreads = extractRiderThreads(msgs, user.uid);
+            const extractedThreads = extractRiderThreads(combinedMsgs, user.uid);
             setThreads(extractedThreads);
         } catch (err) {
             console.error(err);
@@ -137,12 +156,8 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
             });
             setThreadMessages(announcementMsgs);
         } else if (activeThread.type === 'dm') {
-            // Show DMs between rider and driver (includes dm_private and followups to the first DM)
-            const dmParentId = activeThread.parentMessageId;
-            const dmMsgs = messages.filter(m =>
-                m.message_type === 'dm_private' ||
-                (m.message_type === 'followup' && m.parent_message_id === dmParentId)
-            );
+            // Show global DMs
+            const dmMsgs = messages.filter(m => m.is_global_dm);
             setThreadMessages(dmMsgs);
         } else if (activeThread.type === 'question') {
             // Show the question thread
@@ -155,60 +170,66 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
         }
     }, [activeThread, messages]);
 
-    const sendMessage = async (content: string) => {
+    const sendMessage = async (content: string, replyToMessageId?: string, imageData?: string) => {
         if (!user) return;
         setSending(true);
         try {
             const token = await user.getIdToken();
 
-            let payload: any;
-            if (activeThread?.type === 'question') {
-                // Followup to a question
-                payload = {
-                    content,
-                    message_type: 'followup',
-                    parent_message_id: activeThread.parentMessageId
-                };
-            } else if (activeThread?.type === 'dm') {
-                // DM to driver (rider can reply to DM thread)
-                payload = {
-                    content,
-                    message_type: 'followup',
-                    parent_message_id: activeThread.parentMessageId
-                };
-                console.log(activeThread)
-            } else {
-                // Announcements are read-only
-                return;
-            }
+            const sendSingleMessage = async (msgContent: string, msgImageData?: string) => {
+                let payload: any;
+                let targetUrl = `/api/trips/${tripId}/chat`;
 
-            const res = await fetch(`/api/trips/${tripId}/chat`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
+                if (activeThread?.type === 'question') {
+                    payload = {
+                        content: msgContent || '📷 Image',
+                        message_type: 'followup',
+                        parent_message_id: activeThread.parentMessageId,
+                        ...(msgImageData && { image_data: msgImageData })
+                    };
+                } else if (activeThread?.type === 'dm') {
+                    targetUrl = '/api/user/chat';
+                    payload = {
+                        content: msgContent || '📷 Image',
+                        receiver_id: driverId,
+                        context_trip_id: tripId,
+                        message_type: 'text',
+                        ...(replyToMessageId && { parent_message_id: replyToMessageId }),
+                        ...(msgImageData && { image_data: msgImageData })
+                    };
+                } else {
+                    return;
+                }
 
-            if (!res.ok) {
-                const errorData = await res.json();
-                notifications.show({
-                    title: t('common.error') || 'Error',
-                    message: errorData.error || t('tripDetails.chat.sendFailed') || 'Failed to send message',
-                    color: 'red',
-                    icon: <IconX size={16} />,
-                    autoClose: 5000
+                const res = await fetch(targetUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
                 });
-                return;
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || t('tripDetails.chat.sendFailed') || 'Failed to send message');
+                }
+            };
+
+            if (imageData && content.trim()) {
+                // Send image first, then text as separate messages
+                await sendSingleMessage('', imageData);
+                await sendSingleMessage(content.trim());
+            } else {
+                await sendSingleMessage(content, imageData);
             }
 
             await fetchMessages();
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
             notifications.show({
                 title: t('common.error') || 'Error',
-                message: t('tripDetails.chat.sendFailed') || 'Failed to send message',
+                message: err.message || t('tripDetails.chat.sendFailed') || 'Failed to send message',
                 color: 'red',
                 icon: <IconX size={16} />,
                 autoClose: 5000
@@ -220,9 +241,17 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
 
     const deleteMessage = useCallback(async (messageId: string) => {
         if (!user) return;
+
+        const msg = messages.find(m => m.id === messageId);
+        const isGlobalDm = msg?.is_global_dm === true;
+
         try {
             const token = await user.getIdToken();
-            const res = await fetch(`/api/trips/${tripId}/chat?message_id=${messageId}`, {
+            const targetUrl = isGlobalDm
+                ? `/api/user/chat?message_id=${messageId}`
+                : `/api/trips/${tripId}/chat?message_id=${messageId}`;
+
+            const res = await fetch(targetUrl, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -248,7 +277,7 @@ export function RiderChatView({ tripId, driverName, driverPhotoUrl }: RiderChatV
                 autoClose: 5000
             });
         }
-    }, [user, tripId, fetchMessages, t]);
+    }, [user, tripId, messages, fetchMessages, t]);
 
     const askQuestion = async () => {
         if (!user || !questionText.trim()) return;
@@ -482,23 +511,17 @@ function extractRiderThreads(messages: any[], riderId: string): Thread[] {
         });
     }
 
-    // DM thread (if any DMs exist)
-    const dms = messages.filter(m => m.message_type === 'dm_private');
-    if (dms.length > 0) {
-        const firstDmId = dms[0].id;
-        // Get all DM messages including followups
-        const allDmMessages = messages.filter(m =>
-            m.message_type === 'dm_private' ||
-            (m.message_type === 'followup' && m.parent_message_id === firstDmId)
-        );
-        const lastDmMessage = allDmMessages[allDmMessages.length - 1];
+    // DM thread (populated with global DMs)
+    const dms = messages.filter(m => m.is_global_dm);
+    if (dms.length > 0 || true) {
+        const lastDmMessage = dms.length > 0 ? dms[dms.length - 1] : null;
         threads.push({
             type: 'dm',
-            id: firstDmId,
+            id: 'dm',
             label: 'Direct Messages',
-            preview: lastDmMessage.content,
-            timestamp: lastDmMessage.created_at,
-            parentMessageId: firstDmId
+            preview: lastDmMessage?.content || '',
+            timestamp: lastDmMessage?.created_at || new Date().toISOString(),
+            parentMessageId: 'dm'
         });
     }
 

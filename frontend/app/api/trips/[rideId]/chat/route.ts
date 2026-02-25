@@ -3,6 +3,7 @@ import { pool } from '@/app/api/lib/db';
 import { verifyUserFromRequest } from '@/app/api/lib/verifyUser';
 import { getTranslationForUser, getTranslation } from '@/app/api/lib/i18n';
 import { createNotification } from '@/app/api/lib/createNotification';
+import { processChatImage } from '@/app/api/lib/processChatImage';
 
 export async function GET(
     req: Request,
@@ -105,6 +106,7 @@ export async function GET(
                     parent_message_id,
                     receiver_id,
                     content,
+                    content_type,
                     created_at,
                     deleted
                 FROM trip_messages 
@@ -171,9 +173,22 @@ export async function POST(
         const t = await getTranslationForUser(userId, client);
 
         const body = await req.json();
-        const { content, message_type, parent_message_id, receiver_id } = body;
+        const { content, message_type, parent_message_id, receiver_id, image_data } = body;
 
-        if (!content || !content.trim()) {
+        let finalContent = content;
+        let contentType = 'text';
+
+        // Handle image upload
+        if (image_data) {
+            try {
+                const imageUrl = await processChatImage(image_data, userId);
+                finalContent = imageUrl;
+                contentType = 'image';
+            } catch (err) {
+                console.error('Failed to process chat image:', err);
+                return NextResponse.json({ error: 'Failed to process image' }, { status: 400 });
+            }
+        } else if (!content || !content.trim()) {
             return NextResponse.json({ error: t('api.errors.messageEmpty') }, { status: 400 });
         }
 
@@ -316,15 +331,15 @@ export async function POST(
         const insertQuery = `
             INSERT INTO trip_messages (
                 trip_id, sender_id, sender_role, message_type, 
-                content, parent_message_id, receiver_id
+                content, parent_message_id, receiver_id, content_type
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING *
         `;
 
         const inserted = await client.query(insertQuery, [
             rideId, userId, senderRole, message_type,
-            content, parent_message_id || null, finalReceiverId || null
+            finalContent, parent_message_id || null, finalReceiverId || null, contentType
         ]);
 
         const insertedMessage = inserted.rows[0];
@@ -336,7 +351,7 @@ export async function POST(
         // - Driver messages -> notify the receiver (if private) or all riders (if announcement)
         // - Rider messages -> notify the driver
 
-        const messagePreview = content.length > 50 ? content.substring(0, 50) + '...' : content;
+        const messagePreview = contentType === 'image' ? '📷 Image' : (finalContent.length > 50 ? finalContent.substring(0, 50) + '...' : finalContent);
         let driverOpenLink = `/dashboard/${rideId}?tab=messages&chat_recipient=${userId}&chat_thread=${parent_message_id || insertedMessage.id}`;
         let riderOpenLink = `/dashboard/${rideId}?tab=messages&chat_thread=${parent_message_id || insertedMessage.id}`;
 

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Stack, Group, Textarea, ActionIcon, Text, Paper, ScrollArea, Avatar, Box, LoadingOverlay, Switch, Modal, Button } from '@mantine/core';
-import { IconSend, IconArrowLeft, IconWorld, IconTrash } from '@tabler/icons-react';
+import { Stack, Group, Textarea, ActionIcon, Text, Paper, ScrollArea, Avatar, Box, LoadingOverlay, Switch, Modal, Button, FileButton, Image, CloseButton } from '@mantine/core';
+import { IconSend, IconArrowLeft, IconWorld, IconTrash, IconPhoto, IconArrowBackUp, IconArrowBack, IconArrowNarrowUp } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import dayjs from '@/utils/dateUtils';
 
@@ -13,13 +13,15 @@ interface Message {
     created_at: string;
     is_me: boolean;
     message_type?: string;
+    content_type?: string;
     original_question?: string;
     parent_message_id?: string | null;
+    is_global_dm?: boolean;
 }
 
 interface ChatInterfaceProps {
     messages: Message[];
-    onSend?: (content: string) => Promise<void>;
+    onSend?: (content: string, replyToMessageId?: string, imageData?: string) => Promise<void>;
     onDelete?: (messageId: string) => Promise<void>;
     recipientName: string;
     recipientPhotoUrl?: string | null;
@@ -41,31 +43,74 @@ export function ChatInterface({
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
     const [deleting, setDeleting] = useState(false);
+    const [replyToMessageId, setReplyToMessageId] = useState<string | null>(null);
+    const [attachedImage, setAttachedImage] = useState<string | null>(null);
+    const resetFileRef = useRef<() => void>(null);
     const viewport = useRef<HTMLDivElement>(null);
     const prevLastMessageId = useRef<string | null>(null);
 
-    const scrollToBottom = () => {
+    useEffect(() => {
+        // Prevent background scrolling when chat interface is mounted
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.body.style.overflow = originalOverflow;
+        };
+    }, []);
+
+    const scrollToBottom = (instant = false) => {
         if (viewport.current) {
-            viewport.current.scrollTo({ top: viewport.current.scrollHeight, behavior: 'smooth' });
+            viewport.current.scrollTo({ top: viewport.current.scrollHeight, behavior: instant ? 'auto' : 'smooth' });
         }
     };
 
-    // Only scroll when messages actually change (new message added)
+    // Scroll logic
     useEffect(() => {
         const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
 
-        // Scroll if: loading finished, or last message ID changed (new message)
-        if (prevLastMessageId.current !== lastMessageId) {
-            scrollToBottom();
-            prevLastMessageId.current = lastMessageId;
+        if (prevLastMessageId.current === null && lastMessageId !== null) {
+            // First time receiving messages: jump instantly
+            setTimeout(() => scrollToBottom(true), 10);
+            setTimeout(() => scrollToBottom(true), 150); // Fallback after components render
+        } else if (prevLastMessageId.current !== lastMessageId && lastMessageId !== null) {
+            // New message appended: smooth scroll
+            setTimeout(() => scrollToBottom(false), 50);
         }
-    }, [messages, loading]);
+
+        prevLastMessageId.current = lastMessageId;
+    }, [messages]);
+
+    // Additionally scroll instantly when loading finishes
+    useEffect(() => {
+        if (!loading && messages.length > 0) {
+            setTimeout(() => scrollToBottom(true), 50);
+        }
+    }, [loading]);
+
+    const handleFileChange = (file: File | null) => {
+        if (!file) return;
+        if (!file.type.startsWith('image/')) return;
+        if (file.size > 10 * 1024 * 1024) return; // 10MB limit
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            setAttachedImage(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+    };
 
     const handleSend = async () => {
-        if (!inputValue.trim() || !onSend) return;
-        const temp = inputValue;
+        if ((!inputValue.trim() && !attachedImage) || !onSend) return;
+        const temp = inputValue.trim();
+        const replyTo = replyToMessageId;
+        const img = attachedImage;
         setInputValue(''); // Optimistic clear
-        await onSend(temp);
+        setReplyToMessageId(null);
+        setAttachedImage(null);
+        resetFileRef.current?.();
+        await onSend(temp, replyTo ?? undefined, img ?? undefined);
+
         scrollToBottom();
     };
 
@@ -87,7 +132,7 @@ export function ChatInterface({
     };
 
     return (
-        <Stack h="100%" gap={0} bg="gray.0" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10 }}>
+        <Stack h="100%" gap={0} bg="gray.0" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 200 }}>
             {/* Header */}
             <Paper p="md" shadow="xs" radius={0} withBorder>
                 <Group gap="sm">
@@ -143,19 +188,63 @@ export function ChatInterface({
                                                 <Text size="xs" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{msg.original_question}</Text>
                                             </Paper>
                                         )}
-                                        <Text size="sm" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{msg.content}</Text>
+                                        {/* Show replied-to message if we have parent_message_id and can find it (global DM only) */}
+                                        {msg.is_global_dm && msg.parent_message_id && messages.some(m => m.id === msg.parent_message_id) && (
+                                            <Paper p="xs" mb="xs" bg={msg.is_me ? 'blue.7' : 'gray.3'} radius="sm" style={{ borderLeft: '3px solid rgba(0,0,0,0.2)' }}>
+                                                <Text size="xs" fw={600} c={msg.is_me ? 'rgba(255,255,255,0.9)' : 'dark.4'} mb={2}>
+                                                    {messages.find(m => m.id === msg.parent_message_id)?.is_me ? ((t as any)('tripDetails.chat.yourself') || 'You') : recipientName}
+                                                </Text>
+                                                <Box>
+                                                    {(() => {
+                                                        const pMsg = messages.find(m => m.id === msg.parent_message_id);
+                                                        if (!pMsg) return <Text size="xs" c={msg.is_me ? 'rgba(255,255,255,0.8)' : 'dimmed'} truncate="end">Replied to a message</Text>;
+                                                        if (pMsg.message_type === 'image' || pMsg.content_type === 'image') {
+                                                            return <Image src={pMsg.content} mah={40} fit="contain" radius="sm" mt={2} />;
+                                                        }
+                                                        return <Text size="xs" c={msg.is_me ? 'rgba(255,255,255,0.8)' : 'dimmed'} truncate="end">{pMsg.content}</Text>;
+                                                    })()}
+                                                </Box>
+                                            </Paper>
+                                        )}
+
+                                        {msg.message_type === 'image' || msg.content_type === 'image' ? (
+                                            <Image
+                                                src={msg.content}
+                                                radius="sm"
+                                                mah={250}
+                                                fit="contain"
+                                                mt={msg.original_question || msg.parent_message_id ? 'xs' : 0}
+                                            />
+                                        ) : (
+                                            <Text size="sm" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{msg.content}</Text>
+                                        )}
                                     </Paper>
-                                    {/* Delete button for own messages (but not root messages of conversations) */}
-                                    {msg.is_me && onDelete && !((msg.message_type === 'dm_private' || msg.message_type === 'question') && !msg.parent_message_id) && (
-                                        <ActionIcon
-                                            variant="subtle"
-                                            color="gray"
-                                            size="sm"
-                                            onClick={() => openDeleteModal(msg.id)}
-                                        >
-                                            <IconTrash size={14} />
-                                        </ActionIcon>
-                                    )}
+
+                                    <Stack gap={0} align="center">
+                                        {/* Reply button for DMs */}
+                                        {msg.is_global_dm && onSend && (
+                                            <ActionIcon
+                                                variant="subtle"
+                                                color="gray"
+                                                size="sm"
+                                                className="reply-btn hide-until-hover"
+                                                onClick={() => setReplyToMessageId(msg.id)}
+                                            >
+                                                <IconArrowBackUp size={14} />
+                                            </ActionIcon>
+                                        )}
+                                        {/* Delete button for own messages (but not root messages of conversations, unless it's global DM) */}
+                                        {msg.is_me && onDelete && (msg.is_global_dm || !((msg.message_type === 'dm_private' || msg.message_type === 'question') && !msg.parent_message_id)) && (
+                                            <ActionIcon
+                                                variant="subtle"
+                                                color="gray"
+                                                size="sm"
+                                                onClick={() => openDeleteModal(msg.id)}
+                                            >
+                                                <IconTrash size={14} />
+                                            </ActionIcon>
+                                        )}
+                                    </Stack>
                                 </Group>
                                 {/* Timestamp */}
                                 <Text
@@ -190,16 +279,61 @@ export function ChatInterface({
                             />
                         </Group>
                     )}
+                    {replyToMessageId && (
+                        <Paper p="xs" mb="xs" bg="gray.1" radius="sm" withBorder style={{ borderLeft: '3px solid var(--mantine-color-blue-5)' }}>
+                            <Group justify="space-between" align="flex-start" wrap="nowrap">
+                                <Box style={{ overflow: 'hidden' }}>
+                                    <Group gap={4} mb={2}>
+                                        <Text size="xs" fw={700} c="dimmed">Replying to</Text>
+                                        <Text size="xs" fw={600} c="dark.7">
+                                            {messages.find(m => m.id === replyToMessageId)?.is_me ? ((t as any)('tripDetails.chat.yourself') || 'You') : recipientName}
+                                        </Text>
+                                    </Group>
+                                    <Box>
+                                        {(() => {
+                                            const rMsg = messages.find(m => m.id === replyToMessageId);
+                                            if (!rMsg) return <Text size="xs" truncate="end" c="dark.7">message</Text>;
+                                            if (rMsg.message_type === 'image' || rMsg.content_type === 'image') {
+                                                return <Image src={rMsg.content} mah={60} fit="contain" radius="sm" mt={2} />;
+                                            }
+                                            return <Text size="xs" truncate="end" c="dark.7">{rMsg.content}</Text>;
+                                        })()}
+                                    </Box>
+                                </Box>
+                                <ActionIcon size="xs" variant="subtle" color="gray" onClick={() => setReplyToMessageId(null)}>
+                                    <IconTrash size={12} />
+                                </ActionIcon>
+                            </Group>
+                        </Paper>
+                    )}
+                    {attachedImage && (
+                        <Paper p="xs" mb="xs" bg="gray.1" radius="sm" withBorder style={{ position: 'relative', display: 'inline-block' }}>
+                            <CloseButton
+                                size="sm"
+                                style={{ position: 'absolute', top: 4, right: 4, zIndex: 2 }}
+                                onClick={() => { setAttachedImage(null); resetFileRef.current?.(); }}
+                            />
+                            <Image src={attachedImage} mah={100} fit="contain" radius="sm" />
+                        </Paper>
+                    )}
                     <form onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
-                        <Group gap="xs">
+                        <Group gap="xs" align="flex-end">
+                            <FileButton resetRef={resetFileRef} onChange={handleFileChange} accept="image/*">
+                                {(props) => (
+                                    <ActionIcon variant="subtle" color="gray" size="lg" radius="xl" {...props} disabled={sending} mb={4}>
+                                        <IconPhoto size={20} />
+                                    </ActionIcon>
+                                )}
+                            </FileButton>
                             <Textarea
-                                placeholder={t('tripDetails.chat.placeholder')}
+                                placeholder={attachedImage ? t('tripDetails.chat.addCaptionOptional') || 'Add a caption...' : t('tripDetails.chat.placeholder')}
                                 style={{ flex: 1 }}
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.currentTarget.value)}
                                 disabled={sending}
                                 radius="xl"
                                 minRows={1}
+                                maxRows={4}
                                 autosize
                             />
                             <ActionIcon
@@ -209,7 +343,8 @@ export function ChatInterface({
                                 size="lg"
                                 type="submit"
                                 loading={sending}
-                                disabled={!inputValue.trim()}
+                                disabled={!inputValue.trim() && !attachedImage}
+                                mb={4}
                             >
                                 <IconSend size={18} />
                             </ActionIcon>

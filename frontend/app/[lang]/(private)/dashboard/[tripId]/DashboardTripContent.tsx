@@ -189,6 +189,7 @@ function TripManagementContent({ params }: { params: Promise<{ tripId: string }>
                                 tripId={tripId}
                                 driverName={trip.driver?.name}
                                 driverPhotoUrl={trip.driver?.photo_url}
+                                driverId={trip.driver?.id}
                             />
                         </Tabs.Panel>
                     </Tabs>

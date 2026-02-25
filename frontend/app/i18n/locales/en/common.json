@@ -12,6 +12,7 @@
         "profile": "Profile",
         "settings": "Settings",
         "history": "History",
+        "messages": "Messages",
         "logout": "Logout",
         "language": "Language",
         "roles": {
@@ -140,6 +141,10 @@
         "trust": {
             "title": "Trust & Safety",
             "description": "Read about our trust and safety policies and how we keep the community safe."
+        },
+        "messages": {
+            "title": "Messages",
+            "description": "Your direct messages and conversations."
         },
         "privacy": {
             "title": "Privacy Policy",
@@ -1028,6 +1033,8 @@
             "bookingDetails": "Booking Details"
         },
         "chat": {
+            "addCaptionOptional": "Add a caption (optional)",
+            "attachImage": "Attach Image",
             "sendFailed": "Failed to send message.",
             "title": "Messages",
             "placeholder": "Type a message...",

@@ -15,7 +15,8 @@ import {
     IconSettings,
     IconMapPin,
     IconNotification,
-    IconBell
+    IconBell,
+    IconMessage
 } from '@tabler/icons-react';
 import { Code, Group } from '@mantine/core';
 import classes from './DashboardNavbar.module.css';
@@ -33,6 +34,7 @@ export function DashboardNavbar({ drawerOpened, toggleDrawer, closeDrawer }: { d
     const data = [
         { link: '/dashboard', label: t('dashboard.navbar.dashboard'), icon: IconLayoutDashboard },
         { link: '/history', label: t('dashboard.navbar.history'), icon: IconHistory },
+        { link: '/messages', label: t('headerMenu.messages'), icon: IconMessage },
         { link: '/roleSettings', label: t('dashboard.navbar.roleSettings'), icon: IconBell },
         ...(role === 'driver' ? [
             { link: '/trip-templates', label: t('dashboard.navbar.tripTemplates'), icon: IconMapPin },

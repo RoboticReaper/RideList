@@ -14,12 +14,13 @@
 export function redactName(name: string | null | undefined): string {
     if (!name) return 'Anon';
 
-    const firstChar = name.charAt(0);
-    const isEnglish = /^[a-zA-Z]$/.test(firstChar);
+    // const firstChar = name.charAt(0);
+    // const isEnglish = /^[a-zA-Z]$/.test(firstChar);
 
-    if (isEnglish) {
-        return name.substring(0, 3) + '***';
-    } else {
-        return name.substring(0, 1) + '***';
-    }
+    // if (isEnglish) {
+    //     return name.substring(0, 3) + '***';
+    // } else {
+    //     return name.substring(0, 1) + '***';
+    // }
+    return name;
 }

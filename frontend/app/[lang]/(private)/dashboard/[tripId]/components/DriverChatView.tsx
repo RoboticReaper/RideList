@@ -2,9 +2,9 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { Box, Loader, Alert, Paper, Textarea, Button, Group, Text, Stack, Modal, ScrollArea, Avatar, ActionIcon, TextInput, Switch } from '@mantine/core';
+import { Box, Loader, Alert, Paper, Textarea, Button, Group, Text, Stack, Modal, ScrollArea, Avatar, ActionIcon, TextInput, Switch, Image, FileButton, CloseButton } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconSpeakerphone, IconSend, IconHistory, IconCheck, IconX, IconArrowLeft, IconWorld } from '@tabler/icons-react';
+import { IconSpeakerphone, IconSend, IconHistory, IconCheck, IconX, IconArrowLeft, IconWorld, IconPhoto } from '@tabler/icons-react';
 import { ChatSubjectList } from './ChatSubjectList';
 import { ChatInterface } from './ChatInterface';
 import { ThreadListView, Thread, extractThreadsFromMessages } from './ThreadListView';
@@ -48,6 +48,8 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
     const [viewingAnnouncements, setViewingAnnouncements] = useState(false);
     const [announcements, setAnnouncements] = useState<any[]>([]);
     const [loadingAnnouncements, setLoadingAnnouncements] = useState(false);
+    const [announcementImage, setAnnouncementImage] = useState<string | null>(null);
+    const announcementFileResetRef = useRef<() => void>(null);
 
     // URL sync tracking - track previous values to detect changes
     const prevChatRecipient = useRef<string | null>(null);
@@ -58,6 +60,7 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
     const [showPublicReplyModal, setShowPublicReplyModal] = useState(false);
     const [publicReplyText, setPublicReplyText] = useState('');
     const [sendingPublicReply, setSendingPublicReply] = useState(false);
+    const [publicReplyImageData, setPublicReplyImageData] = useState<string | undefined>(undefined);
 
     // Fetch Riders (Subjects)
     const fetchRiders = useCallback(async () => {
@@ -192,16 +195,23 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
         if (!user || !activeRider) return;
         try {
             const token = await user.getIdToken();
-            const res = await fetch(`/api/trips/${tripId}/chat`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!res.ok) throw new Error("Failed to load chat");
-            const data = await res.json();
+            const [tripRes, dmRes] = await Promise.all([
+                fetch(`/api/trips/${tripId}/chat`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`/api/user/chat?other_user_id=${activeRider.rider_id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+            ]);
+
+            if (!tripRes.ok) throw new Error("Failed to load trip chat");
+            const tripData = await tripRes.json();
+            const dmData = dmRes.ok ? await dmRes.json() : { messages: [] };
 
             // Filter messages relevant to this rider
-            const msgMap = new Map(data.messages.map((m: any) => [m.id, m]));
+            const msgMap = new Map(tripData.messages.map((m: any) => [m.id, m]));
 
-            const riderMessages = data.messages.filter((m: any) => {
+            const tripRiderMessages = tripData.messages.filter((m: any) => {
                 const isDirect = (m.sender_id === activeRider.rider_id || m.receiver_id === activeRider.rider_id);
                 if (isDirect) return true;
 
@@ -217,6 +227,17 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
                 ...m,
                 is_me: m.sender_id === user.uid
             }));
+
+            const globalDMs = dmData.messages.map((m: any) => ({
+                ...m,
+                is_me: m.sender_id === user.uid,
+                is_global_dm: true,
+                message_type: m.message_type || 'dm_private'
+            }));
+
+            const riderMessages = [...tripRiderMessages, ...globalDMs].sort((a, b) =>
+                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            );
 
             setAllMessages(riderMessages);
 
@@ -262,13 +283,8 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
         }
 
         if (activeThread.type === 'dm') {
-            // Show DM messages and followups to the first DM
-            const firstDm = allMessages.find(m => m.message_type === 'dm_private');
-            const firstDmId = firstDm?.id;
-            const dms = allMessages.filter(m =>
-                m.message_type === 'dm_private' ||
-                (m.message_type === 'followup' && m.parent_message_id === firstDmId)
-            );
+            // Show global DMs
+            const dms = allMessages.filter(m => m.is_global_dm);
             setThreadMessages(dms);
         } else if (activeThread.type === 'question') {
             // Show the question and all replies to it
@@ -290,70 +306,65 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
         }
     }, [activeRider, activeThread, fetchChatForRider]);
 
-    const sendMessage = async (content: string) => {
+    const sendMessage = async (content: string, replyToMessageId?: string, imageData?: string) => {
         if (!user || !activeRider) return;
         setSending(true);
         try {
             const token = await user.getIdToken();
 
-            let payload: any;
-            if (activeThread?.type === 'question') {
-                // Reply to question as private answer
-                payload = {
-                    content,
-                    message_type: 'answer_private',
-                    parent_message_id: activeThread.parentMessageId,
-                    receiver_id: activeRider.rider_id
-                };
-            } else {
-                // Regular DM - check if there's already a first DM message
-                const firstDm = allMessages.find(m => m.message_type === 'dm_private');
+            const sendSingleMessage = async (msgContent: string, msgImageData?: string) => {
+                let payload: any;
+                let targetUrl = `/api/trips/${tripId}/chat`;
 
-                if (firstDm) {
-                    // There's already a DM thread - send as followup
+                if (activeThread?.type === 'question') {
                     payload = {
-                        content,
-                        message_type: 'dm_private',
-                        parent_message_id: firstDm.id,
-                        receiver_id: activeRider.rider_id
+                        content: msgContent || '📷 Image',
+                        message_type: 'answer_private',
+                        parent_message_id: activeThread.parentMessageId,
+                        receiver_id: activeRider.rider_id,
+                        ...(msgImageData && { image_data: msgImageData })
                     };
                 } else {
-                    // First DM message - no parent
+                    targetUrl = '/api/user/chat';
                     payload = {
-                        content,
-                        message_type: 'dm_private',
-                        receiver_id: activeRider.rider_id
+                        content: msgContent || '📷 Image',
+                        message_type: 'text',
+                        context_trip_id: tripId,
+                        receiver_id: activeRider.rider_id,
+                        ...(replyToMessageId && { parent_message_id: replyToMessageId }),
+                        ...(msgImageData && { image_data: msgImageData })
                     };
                 }
-            }
 
-            const res = await fetch(`/api/trips/${tripId}/chat`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (!res.ok) {
-                const errorData = await res.json();
-                notifications.show({
-                    title: t('common.error') || 'Error',
-                    message: errorData.error || t('tripDetails.chat.sendFailed') || 'Failed to send message',
-                    color: 'red',
-                    icon: <IconX size={16} />,
-                    autoClose: 5000
+                const res = await fetch(targetUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
                 });
-                return;
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || t('tripDetails.chat.sendFailed') || 'Failed to send message');
+                }
+            };
+
+            if (imageData && content.trim()) {
+                // Send image first, then text as separate messages
+                await sendSingleMessage('', imageData);
+                await sendSingleMessage(content.trim());
+            } else {
+                await sendSingleMessage(content, imageData);
             }
 
             await fetchChatForRider();
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
             notifications.show({
                 title: t('common.error') || 'Error',
-                message: t('tripDetails.chat.sendFailed') || 'Failed to send message',
+                message: err.message || t('tripDetails.chat.sendFailed') || 'Failed to send message',
                 color: 'red',
                 icon: <IconX size={16} />,
                 autoClose: 5000
@@ -364,48 +375,55 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
     };
 
     const sendAnnouncement = async () => {
-        if (!user || !announcementText.trim()) return;
+        if (!user || (!announcementText.trim() && !announcementImage)) return;
         setSendingAnnouncement(true);
         try {
             const token = await user.getIdToken();
-            const payload = {
-                content: announcementText.trim(),
-                message_type: 'announcement'
+
+            const sendSingleAnnouncement = async (content: string, imageData?: string) => {
+                const payload: any = {
+                    content: content || '📷 Image',
+                    message_type: 'announcement',
+                    ...(imageData && { image_data: imageData })
+                };
+
+                const res = await fetch(`/api/trips/${tripId}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || t('tripDetails.chat.announcementFailed') || 'Failed to send announcement');
+                }
             };
 
-            const res = await fetch(`/api/trips/${tripId}/chat`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (res.ok) {
-                setAnnouncementText('');
-                notifications.show({
-                    title: t('tripDetails.chat.announcementSent') || 'Announcement Sent',
-                    message: t('tripDetails.chat.announcementSentDesc') || 'Your announcement has been sent to all riders',
-                    color: 'green',
-                    icon: <IconCheck size={16} />,
-                    autoClose: 3000
-                });
+            if (announcementImage && announcementText.trim()) {
+                await sendSingleAnnouncement('', announcementImage);
+                await sendSingleAnnouncement(announcementText.trim());
             } else {
-                const errorData = await res.json();
-                notifications.show({
-                    title: t('common.error') || 'Error',
-                    message: errorData.error || t('tripDetails.chat.announcementFailed') || 'Failed to send announcement',
-                    color: 'red',
-                    icon: <IconX size={16} />,
-                    autoClose: 5000
-                });
+                await sendSingleAnnouncement(announcementText.trim(), announcementImage ?? undefined);
             }
-        } catch (err) {
+
+            setAnnouncementText('');
+            setAnnouncementImage(null);
+            announcementFileResetRef.current?.();
+            notifications.show({
+                title: t('tripDetails.chat.announcementSent') || 'Announcement Sent',
+                message: t('tripDetails.chat.announcementSentDesc') || 'Your announcement has been sent to all riders',
+                color: 'green',
+                icon: <IconCheck size={16} />,
+                autoClose: 3000
+            });
+        } catch (err: any) {
             console.error(err);
             notifications.show({
                 title: t('common.error') || 'Error',
-                message: t('tripDetails.chat.announcementFailed') || 'Failed to send announcement',
+                message: err.message || t('tripDetails.chat.announcementFailed') || 'Failed to send announcement',
                 color: 'red',
                 icon: <IconX size={16} />,
                 autoClose: 5000
@@ -460,9 +478,17 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
 
     const deleteMessage = useCallback(async (messageId: string) => {
         if (!user) return;
+
+        const msg = allMessages.find(m => m.id === messageId) || announcements.find(m => m.id === messageId);
+        const isGlobalDm = msg?.is_global_dm === true;
+
         try {
             const token = await user.getIdToken();
-            const res = await fetch(`/api/trips/${tripId}/chat?message_id=${messageId}`, {
+            const targetUrl = isGlobalDm
+                ? `/api/user/chat?message_id=${messageId}`
+                : `/api/trips/${tripId}/chat?message_id=${messageId}`;
+
+            const res = await fetch(targetUrl, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -493,7 +519,7 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
                 autoClose: 5000
             });
         }
-    }, [user, tripId, fetchAnnouncements, viewingAnnouncements, activeRider, fetchChatForRider, t]);
+    }, [user, tripId, allMessages, announcements, fetchAnnouncements, viewingAnnouncements, activeRider, fetchChatForRider, t]);
 
     // Get the original question content for the current thread
     const getOriginalQuestion = () => {
@@ -503,53 +529,59 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
     };
 
     const sendPublicReply = async () => {
-        if (!user || !activeRider || !activeThread || !publicReplyText.trim()) return;
+        if (!user || !activeRider || !activeThread || (!publicReplyText.trim() && !publicReplyImageData)) return;
         setSendingPublicReply(true);
         try {
             const token = await user.getIdToken();
-            const payload = {
-                content: publicReplyText.trim(),
-                message_type: 'answer_public',
-                parent_message_id: activeThread.parentMessageId,
-                receiver_id: activeRider.rider_id
+            const sendRequest = async (content: string, imageData?: string) => {
+                const payload = {
+                    content: content || '📷 Image',
+                    message_type: 'answer_public',
+                    parent_message_id: activeThread.parentMessageId,
+                    receiver_id: activeRider.rider_id,
+                    ...(imageData && { image_data: imageData })
+                };
+
+                const res = await fetch(`/api/trips/${tripId}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || t('tripDetails.chat.sendFailed') || 'Failed to send reply');
+                }
             };
 
-            const res = await fetch(`/api/trips/${tripId}/chat`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (res.ok) {
-                setPublicReplyText('');
-                setShowPublicReplyModal(false);
-                setPublicReplyEnabled(false);
-                notifications.show({
-                    title: t('tripDetails.chat.publicReplySent') || 'Public Reply Sent',
-                    message: t('tripDetails.chat.publicReplySentDesc') || 'Your reply is now visible to all riders',
-                    color: 'green',
-                    icon: <IconCheck size={16} />,
-                    autoClose: 3000
-                });
-                await fetchChatForRider();
+            if (publicReplyImageData && publicReplyText.trim()) {
+                await sendRequest('', publicReplyImageData);
+                await sendRequest(publicReplyText.trim());
             } else {
-                const errorData = await res.json();
-                notifications.show({
-                    title: t('common.error') || 'Error',
-                    message: errorData.error || t('tripDetails.chat.sendFailed') || 'Failed to send reply',
-                    color: 'red',
-                    icon: <IconX size={16} />,
-                    autoClose: 5000
-                });
+                await sendRequest(publicReplyText.trim(), publicReplyImageData);
             }
-        } catch (err) {
+
+            // If we reached here without throwing, it was successful
+            setPublicReplyText('');
+            setPublicReplyImageData(undefined);
+            setShowPublicReplyModal(false);
+            setPublicReplyEnabled(false);
+            notifications.show({
+                title: t('tripDetails.chat.publicReplySent') || 'Public Reply Sent',
+                message: t('tripDetails.chat.publicReplySentDesc') || 'Your reply is now visible to all riders',
+                color: 'green',
+                icon: <IconCheck size={16} />,
+                autoClose: 3000
+            });
+            await fetchChatForRider();
+        } catch (err: any) {
             console.error(err);
             notifications.show({
                 title: t('common.error') || 'Error',
-                message: t('tripDetails.chat.sendFailed') || 'Failed to send reply',
+                message: err.message || t('tripDetails.chat.sendFailed') || 'Failed to send reply',
                 color: 'red',
                 icon: <IconX size={16} />,
                 autoClose: 5000
@@ -593,14 +625,15 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
         const isQuestionThread = activeThread.type === 'question';
 
         // Custom send handler that shows modal when public toggle is on
-        const handleSend = async (content: string) => {
+        const handleSend = async (content: string, replyToMessageId?: string, imageData?: string) => {
             if (isQuestionThread && publicReplyEnabled) {
                 // Store the content and show confirmation modal
                 setPublicReplyText(content);
+                setPublicReplyImageData(imageData);
                 setShowPublicReplyModal(true);
             } else {
                 // Normal send
-                await sendMessage(content);
+                await sendMessage(content, replyToMessageId, imageData);
             }
         };
 
@@ -628,6 +661,7 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
                     onClose={() => {
                         setShowPublicReplyModal(false);
                         setPublicReplyText('');
+                        setPublicReplyImageData(undefined);
                     }}
                     zIndex={300}
                     title={
@@ -656,7 +690,12 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
                             <Text size="xs" c="dimmed" mb="xs" fw={600}>
                                 {t('tripDetails.chat.yourReply') || 'Your Reply'}
                             </Text>
-                            <Text size="sm">{publicReplyText}</Text>
+                            {publicReplyImageData && (
+                                <Image src={publicReplyImageData} mah={120} fit="contain" radius="sm" mb={publicReplyText.trim() ? 'xs' : 0} />
+                            )}
+                            {publicReplyText.trim() && (
+                                <Text size="sm">{publicReplyText}</Text>
+                            )}
                         </Paper>
 
                         <Group justify="flex-end">
@@ -665,6 +704,7 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
                                 onClick={() => {
                                     setShowPublicReplyModal(false);
                                     setPublicReplyText('');
+                                    setPublicReplyImageData(undefined);
                                     setPublicReplyEnabled(false);
                                 }}
                             >
@@ -675,7 +715,7 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
                                 leftSection={<IconWorld size={14} />}
                                 onClick={sendPublicReply}
                                 loading={sendingPublicReply}
-                                disabled={!publicReplyText.trim()}
+                                disabled={!publicReplyText.trim() && !publicReplyImageData}
                             >
                                 {t('tripDetails.chat.sendPublicReply') || 'Send Public Reply'}
                             </Button>
@@ -731,13 +771,37 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
                     minRows={2}
                     autosize
                 />
+                {announcementImage && (
+                    <Paper p="xs" mt="xs" bg="gray.1" radius="sm" withBorder style={{ position: 'relative', display: 'inline-block' }}>
+                        <CloseButton
+                            size="sm"
+                            style={{ position: 'absolute', top: 4, right: 4, zIndex: 2 }}
+                            onClick={() => { setAnnouncementImage(null); announcementFileResetRef.current?.(); }}
+                        />
+                        <Image src={announcementImage} mah={100} fit="contain" radius="sm" />
+                    </Paper>
+                )}
                 <Group justify="flex-end" mt="sm">
+                    <FileButton resetRef={announcementFileResetRef} onChange={(file) => {
+                        if (!file) return;
+                        if (!file.type.startsWith('image/')) return;
+                        if (file.size > 10 * 1024 * 1024) return;
+                        const reader = new FileReader();
+                        reader.onload = (e) => setAnnouncementImage(e.target?.result as string);
+                        reader.readAsDataURL(file);
+                    }} accept="image/*">
+                        {(props) => (
+                            <Button variant="subtle" size="xs" leftSection={<IconPhoto size={14} />} {...props} disabled={sendingAnnouncement}>
+                                {t('tripDetails.chat.attachImage') || 'Attach Image'}
+                            </Button>
+                        )}
+                    </FileButton>
                     <Button
                         size="xs"
                         leftSection={<IconSend size={14} />}
                         onClick={sendAnnouncement}
                         loading={sendingAnnouncement}
-                        disabled={!announcementText.trim()}
+                        disabled={!announcementText.trim() && !announcementImage}
                     >
                         {t('tripDetails.chat.sendAnnouncement')}
                     </Button>

@@ -1,7 +1,8 @@
 'use client'
 
 import { TripInputBar } from '@/components/TripInputBar/TripInputBar';
-import { Container, Title, Button, Collapse, Stack, Card, Text, Group, Badge, SimpleGrid, Box, Loader, Center } from '@mantine/core';
+import { Container, Title, Button, Collapse, Stack, Card, Text, Box, Loader, Center } from '@mantine/core';
+import { TrendCard } from './components/TrendCard';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { useDisclosure } from '@mantine/hooks';
@@ -185,78 +186,15 @@ export default function NewRidePage() {
                             ) : (
                                 <Stack gap="sm">
                                     {trends.slice(0, 10).map((trend, index) => (
-                                        <Card key={index} withBorder shadow="xs" p="sm" radius="sm">
-                                            <Group justify="space-between" mb="xs">
-                                                <Group gap="xs">
-                                                    <IconMapPin size={16} />
-                                                    <Text size="sm" fw={500}>
-                                                        {trend.fromText} → {trend.toText}
-                                                    </Text>
-                                                </Group>
-                                                <Group gap="xs">
-                                                    <Badge color="blue" size="sm">
-                                                        #{index + 1}
-                                                    </Badge>
-                                                    <Button
-                                                        size="xs"
-                                                        variant="light"
-                                                        color="green"
-                                                        leftSection={<IconArrowRight size={14} />}
-                                                        onClick={() => handleApplyTrend(trend)}
-                                                    >
-                                                        {t('rides.trends.apply')}
-                                                    </Button>
-                                                </Group>
-                                            </Group>
-                                            <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
-                                                <Box>
-                                                    <Group gap={4}>
-                                                        <IconCalendar size={14} />
-                                                        <Text size="xs" c="dimmed">{t('rides.trends.dateTime')}</Text>
-                                                    </Group>
-                                                    <Text size="sm" fw={500}>
-                                                        {formatDate(trend.date)}
-                                                    </Text>
-                                                    <Text size="xs" c="dimmed">
-                                                        {formatTimePeriod(trend.timeCategory)}
-                                                    </Text>
-                                                </Box>
-                                                <Box>
-                                                    <Group gap={4}>
-                                                        <IconUsers size={14} />
-                                                        <Text size="xs" c="dimmed">{t('rides.trends.demand')}</Text>
-                                                    </Group>
-                                                    <Text size="sm" fw={500}>
-                                                        {trend.demand.totalSeats} {t('rides.trends.seats')}
-                                                    </Text>
-                                                    <Text size="xs" c="dimmed">
-                                                        {trend.demand.requestCount} {t('rides.trends.requests')}
-                                                    </Text>
-                                                </Box>
-                                                <Box>
-                                                    <Group gap={4}>
-                                                        <IconCoin size={14} />
-                                                        <Text size="xs" c="dimmed">{t('rides.trends.priceRange')}</Text>
-                                                    </Group>
-                                                    <Text size="sm" fw={500}>
-                                                        {trend.priceRange.min != null && trend.priceRange.max != null
-                                                            ? `$${trend.priceRange.min} - $${trend.priceRange.max}`
-                                                            : '-'}
-                                                    </Text>
-                                                    {trend.priceRange.avg != null && (
-                                                        <Text size="xs" c="dimmed">
-                                                            {t('rides.trends.avg')}: ${trend.priceRange.avg}
-                                                        </Text>
-                                                    )}
-                                                </Box>
-                                                <Box>
-                                                    <Text size="xs" c="dimmed">{t('rides.trends.demandLevel')}</Text>
-                                                    <Badge color={getDemandColor(trend.demand.demandLevel)} variant="light">
-                                                        {t(`rides.trends.levels.${trend.demand.demandLevel}`)}
-                                                    </Badge>
-                                                </Box>
-                                            </SimpleGrid>
-                                        </Card>
+                                        <TrendCard
+                                            key={index}
+                                            trend={trend}
+                                            index={index}
+                                            onApply={handleApplyTrend}
+                                            formatDate={formatDate}
+                                            formatTimePeriod={formatTimePeriod}
+                                            getDemandColor={getDemandColor}
+                                        />
                                     ))}
                                 </Stack>
                             )}
