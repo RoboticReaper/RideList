@@ -14,6 +14,7 @@ import {
   IconSettings,
   IconBell,
   IconHistory,
+  IconMessage,
 } from '@tabler/icons-react';
 import {
   ActionIcon,
@@ -174,6 +175,13 @@ export function HeaderMenu() {
                         </Menu.Item>
                         <Menu.Item
                           component={LocalizedLink}
+                          href="/messages"
+                          leftSection={<IconMessage size={14} />}
+                        >
+                          {t('headerMenu.messages')}
+                        </Menu.Item>
+                        <Menu.Item
+                          component={LocalizedLink}
                           href="/history"
                           leftSection={<IconHistory size={14} />}
                         >
@@ -322,6 +330,18 @@ export function HeaderMenu() {
                   onClick={closeDrawer}
                 >
                   {t('headerMenu.profile')}
+                </Button>
+                <Button
+                  fullWidth
+                  variant="subtle"
+                  leftSection={<IconMessage size={14} />}
+                  justify="start"
+                  mb="xs"
+                  component={LocalizedLink}
+                  href="/messages"
+                  onClick={closeDrawer}
+                >
+                  {t('headerMenu.messages')}
                 </Button>
                 <Button
                   fullWidth
