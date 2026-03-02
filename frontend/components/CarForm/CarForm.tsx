@@ -9,6 +9,7 @@ import { notifications } from '@mantine/notifications';
 import { IconCar, IconDeviceFloppy, IconTrash, IconPhoto, IconX } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
+import { compressImage } from '@/utils/compressImage';
 
 interface CarFormProps {
     initialData?: any;
@@ -40,17 +41,19 @@ export default function CarForm({ initialData, isEditing = false, carId }: CarFo
         initialData?.pic4 || null,
     ]);
 
-    const handleCarPicUpload = (file: File | null, index: number) => {
+    const handleCarPicUpload = async (file: File | null, index: number) => {
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
+        try {
+            const compressedBase64 = await compressImage(file);
             setCarPics(prev => {
                 const next = [...prev];
-                next[index] = reader.result as string;
+                next[index] = compressedBase64;
                 return next;
             });
-        };
-        reader.readAsDataURL(file);
+        } catch (error) {
+            console.error('Image compression failed:', error);
+            notifications.show({ title: t('rides.errors.errorTitle'), message: t('cars.form.notifications.saveError'), color: 'red' });
+        }
     };
 
     const removeCarPic = (index: number) => {
@@ -73,6 +76,31 @@ export default function CarForm({ initialData, isEditing = false, carId }: CarFo
         setLoading(true);
         try {
             const token = await user.getIdToken();
+
+            // 1. Upload any new base64 images individually first
+            const uploadedUrls = [...carPics];
+            for (let i = 0; i < uploadedUrls.length; i++) {
+                const picData = uploadedUrls[i];
+                if (picData && picData.startsWith('data:')) {
+                    const uploadRes = await fetch('/api/user/cars/upload-image', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ image: picData })
+                    });
+
+                    if (!uploadRes.ok) {
+                        throw new Error('Failed to upload image ' + (i + 1));
+                    }
+
+                    const uploadData = await uploadRes.json();
+                    uploadedUrls[i] = uploadData.url;
+                }
+            }
+
+            // 2. Submit the car data with the URLs
             const payload = {
                 make,
                 model,
@@ -82,10 +110,10 @@ export default function CarForm({ initialData, isEditing = false, carId }: CarFo
                 seats: Number(seats),
                 big_luggage: Number(bigLuggage),
                 small_luggage: Number(smallLuggage),
-                pic1: carPics[0],
-                pic2: carPics[1],
-                pic3: carPics[2],
-                pic4: carPics[3],
+                pic1: uploadedUrls[0],
+                pic2: uploadedUrls[1],
+                pic3: uploadedUrls[2],
+                pic4: uploadedUrls[3],
             };
 
             const url = isEditing ? `/api/user/cars/${carId}` : '/api/user/cars';

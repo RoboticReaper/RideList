@@ -19,7 +19,7 @@ import { parseFlexibility, parsePayWindow, parseCutoffTimeNullable, parseStartCh
 import { RadiusMap } from '../Rides/RadiusMap';
 import { DEFAULT_AUTOCOMPLETE_LOCATIONS } from '@/utils/defaultLocations';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-
+import { compressImage } from '@/utils/compressImage';
 
 // Type for Place Prediction from New API
 interface PlacePrediction {
@@ -116,17 +116,19 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
     const [carSeats, setCarSeats] = useState<number | ''>('');
     const [carPics, setCarPics] = useState<(string | null)[]>([null, null, null, null]);
 
-    const handleCarPicUpload = (file: File | null, index: number) => {
+    const handleCarPicUpload = async (file: File | null, index: number) => {
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
+        try {
+            const compressedBase64 = await compressImage(file);
             setCarPics(prev => {
                 const next = [...prev];
-                next[index] = reader.result as string;
+                next[index] = compressedBase64;
                 return next;
             });
-        };
-        reader.readAsDataURL(file);
+        } catch (error) {
+            console.error('Image compression failed:', error);
+            notifications.show({ title: t('rides.errors.errorTitle'), message: t('rides.errors.postingTrip'), color: 'red' });
+        }
     };
 
     const removeCarPic = (index: number) => {
@@ -1096,6 +1098,30 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
             const isAnyFieldFilled = carMake.trim() || carModel.trim() || carColor.trim() || carYear.trim() || carPlate.trim() || carBigLuggage !== '' || carSmallLuggage !== '' || carSeats !== '';
 
             if (isAnyFieldFilled) {
+                const token = await user.getIdToken();
+                // 1. Upload any new base64 images individually first
+                const uploadedUrls = [...carPics];
+                for (let i = 0; i < uploadedUrls.length; i++) {
+                    const picData = uploadedUrls[i];
+                    if (picData && typeof picData === 'string' && picData.startsWith('data:')) {
+                        const uploadRes = await fetch('/api/user/cars/upload-image', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ image: picData })
+                        });
+
+                        if (!uploadRes.ok) {
+                            throw new Error('Failed to upload car image ' + (i + 1));
+                        }
+
+                        const uploadData = await uploadRes.json();
+                        uploadedUrls[i] = uploadData.url;
+                    }
+                }
+
                 payload.car = {
                     make: carMake,
                     model: carModel,
@@ -1105,10 +1131,10 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
                     big_luggage: carBigLuggage !== '' ? carBigLuggage : null,
                     small_luggage: carSmallLuggage !== '' ? carSmallLuggage : null,
                     seats: carSeats !== '' ? Number(carSeats) : null,
-                    pic1: carPics[0],
-                    pic2: carPics[1],
-                    pic3: carPics[2],
-                    pic4: carPics[3],
+                    pic1: uploadedUrls[0],
+                    pic2: uploadedUrls[1],
+                    pic3: uploadedUrls[2],
+                    pic4: uploadedUrls[3],
                 };
             } else {
                 // Treat as "No Vehicle" if all fields are empty
