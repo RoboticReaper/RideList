@@ -232,7 +232,7 @@ export async function GET(
 
         // Identity
         const displayName = canViewReceipt ? row.driver_name : redactName(row.driver_name);
-        const photoUrl = canViewReceipt ? row.driver_photo_url : null;
+        const photoUrl = row.driver_photo_url;
 
         // Contact Fields
         const driverPhone = canViewPhone ? row.driver_phone : null;

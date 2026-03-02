@@ -75,7 +75,7 @@ export async function GET(req: Request) {
             return {
                 otherUserId: row.other_user_id,
                 otherUserName: isVisible ? row.other_user_name : redactName(row.other_user_name),
-                otherUserPhotoUrl: isVisible ? row.other_user_photo_url : null,
+                otherUserPhotoUrl: row.other_user_photo_url,
                 lastMessage: {
                     id: row.last_message_id,
                     content: row.last_message_content,

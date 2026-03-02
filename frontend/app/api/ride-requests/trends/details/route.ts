@@ -130,7 +130,7 @@ export async function GET(req: Request) {
                 requester: {
                     id: row.requester_id,
                     name: isVisible ? row.requester_name : redactName(row.requester_name),
-                    photoUrl: isVisible ? row.requester_photo_url : null,
+                    photoUrl: row.requester_photo_url,
                 }
             };
         });

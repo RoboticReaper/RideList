@@ -193,7 +193,7 @@ export async function GET(
 
                 // Identity
                 rider_name: displayName,
-                rider_photo_url: identityVisible ? row.rider_photo_url : null,
+                rider_photo_url: row.rider_photo_url,
                 rider_rating: row.rider_rating ?? null,
                 rider_completed_rides: row.rider_completed_rides ?? 0,
 

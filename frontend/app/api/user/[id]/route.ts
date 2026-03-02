@@ -48,8 +48,9 @@ export async function GET(
 
         // 3. Determine Visibility
         // Levels: 
-        // 0 = NONE (Redacted Name, No Phone, No Photo) -> "The Stranger/Past History" View
-        // 2 = FULL (Full Name, Full Phone, Photo) -> "The Active/Recent" View
+        // 0 = NONE (Redacted Name, No Phone) -> "The Stranger/Past History" View
+        // 2 = FULL (Full Name, Full Phone) -> "The Active/Recent" View
+        // Note: Photo is always visible regardless of access level
         let accessLevel = 0;
 
         if (requesterUser) {
@@ -148,10 +149,8 @@ export async function GET(
         // Level 0: null
         const displayPhone = hasPhoneAccess ? profile.phone : null;
 
-        // Photo:
-        // Level 2/Owner: URL
-        // Level 0: null (Privacy)
-        const displayPhoto = (accessLevel === 2 || isOwner) ? profile.photo_url : null;
+        // Photo: Always visible
+        const displayPhoto = profile.photo_url;
 
         return NextResponse.json({
             id: profile.id,

@@ -191,7 +191,7 @@ export async function GET(request: NextRequest) {
                 pg.name AS driver_name,
                 pg.verified AS driver_verified,
                 pg.community_driver AS driver_community_driver,
-                -- pg.photo_url AS driver_photo_url, -- OMITTED for privacy
+                pg.photo_url AS driver_photo_url,
                 pd.rating_cached AS driver_rating,
                 pd.completed_trips AS driver_completed_trips,
                 (${scoreCalculation}) AS score
@@ -212,7 +212,7 @@ export async function GET(request: NextRequest) {
         const rows = result.rows.map(row => ({
             ...row,
             driver_name: redactName(row.driver_name),
-            driver_photo_url: null // Explicitly nullify even if we didn't select it, to match interface if needed
+            driver_photo_url: row.driver_photo_url || null
         }));
 
         return NextResponse.json({ rides: rows, page, limit });
