@@ -198,7 +198,6 @@ export default function CarForm({ initialData, isEditing = false, carId }: CarFo
                             value={seats}
                             onChange={(v) => setSeats(v === '' ? '' : Number(v))}
                             min={1}
-                            max={20}
                         />
                         <NumberInput
                             label={t('cars.form.bigLuggage')}
