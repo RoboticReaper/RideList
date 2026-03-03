@@ -11,6 +11,7 @@ import { ThreadListView, Thread, extractThreadsFromMessages } from './ThreadList
 import { useAuth } from '@/components/firebase/AuthContext';
 import { useTranslation } from 'react-i18next';
 import dayjs from '@/utils/dateUtils';
+import { compressImage } from '@/utils/compressImage';
 
 interface DriverChatViewProps {
     tripId: string;
@@ -782,13 +783,16 @@ export function DriverChatView({ tripId, manualRefreshId }: DriverChatViewProps)
                     </Paper>
                 )}
                 <Group justify="flex-end" mt="sm">
-                    <FileButton resetRef={announcementFileResetRef} onChange={(file) => {
+                    <FileButton resetRef={announcementFileResetRef} onChange={async (file) => {
                         if (!file) return;
                         if (!file.type.startsWith('image/')) return;
                         if (file.size > 10 * 1024 * 1024) return;
-                        const reader = new FileReader();
-                        reader.onload = (e) => setAnnouncementImage(e.target?.result as string);
-                        reader.readAsDataURL(file);
+                        try {
+                            const compressedBase64 = await compressImage(file);
+                            setAnnouncementImage(compressedBase64);
+                        } catch (error) {
+                            console.error('Announcement image compression failed:', error);
+                        }
                     }} accept="image/*">
                         {(props) => (
                             <Button variant="subtle" size="xs" leftSection={<IconPhoto size={14} />} {...props} disabled={sendingAnnouncement}>

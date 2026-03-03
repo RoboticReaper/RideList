@@ -5,6 +5,7 @@ import { Stack, Group, Textarea, ActionIcon, Text, Paper, ScrollArea, Avatar, Bo
 import { IconSend, IconArrowLeft, IconWorld, IconTrash, IconPhoto, IconArrowBackUp, IconArrowBack, IconArrowNarrowUp, IconInfoCircle } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import dayjs from '@/utils/dateUtils';
+import { compressImage } from '@/utils/compressImage';
 
 interface Message {
     id: string;
@@ -91,16 +92,17 @@ export function ChatInterface({
         }
     }, [loading]);
 
-    const handleFileChange = (file: File | null) => {
+    const handleFileChange = async (file: File | null) => {
         if (!file) return;
         if (!file.type.startsWith('image/')) return;
         if (file.size > 10 * 1024 * 1024) return; // 10MB limit
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            setAttachedImage(e.target?.result as string);
-        };
-        reader.readAsDataURL(file);
+        try {
+            const compressedBase64 = await compressImage(file);
+            setAttachedImage(compressedBase64);
+        } catch (error) {
+            console.error('Image compression failed:', error);
+        }
     };
 
     const handleSend = async () => {

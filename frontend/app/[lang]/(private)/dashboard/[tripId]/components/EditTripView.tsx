@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { compressImage } from '@/utils/compressImage';
 import { Button, NumberInput, Stack, Textarea, Group, Switch, Select, Alert, MultiSelect, SimpleGrid, Title, Divider, Autocomplete, Loader, ActionIcon, TextInput, TagsInput, Accordion, Text, Anchor, FileButton, Image, Paper, Input } from '@mantine/core';
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications';
@@ -347,24 +348,19 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
     };
 
     // --- QR Code Helpers ---
-    const handleQRCodeUpload = (file: File | null, paymentMethod: string) => {
+    const handleQRCodeUpload = async (file: File | null, paymentMethod: string) => {
         if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const base64 = e.target?.result as string;
-            if (base64) {
-                setPaymentQRCodes(prev => ({ ...prev, [paymentMethod]: base64 }));
-            }
-        };
-        reader.onerror = () => {
+        try {
+            const compressedBase64 = await compressImage(file);
+            setPaymentQRCodes(prev => ({ ...prev, [paymentMethod]: compressedBase64 }));
+        } catch (error) {
+            console.error('QR code compression failed:', error);
             notifications.show({
                 title: t('rides.errors.qrUploadErrorTitle'),
                 message: t('rides.errors.qrUploadError'),
                 color: 'red'
             });
-        };
-        reader.readAsDataURL(file);
+        }
     };
 
     const removeQRCode = (paymentMethod: string) => {

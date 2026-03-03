@@ -7,6 +7,7 @@ import { IconDeviceFloppy, IconTrash, IconUpload } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { compressImage } from '@/utils/compressImage';
 
 import { parseFlexibilityNullable, parsePayWindowNullable, parseCutoffTimeNullable, parseStartCheckInNullable } from '@/utils/intervalParsers';
 
@@ -66,24 +67,19 @@ export function RuleTemplateForm({ templateId, initialData }: RuleTemplateFormPr
     );
 
     // QR Code helpers
-    const handleQRCodeUpload = (file: File | null, paymentMethod: string) => {
+    const handleQRCodeUpload = async (file: File | null, paymentMethod: string) => {
         if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const base64 = e.target?.result as string;
-            if (base64) {
-                setPaymentQRCodes(prev => ({ ...prev, [paymentMethod]: base64 }));
-            }
-        };
-        reader.onerror = () => {
+        try {
+            const compressedBase64 = await compressImage(file);
+            setPaymentQRCodes(prev => ({ ...prev, [paymentMethod]: compressedBase64 }));
+        } catch (error) {
+            console.error('QR code compression failed:', error);
             notifications.show({
                 title: t('rides.errors.qrUploadErrorTitle'),
                 message: t('rides.errors.qrUploadError'),
                 color: 'red'
             });
-        };
-        reader.readAsDataURL(file);
+        }
     };
 
     const removeQRCode = (paymentMethod: string) => {

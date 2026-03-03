@@ -838,23 +838,20 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
             return;
         }
 
-        // Convert File to base64
-        const reader = new FileReader();
-        reader.onload = () => {
-            const base64 = reader.result as string;
+        try {
+            const compressedBase64 = await compressImage(file);
             setPaymentQRCodes(prev => ({
                 ...prev,
-                [paymentMethod]: base64
+                [paymentMethod]: compressedBase64
             }));
-        };
-        reader.onerror = () => {
+        } catch (error) {
+            console.error('QR code compression failed:', error);
             notifications.show({
                 title: t('rides.errors.qrUploadErrorTitle'),
                 message: t('rides.errors.qrUploadError'),
                 color: 'red'
             });
-        };
-        reader.readAsDataURL(file);
+        }
     };
 
     const removeQRCode = (paymentMethod: string) => {

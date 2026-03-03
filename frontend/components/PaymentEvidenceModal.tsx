@@ -4,6 +4,7 @@ import { Modal, Stack, Text, TextInput, Button, Image, FileInput, Group } from '
 import { IconUpload, IconPhoto } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useState, useCallback } from 'react';
+import { compressImage } from '@/utils/compressImage';
 
 interface PaymentEvidenceModalProps {
     opened: boolean;
@@ -18,7 +19,7 @@ export function PaymentEvidenceModal({ opened, onClose, onSubmit, loading }: Pay
     const [evidenceText, setEvidenceText] = useState('');
     const [imageError, setImageError] = useState<string | null>(null);
 
-    const handleFileChange = useCallback((file: File | null) => {
+    const handleFileChange = useCallback(async (file: File | null) => {
         setImageError(null);
         if (!file) {
             setEvidenceImage(null);
@@ -37,11 +38,13 @@ export function PaymentEvidenceModal({ opened, onClose, onSubmit, loading }: Pay
             return;
         }
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            setEvidenceImage(e.target?.result as string);
-        };
-        reader.readAsDataURL(file);
+        try {
+            const compressedBase64 = await compressImage(file);
+            setEvidenceImage(compressedBase64);
+        } catch (error) {
+            console.error('Payment evidence image compression failed:', error);
+            setImageError('Failed to process image');
+        }
     }, [t]);
 
     const handleSubmit = async () => {

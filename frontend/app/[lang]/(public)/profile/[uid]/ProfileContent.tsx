@@ -8,6 +8,7 @@ import { updateProfile } from "firebase/auth";
 import { useTranslation } from 'react-i18next';
 import { IconCheck, IconPhone, IconCalendar, IconPencil, IconX, IconDeviceFloppy, IconCar, IconSteeringWheel, IconCamera, IconMessage } from '@tabler/icons-react';
 import dayjs, { CHICAGO_TZ } from '@/utils/dateUtils';
+import { compressImage } from '@/utils/compressImage';
 
 interface UserProfile {
     id: string;
@@ -78,15 +79,16 @@ export default function ProfilePage() {
         }
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPendingPhoto(reader.result as string);
+            try {
+                const compressedBase64 = await compressImage(file);
+                setPendingPhoto(compressedBase64);
                 setRemovePhoto(false);
-            };
-            reader.readAsDataURL(file);
+            } catch (error) {
+                console.error('Profile photo compression failed:', error);
+            }
         }
     };
 
