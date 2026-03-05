@@ -2,6 +2,8 @@
 import { MetadataRoute } from 'next';
 import { pool } from '@/app/api/lib/db';
 
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const BASE_URL = 'https://www.ridelist.app';
 
