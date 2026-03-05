@@ -844,19 +844,6 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                         {t(getBookingStatusConfig(b.status).labelKey)}
                         {b.status === 'removed' && b.removal_reason && `, (${t('tripDetails.manage.reasons.reason')}: ${b.removal_reason})`}
                         {b.picked_up && t('tripDetails.manage.status.pickedUpSuffix')}
-                        {b.status === 'pending_pay_confirmation_from_driver' && b.payment_evidence_url && (
-                            <Button
-                                size="compact-xs"
-                                variant="subtle"
-                                color="blue"
-                                ml={4}
-                                leftSection={<IconEye size={12} />}
-                                onClick={() => setEvidenceModal({ url: b.payment_evidence_url!, text: b.payment_evidence_text || '' })}
-                                styles={{ root: { padding: '0 4px', height: 20 } }}
-                            >
-                                {t('paymentEvidence.viewBtn' as any) || 'View'}
-                            </Button>
-                        )}
                     </Text>
                 </Table.Td>
                 <Table.Td>
@@ -872,6 +859,19 @@ export function ManageTripView({ tripId, tripStatus, trip, onStatusChange, lastR
                     <Text size="sm" style={{ overflowWrap: 'break-word', whiteSpace: 'normal' }}>
                         {b.intended_payment_method || t('common.none')}
                     </Text>
+                    {b.payment_evidence_url && (
+                        <Button
+                            size="compact-xs"
+                            variant="subtle"
+                            color="blue"
+                            mt={4}
+                            leftSection={<IconEye size={12} />}
+                            onClick={() => setEvidenceModal({ url: b.payment_evidence_url!, text: b.payment_evidence_text || '' })}
+                            styles={{ root: { padding: '0 4px', height: 20 } }}
+                        >
+                            {t('paymentEvidence.viewBtn' as any) || 'View'}
+                        </Button>
+                    )}
                 </Table.Td>
                 <Table.Td>
                     <Stack gap={0}>
