@@ -1852,7 +1852,7 @@
             "title": "安装应用",
             "description": "在您的设备上安装 RideList 以获得更好的体验。",
             "button": "安装应用",
-            "iosInstructions": "点击浏览器菜单中的“分享”按钮，然后选择“添加到主屏幕”。",
+            "iosInstructions": "点击Safari或Chrome浏览器菜单中的“分享”按钮，然后选择“添加到主屏幕”（可能需要先点击“更多”）。",
             "howToInstall": "如何安装"
         }
     },

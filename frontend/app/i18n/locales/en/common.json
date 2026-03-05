@@ -1852,7 +1852,7 @@
             "title": "Install App",
             "description": "Install RideList on your device for a better experience.",
             "button": "Install App",
-            "iosInstructions": "Tap the 'Share' button in your browser menu, then select 'Add to Home Screen'.",
+            "iosInstructions": "In Safari or Chrome, tap the 'Share' button, then select 'Add to Home Screen' (you may need to tap 'More' first).",
             "howToInstall": "How to install"
         }
     },
@@ -2402,8 +2402,9 @@
         "fixedBtn": "I Fixed It",
         "installRequiredTitle": "Install to Enable Push",
         "installRequiredMessage": "To receive push notifications on iOS, you must install this website to your home screen.",
-        "installGuideIOS1": "Tap the Share button",
-        "installGuideIOS2": "Select 'Add to Home Screen'",
+        "installGuideIOS1": "In Safari or Chrome, tap the Share button",
+        "installGuideIOS2": "If you don't see 'Add to Home Screen', tap 'More' in the menu",
+        "installGuideIOS3": "Select 'Add to Home Screen'",
         "laterBtn": "Maybe Later",
         "installTitle": "Install App",
         "installMessage": "Install our app for the best experience and reliable notifications.",
