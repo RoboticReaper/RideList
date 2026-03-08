@@ -76,7 +76,8 @@ export async function POST(req: Request) {
             dest_lat,
             dest_lng,
             car_id,
-            rule_id
+            rule_id,
+            trip_title
         } = body;
 
         if (!name) {
@@ -127,20 +128,23 @@ export async function POST(req: Request) {
             `INSERT INTO trip_templates (
                 driver, name, notes, price, total_seats, from_text, to_text,
                 from_place_id, to_place_id,
-                origin_geog, destination_geog, car, rule
+                origin_geog, destination_geog, car, rule,
+                trip_title
             ) VALUES (
                 $1, $2, $3, $4, $5, $6, $7,
                 $14, $15,
                 ST_SetSRID(ST_MakePoint($8, $9), 4326),
                 ST_SetSRID(ST_MakePoint($10, $11), 4326),
-                $12, $13
+                $12, $13,
+                $16
             ) RETURNING *`,
             [
                 user.uid, name, notes, price, total_seats, from_text, to_text,
-                origin_lng || null, origin_lat || null, // PostGIS uses Lon, Lat (X, Y)
+                origin_lng || null, origin_lat || null,
                 dest_lng || null, dest_lat || null,
                 car_id || null, rule_id || null,
-                from_place_id || null, to_place_id || null
+                from_place_id || null, to_place_id || null,
+                trip_title || null
             ]
         );
 

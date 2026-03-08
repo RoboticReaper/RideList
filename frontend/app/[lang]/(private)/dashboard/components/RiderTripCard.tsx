@@ -25,6 +25,8 @@ interface Trip {
     big_luggage: number;
     small_luggage: number;
     start_check_in?: boolean;
+    trip_title?: string | null;
+    return_time?: string | null;
 }
 
 interface RiderTripCardProps {
@@ -126,15 +128,20 @@ export function RiderTripCard({ trip, onRefresh }: RiderTripCardProps) {
                 {/* Header: Route and Status */}
                 <Flex justify="space-between" align="start" direction={{ base: 'column', sm: 'row' }} gap="xs">
                     <Stack gap={4}>
+                        {trip.trip_title && (
+                            <Text fw={700} size="xl" style={{ lineHeight: 1.2 }}>
+                                {trip.trip_title}
+                            </Text>
+                        )}
                         <Group gap="xs">
                             <IconMapPin size={18} style={{ color: 'var(--mantine-color-blue-6)' }} />
-                            <Text fw={600} size="lg" lineClamp={1} title={trip.from_text}>
+                            <Text fw={trip.trip_title ? 500 : 600} size={trip.trip_title ? 'md' : 'lg'} c={trip.trip_title ? 'dimmed' : undefined} lineClamp={1} title={trip.from_text}>
                                 {trip.from_text.split(',')[0]}
                             </Text>
-                            <Text size="lg" c="dimmed">
+                            <Text size={trip.trip_title ? 'md' : 'lg'} c="dimmed">
                                 &rarr;
                             </Text>
-                            <Text fw={600} size="lg" lineClamp={1} title={trip.to_text}>
+                            <Text fw={trip.trip_title ? 500 : 600} size={trip.trip_title ? 'md' : 'lg'} c={trip.trip_title ? 'dimmed' : undefined} lineClamp={1} title={trip.to_text}>
                                 {trip.to_text.split(',')[0]}
                             </Text>
                             <Tooltip label={t('dashboard.tripCard.viewPosting')}>

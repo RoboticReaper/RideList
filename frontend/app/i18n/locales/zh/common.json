@@ -497,6 +497,8 @@
             "dateRequiredTitle": "需要出发时间",
             "pastDate": "出发时间不能早于当前时间。",
             "pastDateTitle": "时间无效",
+            "invalidReturnTime": "返程时间必须晚于出发时间。",
+            "invalidReturnTimeTitle": "返程时间无效",
             "priceRequired": "请输入有效的价格。",
             "priceRequiredTitle": "需要价格",
             "seatsRequired": "请至少提供 1 个座位。",
@@ -843,6 +845,11 @@
                 "dest": "到达位置",
                 "departure": "出发时间",
                 "pickDateTime": "选择日期和时间（芝加哥时间）",
+                "tripTitle": "\u884c\u7a0b\u6807\u9898",
+                "tripTitleDesc": "\u53ef\u9009\u6807\u7b7e\uff0c\u5982\u201c\u6f14\u5531\u4f1a\u201d\u6216\u201c\u673a\u573a\u63a5\u9001\u201d",
+                "tripTitlePlaceholder": "\u4f8b\u5982\uff1a\u6625\u5047\u51fa\u884c",
+                "returnTime": "\u8fd4\u7a0b\u65f6\u95f4",
+                "returnTimePlaceholder": "\u53ef\u9009\u8fd4\u7a0b\u65f6\u95f4",
                 "nextDetails": "下一步：行程详情",
                 "tripDetails": "行程详情",
                 "pricePerPerson": "每人价格（美元）",
@@ -986,6 +993,10 @@
                 "unnamedTemplate": "未命名模板"
             }
         }
+    },
+    "trip": {
+        "returnTimeLabel": "\u8fd4\u7a0b\uff1a{{time}}",
+        "returnTimeBadge": "\u8fd4\u7a0b\uff1a{{time}}"
     },
     "common": {
         "loading": "加载中...",
@@ -1348,6 +1359,8 @@
                 "pickupRadius": "接送半径（米）",
                 "dropoffRadius": "下车半径（米）",
                 "departureTime": "出发时间（芝加哥时间）",
+                "tripTitle": "行程标题",
+                "returnTime": "返程时间",
                 "price": "价格（美元）",
                 "totalSeats": "总座位数",
                 "vehicle": "车辆",
@@ -1766,6 +1779,8 @@
                 "fromPlaceholder": "出发地点",
                 "to": "目的地",
                 "toPlaceholder": "目的地",
+                "tripTitle": "行程标题",
+                "returnTime": "返程时间",
                 "price": "价格（美元）",
                 "totalSeats": "总座位数",
                 "vehicle": "车辆",

@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     try {
         const result = await pool.query(
-            `SELECT from_text, to_text, departure_time, modified_at, status
+            `SELECT from_text, to_text, departure_time, modified_at, status, trip_title
              FROM trips WHERE id = $1 LIMIT 1`,
             [rideId]
         );
@@ -26,8 +26,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
                 .tz(CHICAGO_TZ)
                 .format('MMM D, YYYY h:mm A');
 
+            const routeText = `${row.from_text} → ${row.to_text}`;
+            const titleText = row.trip_title
+                ? `${row.trip_title} | ${routeText} | ${formattedTime}`
+                : `${routeText} | ${formattedTime}`;
+
             return {
-                title: `${row.from_text} → ${row.to_text} | ${formattedTime}`,
+                title: titleText,
                 description: t('metadata.rideDetails.description'),
                 robots: {
                     index: row.status === 'bookable',

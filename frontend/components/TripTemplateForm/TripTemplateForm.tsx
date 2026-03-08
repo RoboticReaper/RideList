@@ -45,6 +45,9 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
     const [selectedCar, setSelectedCar] = useState<string | null>(initialData?.car || null);
     const [selectedRule, setSelectedRule] = useState<string | null>(initialData?.rule || null);
 
+    // Trip Title
+    const [tripTitle, setTripTitle] = useState(initialData?.trip_title || '');
+
     // Data Lists
     const [myCars, setMyCars] = useState<any[]>([]);
     const [myRules, setMyRules] = useState<any[]>([]);
@@ -215,7 +218,8 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
                 dest_lat: eCoords?.lat,
                 dest_lng: eCoords?.lng,
                 car_id: selectedCar === 'none' ? null : selectedCar,
-                rule_id: selectedRule === 'none' || selectedRule === '' ? null : selectedRule
+                rule_id: selectedRule === 'none' || selectedRule === '' ? null : selectedRule,
+                trip_title: tripTitle || null
             };
 
             const url = isNew ? '/api/user/trip-templates' : `/api/user/trip-templates/${templateId}`;
@@ -369,6 +373,14 @@ export function TripTemplateForm({ templateId, initialData }: TripTemplateFormPr
                         }}
                         rightSection={loadingEnd ? <Loader size="xs" /> : (endLocation ? <ActionIcon variant="subtle" onClick={() => { setEndLocation(''); setEndPlaceId(null); setEndCoords(null); }}><IconX size={16} /></ActionIcon> : null)}
                     />
+
+                    <TextInput
+                        label={t('templates.trips.form.tripTitle')}
+                        placeholder={t('rides.create.labels.tripTitlePlaceholder')}
+                        value={tripTitle}
+                        onChange={(e) => setTripTitle(e.target.value)}
+                    />
+
 
                     <Group grow>
                         <NumberInput label={t('templates.trips.form.price')} value={price} onChange={(val) => setPrice(val === '' ? '' : Number(val))} min={0} />

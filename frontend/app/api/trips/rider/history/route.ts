@@ -53,6 +53,8 @@ export async function GET(req: Request) {
                 t.departure_time,
                 t.status as trip_status,
                 t.price,
+                t.return_time,
+                t.trip_title,
                 lb.status as booking_status,
                 lb.seats_booked,
                 lb.id as booking_id,

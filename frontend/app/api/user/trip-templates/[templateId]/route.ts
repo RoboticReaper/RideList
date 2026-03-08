@@ -69,7 +69,8 @@ export async function PUT(
             dest_lat,
             dest_lng,
             car_id,
-            rule_id
+            rule_id,
+            trip_title
         } = body;
 
         const res = await client.query(
@@ -85,7 +86,8 @@ export async function PUT(
                 origin_geog = CASE WHEN $7::float IS NOT NULL AND $8::float IS NOT NULL THEN ST_SetSRID(ST_MakePoint($8, $7), 4326) ELSE origin_geog END,
                 destination_geog = CASE WHEN $9::float IS NOT NULL AND $10::float IS NOT NULL THEN ST_SetSRID(ST_MakePoint($10, $9), 4326) ELSE destination_geog END,
                 car = $11,
-                rule = $12
+                rule = $12,
+                trip_title = COALESCE($17, trip_title)
              WHERE id = $13 AND driver = $14
              RETURNING *`,
             [
@@ -94,7 +96,8 @@ export async function PUT(
                 dest_lat, dest_lng,
                 car_id, rule_id,
                 templateId, user.uid,
-                from_place_id, to_place_id
+                from_place_id, to_place_id,
+                trip_title
             ]
         );
 

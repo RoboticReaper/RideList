@@ -194,6 +194,8 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
     const [linkTemplates, setLinkTemplates] = useState(false);
     const [ruleTemplateName, setRuleTemplateName] = useState('');
     const [tripTemplateName, setTripTemplateName] = useState('');
+    const [tripTitle, setTripTitle] = useState('');
+    const [returnTime, setReturnTime] = useState<Date | null>(null);
     const [payWindow, setPayWindow] = useState<number | ''>(60); // Default 60 mins
     const [startCheckInEnabled, setStartCheckInEnabled] = useState(true);
     const [startCheckInHrs, setStartCheckInHrs] = useState<number | ''>(3);
@@ -323,6 +325,8 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
         startCheckInHrs: number | '';
         startCoords: { lat: number; lng: number } | null;
         endCoords: { lat: number; lng: number } | null;
+        tripTitle?: string;
+        returnTime?: string | null;
     }
 
     // Load Draft on Mount
@@ -399,6 +403,8 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
                 if (draft.endPlaceId) setEndPlaceId(draft.endPlaceId);
                 if (draft.startCoords) setStartCoords(draft.startCoords);
                 if (draft.endCoords) setEndCoords(draft.endCoords);
+                if ((draft as any).tripTitle) setTripTitle((draft as any).tripTitle);
+                if ((draft as any).returnTime) setReturnTime(dayjs((draft as any).returnTime).toDate());
 
                 // Check if draft has meaningful data (non-default)
                 const isMeaningful =
@@ -557,6 +563,8 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
         setPayWindow(60);
         setStartCheckInEnabled(true);
         setStartCheckInHrs(3);
+        setTripTitle('');
+        setReturnTime(null);
         setSelectedTemplate(null);
         setSelectedTripTemplate(null);
         setPostedLink('');
@@ -649,7 +657,9 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
                 startCheckInEnabled,
                 startCheckInHrs,
                 startCoords,
-                endCoords
+                endCoords,
+                tripTitle,
+                returnTime: returnTime ? dayjs(returnTime).format('YYYY-MM-DDTHH:mm:ss') : null
             };
             localStorage.setItem('trip_draft', JSON.stringify(draft));
         }, 1000); // Save after 1 second of inactivity
@@ -663,7 +673,7 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
         dropoffRadius, pickupRules, cancellationPolicy, cutoffEnabled,
         dropoffRadius, pickupRules, cancellationPolicy, cutoffEnabled,
         cutoffHours, payWindow, notes, startPlaceId, endPlaceId, startCheckInHrs,
-        startCoords, endCoords
+        startCoords, endCoords, tripTitle, returnTime
     ]);
 
     const fetchPlaces = async (query: string, setSuggestions: (data: string[]) => void, setLoading: (l: boolean) => void, sessionToken: string) => {
@@ -882,6 +892,10 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
                 notifications.show({ title: t('rides.errors.pastDateTitle'), message: t('rides.errors.pastDate'), color: 'red' });
                 return;
             }
+            if (returnTime && returnTime <= startTime) {
+                notifications.show({ title: t('rides.errors.invalidReturnTimeTitle'), message: t('rides.errors.invalidReturnTime'), color: 'red' });
+                return;
+            }
         }
 
         // Step 2 Validation (Details)
@@ -1088,6 +1102,8 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
                         .map(m => [m, paymentQRCodes[m]])
                 )
                 : {},
+            tripTitle: tripTitle || null,
+            returnTime: returnTime ? toChicagoISO(returnTime) : null,
         };
 
         // Attach Car Info
@@ -1245,6 +1261,7 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
                                             setPrice(Number(tmpl.price));
                                             setSeats(Number(tmpl.total_seats));
                                             setNotes(tmpl.notes);
+                                            if (tmpl.trip_title) setTripTitle(tmpl.trip_title);
 
                                             setLoadingStart(false);
                                             setLoadingEnd(false);
@@ -1402,6 +1419,34 @@ export function TripInputBar({ initialFrom, initialTo, initialFromCoords, initia
                                 rightSection={renderRightSection(false, startTime ? 'true' : '', () => setStartTime(null))}
                                 rightSectionPointerEvents="all"
                                 min={toDateTimeLocalString(getChicagoNow())}
+                            />
+                        </Input.Wrapper>
+
+                        <TextInput
+                            label={t('rides.create.labels.tripTitle')}
+                            description={t('rides.create.labels.tripTitleDesc')}
+                            placeholder={t('rides.create.labels.tripTitlePlaceholder')}
+                            value={tripTitle}
+                            onChange={(e) => setTripTitle(e.currentTarget.value)}
+                        />
+
+                        <Input.Wrapper label={t('rides.create.labels.returnTime')}>
+                            <Input
+                                component="input"
+                                type="datetime-local"
+                                placeholder={t('rides.create.labels.returnTimePlaceholder')}
+                                value={toDateTimeLocalString(returnTime)}
+                                onChange={(e) => {
+                                    const val = e.currentTarget.value;
+                                    setReturnTime(val ? fromDateTimeLocalString(val) : null);
+                                }}
+                                leftSection={<IconCalendar size={16} />}
+                                rightSection={returnTime ? (
+                                    <ActionIcon variant="subtle" size="sm" onClick={() => setReturnTime(null)}>
+                                        <IconX size={14} />
+                                    </ActionIcon>
+                                ) : null}
+                                rightSectionPointerEvents="all"
                             />
                         </Input.Wrapper>
 

@@ -118,6 +118,10 @@ create table cars (
   deleted bool not null default false,
   deleted_at timestamptz,
   last_selected timestamptz,
+    pic1 text,
+    pic2 text,
+    pic3 text,
+    pic4 text,
   constraint cars_deleted_consistency check (
     (deleted = false and deleted_at is null) or (deleted = true and deleted_at is not null)
   )
@@ -178,7 +182,12 @@ create table trip_rules (
   auto_accept bool not null default true,
   cutoff_time interval not null,
   pay_window interval not null,
-  start_check_in_hrs_before_departure interval
+  start_check_in_hrs_before_departure interval,
+
+  big_luggage_paid int not null default 0 check ( big_luggage_paid >= 0 ),
+  small_luggage_paid int not null default 0 check ( small_luggage_paid >= 0 ),
+  big_luggage_paid_price int not null default 0 check ( big_luggage_paid_price >= 0),
+  small_luggage_paid_price int not null default 0 check (small_luggage_paid_price >= 0)
 );
 
 create table trip_routes ( -- expensive feature. only paid users will have routes
@@ -243,6 +252,9 @@ create table bookings (
   picked_up bool not null default false,
   picked_up_at timestamptz,
 
+    payment_evidence_url text,
+    payment_evidence_text text,
+
   constraint ready_time_consistency check (
       (ready = false and ready_at is null) or (ready = true and ready_at is not null)
       )
@@ -266,7 +278,11 @@ create table booking_rule_snapshot (
   auto_accept bool not null,
   cutoff_time interval,
   pay_window interval not null,
-  start_check_in_hrs_before_departure interval
+  start_check_in_hrs_before_departure interval,
+    big_luggage_paid int,
+    small_luggage_paid int,
+    big_luggage_paid_price int,
+    small_luggage_paid_price int
 );
 
 create table booking_status_history (
@@ -303,7 +319,11 @@ create table car_snapshots (
   plate text,
   color text,
   year text,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+    pic1 text,
+    pic2 text,
+    pic3 text,
+    pic4 text
 );
 
 -- ======================
@@ -327,7 +347,11 @@ create table rule_templates (
   payment_handle text,
   payment_qr_codes jsonb,
   pay_window interval,
-  start_check_in_hrs_before_departure interval
+  start_check_in_hrs_before_departure interval,
+  big_luggage_paid int,
+  small_luggage_paid int,
+  big_luggage_paid_price int,
+  small_luggage_paid_price int
 );
 
 create table trip_templates (
@@ -349,6 +373,17 @@ create table trip_templates (
   total_seats int check (total_seats is null or total_seats > 0),
   created_at timestamptz not null default now(),
   modified_at timestamptz
+);
+
+create table dm_messages (
+    id uuid primary key default gen_random_uuid(),
+    sender_id text references users(id) not null,
+    receiver_id text references users(id) not null,
+    message_type text not null check (message_type in ('text', 'image', 'live_location')),
+    content text not null, -- content is message if type is text, url if image. live_location for later
+    parent_message_id uuid references dm_messages(id),
+    created_at timestamptz default now(),
+    deleted bool default false
 );
 
 
@@ -432,6 +467,7 @@ create table trip_messages (
   trip_id uuid references trips(id) not null,
   sender_id text references users(id),
   sender_role text check (sender_role in ('driver', 'rider', 'system')),
+    content_type text not null default 'text' check (content_type in ('text', 'image')),
 
   -- Message classification
   message_type text not null check (

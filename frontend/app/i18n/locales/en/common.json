@@ -499,6 +499,8 @@
             "pastDateTitle": "Invalid Date",
             "priceRequired": "Please enter a valid price.",
             "priceRequiredTitle": "Price Required",
+            "invalidReturnTime": "Return time must be later than departure time.",
+            "invalidReturnTimeTitle": "Invalid Return Time",
             "seatsRequired": "Please enter at least 1 seat.",
             "seatsRequiredTitle": "Seats Required",
             "carSeatsRequired": "If you are adding a vehicle, please specify the number of seats.",
@@ -843,6 +845,11 @@
                 "dest": "Destination",
                 "departure": "Departure",
                 "pickDateTime": "Pick date & time (Chicago Time)",
+                "tripTitle": "Trip Title",
+                "tripTitleDesc": "Optional label like \"Concert\" or \"Airport Run\"",
+                "tripTitlePlaceholder": "e.g. Spring Break Trip",
+                "returnTime": "Return Time",
+                "returnTimePlaceholder": "Optional return time",
                 "nextDetails": "Next: Trip Details",
                 "tripDetails": "Trip Details",
                 "pricePerPerson": "Price per Person ($)",
@@ -986,6 +993,10 @@
                 "unnamedTemplate": "Unnamed Template"
             }
         }
+    },
+    "trip": {
+        "returnTimeLabel": "Return: {{time}}",
+        "returnTimeBadge": "Return: {{time}}"
     },
     "common": {
         "loading": "Loading...",
@@ -1348,6 +1359,8 @@
                 "pickupRadius": "Pickup Radius (m)",
                 "dropoffRadius": "Dropoff Radius (m)",
                 "departureTime": "Departure Time (Chicago Time)",
+                "tripTitle": "Trip Title",
+                "returnTime": "Return Time",
                 "price": "Price ($)",
                 "totalSeats": "Total Seats",
                 "vehicle": "Vehicle",
@@ -1421,6 +1434,10 @@
                 "invalidDeparture": {
                     "title": "Invalid Departure Time",
                     "message": "Departure time cannot be in the past."
+                },
+                "invalidReturnTime": {
+                    "title": "Invalid Return Time",
+                    "message": "Return time must be later than departure time."
                 },
                 "invalidSeats": {
                     "title": "Invalid Seats",
@@ -1607,6 +1624,8 @@
             "missingDepMessage": "Please select a departure time.",
             "invalidDep": "Invalid Departure Time",
             "invalidDepMessage": "Departure time cannot be in the past.",
+            "invalidReturnTime": "Invalid Return Time",
+            "invalidReturnTimeMessage": "Return time must be later than departure time.",
             "invalidSeats": "Invalid Seats",
             "invalidSeatsMessage": "Total seats must be at least 1.",
             "invalidPrice": "Invalid Price",
@@ -1766,6 +1785,8 @@
                 "fromPlaceholder": "Start Location",
                 "to": "To",
                 "toPlaceholder": "Destination",
+                "tripTitle": "Trip Title",
+                "returnTime": "Return Time",
                 "price": "Price ($)",
                 "totalSeats": "Total Seats",
                 "vehicle": "Vehicle",

@@ -45,6 +45,10 @@ interface RideCardProps {
         auto_accept: boolean;
         payment_methods: string[];
         departure_time_flexibility?: string;
+
+        // Optional new fields
+        trip_title?: string | null;
+        return_time?: string | null;
     };
 }
 
@@ -105,10 +109,16 @@ export function RideCard({ ride }: RideCardProps) {
             {/* Main Row: Route & Price */}
             <Group justify="space-between" align="flex-start" mb="sm" wrap="wrap">
                 <Stack gap={4} style={{ flex: '3 1 200px', minWidth: '200px' }}>
+                    {/* Trip Title */}
+                    {ride.trip_title && (
+                        <Text fw={700} size="lg" style={{ lineHeight: 1.2 }}>
+                            {ride.trip_title}
+                        </Text>
+                    )}
                     {/* Route + Status Badge */}
                     <Group gap={6} align="center" wrap="wrap">
                         <IconMapPin size={18} style={{ opacity: 0.7, flexShrink: 0 }} />
-                        <Text fw={600} size="md" style={{ lineHeight: 1.3 }}>
+                        <Text fw={ride.trip_title ? 500 : 600} size={ride.trip_title ? 'sm' : 'md'} c={ride.trip_title ? 'dimmed' : undefined} style={{ lineHeight: 1.3 }}>
                             {ride.from_text} <Text span c="dimmed">→</Text> {ride.to_text}
                         </Text>
                         {/* Status Badge Moved Here */}
@@ -130,6 +140,14 @@ export function RideCard({ ride }: RideCardProps) {
                             {relativeTime && <Text span size="xs" ml={6} suppressHydrationWarning>· {relativeTime}</Text>}
                         </Text>
                     </Group>
+                    {ride.return_time && (
+                        <Group gap={6} align="center">
+                            <IconClock size={14} style={{ opacity: 0.5 }} />
+                            <Text size="xs" c="dimmed">
+                                {t('trip.returnTimeLabel', { time: dayjs(ride.return_time).tz(CHICAGO_TZ).format('MMM D, h:mm A') })}
+                            </Text>
+                        </Group>
+                    )}
                 </Stack>
 
                 {/* Price & Progress Bar (Moved Here) */}

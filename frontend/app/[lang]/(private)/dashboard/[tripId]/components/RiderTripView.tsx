@@ -409,7 +409,12 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
 
             <Stack gap="lg" pb={200}>
                 <Stack gap={0}>
-                    <Title order={2}>
+                    {trip.trip_title && (
+                        <Title order={1} style={{ lineHeight: 1.2 }} mb={4}>
+                            {trip.trip_title}
+                        </Title>
+                    )}
+                    <Title order={trip.trip_title ? 3 : 2} c={trip.trip_title ? 'dimmed' : undefined}>
                         {trip.from_text.split(',')[0]} &rarr; {trip.to_text.split(',')[0]}
                     </Title>
                     <Group gap="md" align="center">
@@ -419,6 +424,13 @@ export function RiderTripView({ trip, onRefresh }: RiderTripViewProps) {
                                 {dayjs(trip.departure_time).tz(CHICAGO_TZ).format('MMM D, h:mm A')}
                             </Text>
                         </Group>
+                        {trip.return_time && (
+                            <Group gap="xs">
+                                <Text size="sm" c="dimmed">
+                                    {t('trip.returnTimeLabel', { time: dayjs(trip.return_time).tz(CHICAGO_TZ).format('MMM D, h:mm A') })}
+                                </Text>
+                            </Group>
+                        )}
                         <Badge
                             size="md"
                             color={getTripStatusConfig(trip.status).color}

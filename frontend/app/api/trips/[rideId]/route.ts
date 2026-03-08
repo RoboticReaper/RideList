@@ -53,6 +53,7 @@ export async function GET(
         t.id, t.price, t.notes, t.from_text, t.to_text, t.departure_time,
         t.total_seats, t.seats_taken, t.status, t.start_check_in,
         t.created_at, t.modified_at, t.from_input_text, t.to_input_text,
+        t.return_time, t.trip_title,
         ST_X(t.origin_geog::geometry) as origin_lng, ST_Y(t.origin_geog::geometry) as origin_lat,
         ST_X(ST_SnapToGrid(t.origin_geog::geometry, 0.002)) as fuzzy_lng, ST_Y(ST_SnapToGrid(t.origin_geog::geometry, 0.002)) as fuzzy_lat,
         ST_X(t.destination_geog::geometry) as dest_lng, ST_Y(t.destination_geog::geometry) as dest_lat,
@@ -263,6 +264,8 @@ export async function GET(
             to_text: row.to_text,
             departure_time: row.departure_time,
             price: row.price,
+            trip_title: row.trip_title || null,
+            return_time: row.return_time || null,
             seats: {
                 total: row.total_seats,
                 taken: row.seats_taken
@@ -547,7 +550,7 @@ export async function PATCH(
             body.car !== undefined || body.departure_time !== undefined ||
             body.from_text !== undefined || body.to_text !== undefined ||
             body.from_place_id !== undefined || body.to_place_id !== undefined || body.start_check_in !== undefined ||
-            body.status !== undefined) {
+            body.status !== undefined || body.return_time !== undefined || body.trip_title !== undefined) {
 
             const updates = [];
             const values = [];
@@ -600,6 +603,14 @@ export async function PATCH(
                 }
                 updates.push(`departure_time = $${idx++}`);
                 values.push(body.departure_time);
+            }
+            if (body.return_time !== undefined) {
+                updates.push(`return_time = $${idx++}`);
+                values.push(body.return_time || null);
+            }
+            if (body.trip_title !== undefined) {
+                updates.push(`trip_title = $${idx++}`);
+                values.push(body.trip_title || null);
             }
             if (body.start_check_in !== undefined) {
                 updates.push(`start_check_in = $${idx++}`);

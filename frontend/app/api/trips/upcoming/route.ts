@@ -34,6 +34,8 @@ export async function GET(req: Request) {
                 t.seats_taken,
                 t.total_seats,
                 t.price,
+                t.return_time,
+                t.trip_title,
                 c.make,
                 c.model,
                 c.plate,

@@ -39,6 +39,8 @@ interface RideDetails {
     to_text: string;
     departure_time: string;
     price: string;
+    trip_title?: string | null;
+    return_time?: string | null;
     access: {
         receipt: boolean;
         contact: boolean;
@@ -497,10 +499,16 @@ export default function RidePage() {
                     </Group>
 
                     <Group justify="space-between" align="end">
-                        <Title order={2} style={{ lineHeight: 1.2 }}>
-                            {ride.from_text} <Text span c="dimmed" inherit>→</Text> {ride.to_text}
-                        </Title>
-
+                        <div>
+                            {ride.trip_title && (
+                                <Title order={1} style={{ lineHeight: 1.2 }} mb={4}>
+                                    {ride.trip_title}
+                                </Title>
+                            )}
+                            <Title order={ride.trip_title ? 3 : 2} style={{ lineHeight: 1.2 }} c={ride.trip_title ? 'dimmed' : undefined}>
+                                {ride.from_text} <Text span c="dimmed" inherit>→</Text> {ride.to_text}
+                            </Title>
+                        </div>
 
                     </Group>
 
@@ -533,6 +541,14 @@ export default function RidePage() {
                                 )}
                             </Text>
                         </Group>
+                        {ride.return_time && (
+                            <Group gap={6}>
+                                <IconClock size={18} color="gray" />
+                                <Text fw={500}>
+                                    {t('trip.returnTimeLabel', { time: dayjs(ride.return_time).tz(CHICAGO_TZ).format('dddd, MMMM D, YYYY h:mm A') })}
+                                </Text>
+                            </Group>
+                        )}
                     </Group>
                     {ride.rules.cutoff_time && ((ride.rules.cutoff_time.days ?? 0) > 0 || (ride.rules.cutoff_time.hours ?? 0) > 0 || (ride.rules.cutoff_time.minutes ?? 0) > 0) && (
                         <Group gap={6} mt={4}>

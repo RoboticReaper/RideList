@@ -110,7 +110,9 @@ export async function POST(req: Request) {
             linkTemplates,
             ruleTemplateName,
             tripTemplateName,
-            startCheckInHrs
+            startCheckInHrs,
+            returnTime,
+            tripTitle
         } = body;
 
         // Validation (Basic)
@@ -356,12 +358,14 @@ export async function POST(req: Request) {
                 departure_time, 
                 total_seats,
                 status,
-                start_check_in
+                start_check_in,
+                return_time,
+                trip_title
             ) VALUES (
                 $1, $2, $3, $4, $5, $6, $7, $8,
                 ST_SetSRID(ST_MakePoint($9, $10), 4326), 
                 ST_SetSRID(ST_MakePoint($11, $12), 4326), 
-                $13, $14, 'bookable', false
+                $13, $14, 'bookable', false, $15, $16
             ) RETURNING id`,
             [
                 user.uid,
@@ -375,7 +379,9 @@ export async function POST(req: Request) {
                 startLng, startLat,
                 endLng, endLat,
                 departureTime,
-                seats
+                seats,
+                returnTime,
+                tripTitle
             ]
         );
 
@@ -535,12 +541,14 @@ export async function POST(req: Request) {
                 to_place_id,
                 origin_geog,
                 destination_geog,
-                total_seats
+                total_seats,
+                return_time,
+                trip_title
             ) VALUES(
                 $1, $2, $3, $4, $5, $6, $7, $8, $14, $15,
                 ST_SetSRID(ST_MakePoint($9, $10), 4326),
                 ST_SetSRID(ST_MakePoint($11, $12), 4326),
-                $13
+                $13, $16, $17
             )`,
                     [
                         user.uid,
@@ -555,7 +563,9 @@ export async function POST(req: Request) {
                         endLng, endLat,
                         seats,
                         start.placeId || null,
-                        end.placeId || null
+                        end.placeId || null,
+                        returnTime,
+                        tripTitle
                     ]
                 );
             }

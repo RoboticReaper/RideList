@@ -32,6 +32,8 @@ interface Trip {
     pic2?: string;
     pic3?: string;
     pic4?: string;
+    trip_title?: string | null;
+    return_time?: string | null;
 }
 
 interface TripCardProps {
@@ -48,15 +50,20 @@ export function TripCard({ trip }: TripCardProps) {
                 {/* Header: Route and Status */}
                 <Flex justify="space-between" align="start" direction={{ base: 'column', sm: 'row' }} gap="xs">
                     <Stack gap={4}>
+                        {trip.trip_title && (
+                            <Text fw={700} size="xl" style={{ lineHeight: 1.2 }}>
+                                {trip.trip_title}
+                            </Text>
+                        )}
                         <Group gap="xs">
                             <IconMapPin size={18} style={{ color: 'var(--mantine-color-blue-6)' }} />
-                            <Text fw={600} size="lg" lineClamp={1} title={trip.from_input_text}>
+                            <Text fw={trip.trip_title ? 500 : 600} size={trip.trip_title ? 'md' : 'lg'} c={trip.trip_title ? 'dimmed' : undefined} lineClamp={1} title={trip.from_input_text}>
                                 {trip.from_input_text?.split(',')[0]}
                             </Text>
-                            <Text size="lg" c="dimmed">
+                            <Text size={trip.trip_title ? 'md' : 'lg'} c="dimmed">
                                 &rarr;
                             </Text>
-                            <Text fw={600} size="lg" lineClamp={1} title={trip.to_input_text}>
+                            <Text fw={trip.trip_title ? 500 : 600} size={trip.trip_title ? 'md' : 'lg'} c={trip.trip_title ? 'dimmed' : undefined} lineClamp={1} title={trip.to_input_text}>
                                 {trip.to_input_text?.split(',')[0]}
                             </Text>
                         </Group>
@@ -84,6 +91,11 @@ export function TripCard({ trip }: TripCardProps) {
                             <Text size="sm">
                                 {dayjs(trip.departure_time).tz(CHICAGO_TZ).format('MMM D, YYYY h:mm A')}
                             </Text>
+                            {trip.return_time && (
+                                <Text size="xs" c="dimmed">
+                                    → {t('trip.returnTimeLabel', { time: dayjs(trip.return_time).tz(CHICAGO_TZ).format('MMM D, h:mm A') })}
+                                </Text>
+                            )}
                         </Group>
 
                         {/* Seats */}

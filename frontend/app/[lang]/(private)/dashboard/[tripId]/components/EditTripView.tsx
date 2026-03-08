@@ -137,6 +137,10 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
         // Check-in
         startCheckInEnabled: parseStartCheckInNullable(t.rules.start_check_in_hrs) !== null,
         startCheckInHrs: parseStartCheckInNullable(t.rules.start_check_in_hrs) ?? 3,
+
+        // Trip Title & Return Time
+        trip_title: t.trip_title || '',
+        return_time: t.return_time ? fromChicagoISO(t.return_time) : null,
     });
 
     const form = useForm({
@@ -427,6 +431,12 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
             return;
         }
 
+        // Return time > Departure time
+        if (values.return_time && values.return_time <= values.departure_time) {
+            notifications.show({ title: t('tripDetails.edit.notifications.invalidReturnTime.title'), message: t('tripDetails.edit.notifications.invalidReturnTime.message'), color: 'red' });
+            return;
+        }
+
         // Validate Price (Must be number >= 0, not empty)
         // Check for undefined, null, or empty string (though initialValues casts to Number, clearing input might make it '')
         if ((values.price as any) === '' || values.price === undefined || values.price === null || Number(values.price) < 0) {
@@ -557,6 +567,16 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
             } else {
                 payload.flexibility = '15 minutes';
             }
+
+            // Return Time
+            if (values.return_time) {
+                payload.return_time = toChicagoISO(values.return_time);
+            } else {
+                payload.return_time = null;
+            }
+
+            // Trip Title
+            payload.trip_title = values.trip_title || null;
 
             if (payload.car === 'none') {
                 delete payload.car;
@@ -729,6 +749,28 @@ export function EditTripView({ trip, manualRefreshId }: EditTripViewProps) {
                                 rightSection={renderRightSection(false, form.values.departure_time ? 'true' : '', () => form.setFieldValue('departure_time', null))}
                                 rightSectionPointerEvents="all"
                                 min={toDateTimeLocalString(getChicagoNow())}
+                            />
+                        </Input.Wrapper>
+
+                        <TextInput
+                            label={t('tripDetails.edit.labels.tripTitle')}
+                            placeholder={t('rides.create.labels.tripTitlePlaceholder')}
+                            {...form.getInputProps('trip_title')}
+                        />
+
+                        <Input.Wrapper label={t('tripDetails.edit.labels.returnTime')}>
+                            <Input
+                                component="input"
+                                type="datetime-local"
+                                placeholder={t('rides.create.labels.returnTimePlaceholder')}
+                                value={toDateTimeLocalString(form.values.return_time)}
+                                onChange={(e) => {
+                                    const val = e.currentTarget.value;
+                                    form.setFieldValue('return_time', val ? fromDateTimeLocalString(val) : null);
+                                }}
+                                leftSection={<IconCalendar size={16} />}
+                                rightSection={renderRightSection(false, form.values.return_time ? 'true' : '', () => form.setFieldValue('return_time', null))}
+                                rightSectionPointerEvents="all"
                             />
                         </Input.Wrapper>
 

@@ -64,6 +64,11 @@ export default function TripTemplatesPage() {
                                 <Badge color="gray" variant="light">{t('templates.trips.seatsCount', { count: template.total_seats })}</Badge>
                             </Group>
 
+                            {template.trip_title && (
+                                <Text size="sm" fw={600} mb={4}>
+                                    {template.trip_title}
+                                </Text>
+                            )}
                             <Text size="sm" c="dimmed" lineClamp={2} style={{ minHeight: '40px' }}>
                                 {template.from_text} → {template.to_text}
                             </Text>

@@ -177,6 +177,8 @@ export async function GET(request: NextRequest) {
                 t.total_seats,
                 t.seats_taken,
                 t.status,
+                t.return_time,
+                t.trip_title,
 
                 tr.big_luggage_lim,
                 tr.small_luggage_lim,
