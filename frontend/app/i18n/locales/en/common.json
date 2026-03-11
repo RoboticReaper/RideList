@@ -628,6 +628,7 @@
             },
             "apply": "Apply",
             "applied": "Route Applied",
+            "details": "Details",
             "dateTime": "Date & Time",
             "tomorrow": "Tomorrow",
             "time": {

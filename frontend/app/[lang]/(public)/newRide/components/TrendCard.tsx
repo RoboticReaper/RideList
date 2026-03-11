@@ -112,9 +112,15 @@ export function TrendCard({
                     >
                         {t('rides.trends.apply')}
                     </Button>
-                    <ActionIcon variant="subtle" color="gray" onClick={toggleExpand}>
-                        {expanded ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
-                    </ActionIcon>
+                    <Button
+                        size="xs"
+                        variant="subtle"
+                        color="gray"
+                        rightSection={expanded ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
+                        onClick={toggleExpand}
+                    >
+                        {t('rides.trends.details', 'Details')}
+                    </Button>
                 </Group>
             </Group>
             <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
