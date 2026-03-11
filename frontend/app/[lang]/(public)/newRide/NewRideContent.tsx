@@ -36,7 +36,7 @@ interface TrendData {
 export default function NewRidePage() {
     const { t } = useTranslation('common');
     const { user, handleProtectedAction } = useAuth();
-    const [trendsOpened, { toggle: toggleTrends, close: closeTrends }] = useDisclosure(false);
+    const [trendsOpened, { toggle: toggleTrends, close: closeTrends }] = useDisclosure(true);
     const [trends, setTrends] = useState<TrendData[]>([]);
     const [loadingTrends, setLoadingTrends] = useState(false);
     const [mounted, setMounted] = useState(false);

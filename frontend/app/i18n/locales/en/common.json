@@ -294,8 +294,8 @@
                         "a": "A basic profile is created automatically when you sign in. You can edit your name and photo later if you choose."
                     },
                     {
-                        "q": "Is my real name visible to everyone?",
-                        "a": "No. Your full name is only shown to people who are actively booking or riding with you. Public viewers see a redacted name."
+                        "q": "Is my name visible to everyone?",
+                        "a": "Yes. Your name is visible to everyone."
                     }
                 ]
             },
@@ -466,7 +466,7 @@
         "agreementsCheckbox": "I agree to <1>privacy policy</1> and <3>terms of service</3>",
         "agreementsError": "Please check agreements to login",
         "completeProfileTitle": "Complete your Profile",
-        "fullNameLabel": "Full Name",
+        "fullNameLabel": "Name (Public)",
         "fullNamePlaceholder": "Your name",
         "nameRequired": "Name is required",
         "phoneLabel": "Phone Number",
@@ -2279,8 +2279,8 @@
             "title": "Identity & profile visibility",
             "p1": "Profiles are intentionally privacy-aware.",
             "list": [
-                "Full names, photos, and phone numbers are not public by default",
-                "Identity details become visible only when there is an active or recent trip relationship",
+                "Phone numbers are not public by default",
+                "Details become visible only when there is an active or recent trip relationship",
                 "Past trips do not grant permanent access to personal contact information"
             ],
             "p2": "Your profile is not meant to be a public directory.",
