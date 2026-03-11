@@ -5,7 +5,7 @@ import { IconMapPin, IconArrowRight, IconCalendar, IconUsers, IconCoin, IconChev
 import { useState } from 'react';
 import { useAuth } from '@/components/firebase/AuthContext';
 import { useRouter } from 'next/navigation';
-import dayjs from '@/utils/dateUtils';
+import dayjs, { fromChicagoISO } from '@/utils/dateUtils';
 import { useTranslation } from 'react-i18next';
 
 interface TripRequest {
@@ -188,7 +188,7 @@ export function TrendCard({
                                                     {req.price && <Badge color="green" size="xs" variant="light">${req.price}</Badge>}
                                                 </Group>
                                                 <Text size="xs" c="dimmed" truncate>
-                                                    {dayjs(req.preferredTime).format('h:mm A')} (±{(() => {
+                                                    {dayjs(fromChicagoISO(req.preferredTime)).format('h:mm A')} (±{(() => {
                                                         const f = req.timeFlexibility as any;
                                                         if (!f) return '0m';
                                                         if (typeof f === 'string') return f.replace('00:00', 'm');

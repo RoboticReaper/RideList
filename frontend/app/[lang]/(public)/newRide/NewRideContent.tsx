@@ -9,7 +9,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { useState, useEffect } from 'react';
 import { IconTrendingUp, IconChevronDown, IconChevronUp, IconMapPin, IconUsers, IconCoin, IconClock, IconArrowRight, IconCalendar } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
-import dayjs from '@/utils/dateUtils';
+import dayjs, { getChicagoNow } from '@/utils/dateUtils';
 
 interface TrendData {
     fromText: string;
@@ -141,8 +141,11 @@ export default function NewRidePage() {
 
     // Format date for display
     const formatDate = (dateStr: string) => {
-        const date = dayjs(dateStr);
-        const today = dayjs().startOf('day');
+        const datePart = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+        const [year, month, day] = datePart.split('-').map(Number);
+        const date = dayjs(`${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} 00:00:00`);
+
+        const today = dayjs(getChicagoNow()).startOf('day');
         const tomorrow = today.add(1, 'day');
 
         if (date.isSame(today, 'day')) {
