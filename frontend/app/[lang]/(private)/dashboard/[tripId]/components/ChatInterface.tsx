@@ -15,7 +15,7 @@ function renderMessageContent(content: string) {
     return parts.map((part, i) => {
         if (part.match(URL_REGEX)) {
             return (
-                <Anchor href={part} rel="noopener noreferrer" key={i} underline="always" inherit>
+                <Anchor href={part} rel="noopener noreferrer" key={i} underline="always" inherit c="inherit">
                     {part}
                 </Anchor>
             );
