@@ -1943,7 +1943,7 @@
                 ],
                 "p2": "Strangers browsing the platform:",
                 "list2": [
-                    "May see a name preview (partially redacted)",
+                    "May see your name",
                     "Will not see phone numbers",
                     "Will not see precise locations"
                 ]
@@ -3351,21 +3351,13 @@
                                     "during active coordination"
                                 ]
                             },
-                            "Photos may be hidden or removed from view once coordination ends."
+                            ""
                         ]
                     },
                     {
                         "title": "Names",
                         "body": [
-                            "Names may be:",
-                            {
-                                "type": "list",
-                                "items": [
-                                    "shown fully in active contexts",
-                                    "partially redacted in inactive or historical views"
-                                ]
-                            },
-                            "This balances trust and privacy."
+                            "Names are always shown."
                         ]
                     }
                 ]
