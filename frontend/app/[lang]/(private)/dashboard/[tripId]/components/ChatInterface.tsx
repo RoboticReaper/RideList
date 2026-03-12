@@ -1,11 +1,28 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Stack, Group, Textarea, ActionIcon, Text, Paper, ScrollArea, Avatar, Box, LoadingOverlay, Switch, Modal, Button, FileButton, Image, CloseButton, Alert } from '@mantine/core';
+import { Stack, Group, Textarea, ActionIcon, Text, Paper, ScrollArea, Avatar, Box, LoadingOverlay, Switch, Modal, Button, FileButton, Image, CloseButton, Alert, Anchor } from '@mantine/core';
 import { IconSend, IconArrowLeft, IconWorld, IconTrash, IconPhoto, IconArrowBackUp, IconArrowBack, IconArrowNarrowUp, IconInfoCircle } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import dayjs from '@/utils/dateUtils';
 import { compressImage } from '@/utils/compressImage';
+
+const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+
+function renderMessageContent(content: string) {
+    if (!content) return null;
+    const parts = content.split(URL_REGEX);
+    return parts.map((part, i) => {
+        if (part.match(URL_REGEX)) {
+            return (
+                <Anchor href={part} rel="noopener noreferrer" key={i} underline="always" inherit>
+                    {part}
+                </Anchor>
+            );
+        }
+        return part;
+    });
+}
 
 interface Message {
     id: string;
@@ -190,7 +207,7 @@ export function ChatInterface({
                                                 <Text size="xs" fw={600} mb={2}>
                                                     {t('tripDetails.chat.originalQuestion') || 'Original Question'}
                                                 </Text>
-                                                <Text size="xs" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{msg.original_question}</Text>
+                                                <Text size="xs" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{renderMessageContent(msg.original_question)}</Text>
                                             </Paper>
                                         )}
                                         {/* Show replied-to message if we have parent_message_id and can find it (global DM only) */}
@@ -221,7 +238,7 @@ export function ChatInterface({
                                                 mt={msg.original_question || msg.parent_message_id ? 'xs' : 0}
                                             />
                                         ) : (
-                                            <Text size="sm" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{msg.content}</Text>
+                                            <Text size="sm" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{renderMessageContent(msg.content)}</Text>
                                         )}
                                     </Paper>
 
