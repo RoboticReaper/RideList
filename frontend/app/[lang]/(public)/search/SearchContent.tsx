@@ -10,7 +10,7 @@ import { useAuth } from '@/components/firebase/AuthContext';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { IconListCheck, IconPlus, IconCheck, IconTrash, IconMapPin, IconClock } from '@tabler/icons-react';
-import dayjs, { toDateTimeLocalString, fromDateTimeLocalString, getChicagoNow, toChicagoISO, CHICAGO_TZ } from '@/utils/dateUtils';
+import dayjs, { toDateTimeLocalString, fromDateTimeLocalString, getChicagoNow, toChicagoISO, fromChicagoISO, CHICAGO_TZ } from '@/utils/dateUtils';
 import { DEFAULT_AUTOCOMPLETE_LOCATIONS } from '@/utils/defaultLocations';
 import { Autocomplete, Loader as MantineLoader } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
@@ -506,7 +506,7 @@ export function SearchContent() {
                                     <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="xs">
                                         <Box>
                                             <Text size="xs" c="dimmed">{t('rides.rideRequests.preferredTime')}</Text>
-                                            <Text size="sm">{dayjs(request.preferred_time).tz(CHICAGO_TZ).format('MMM D, h:mm A')}</Text>
+                                            <Text size="sm">{dayjs(fromChicagoISO(request.preferred_time)).format('MMM D, h:mm A')}</Text>
                                         </Box>
                                         <Box>
                                             <Text size="xs" c="dimmed">{t('rides.rideRequests.flexibility')}</Text>
@@ -522,7 +522,7 @@ export function SearchContent() {
                                         </Box>
                                         <Box>
                                             <Text size="xs" c="dimmed">{t('rides.rideRequests.expiresAt')}</Text>
-                                            <Text size="sm">{dayjs(request.expires_at).tz(CHICAGO_TZ).format('MMM D, h:mm A')}</Text>
+                                            <Text size="sm">{dayjs(fromChicagoISO(request.expires_at)).format('MMM D, h:mm A')}</Text>
                                         </Box>
                                     </SimpleGrid>
                                     <Group gap="xs" mt="xs">
