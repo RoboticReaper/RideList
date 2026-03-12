@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Stack, Group, Textarea, ActionIcon, Text, Paper, ScrollArea, Avatar, Box, LoadingOverlay, Switch, Modal, Button, FileButton, Image, CloseButton, Alert, Anchor } from '@mantine/core';
 import { IconSend, IconArrowLeft, IconWorld, IconTrash, IconPhoto, IconArrowBackUp, IconArrowBack, IconArrowNarrowUp, IconInfoCircle } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
+import { useNotifications } from '@/components/Notifications/NotificationContext';
+import { LocalizedLink } from '@/components/LocalizedLink';
 import dayjs from '@/utils/dateUtils';
 import { compressImage } from '@/utils/compressImage';
 
@@ -60,6 +62,8 @@ export function ChatInterface({
     disableSend, permissionNotice
 }: ChatInterfaceProps) {
     const { t } = useTranslation('common');
+    const { pushPermission } = useNotifications();
+    const [bannerDismissed, setBannerDismissed] = useState(true);
     const [inputValue, setInputValue] = useState('');
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
@@ -69,6 +73,12 @@ export function ChatInterface({
     const resetFileRef = useRef<() => void>(null);
     const viewport = useRef<HTMLDivElement>(null);
     const prevLastMessageId = useRef<string | null>(null);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setBannerDismissed(sessionStorage.getItem('chat_push_banner_dismissed') === 'true');
+        }
+    }, []);
 
     useEffect(() => {
         // Prevent background scrolling when chat interface is mounted
@@ -153,6 +163,11 @@ export function ChatInterface({
         }
     };
 
+    const handleDismissBanner = () => {
+        setBannerDismissed(true);
+        sessionStorage.setItem('chat_push_banner_dismissed', 'true');
+    };
+
     return (
         <Stack h="100%" gap={0} bg="gray.0" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 200 }}>
             {/* Header */}
@@ -170,6 +185,24 @@ export function ChatInterface({
 
             {/* Messages Area */}
             <Box style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                {!loading && !bannerDismissed && pushPermission !== 'granted' && (
+                    <Paper
+                        shadow="sm"
+                        radius="md"
+                        withBorder
+                        p="xs"
+                        bg="blue.0"
+                        style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, maxWidth: 220 }}
+                    >
+                        <CloseButton size="sm" style={{ position: 'absolute', top: 4, right: 4 }} onClick={handleDismissBanner} />
+                        <Text size="xs" pe="xl" mb="xs" lh={1.3} c="blue.9">
+                            {t('tripDetails.chat.enablePushBanner')}
+                        </Text>
+                        <Button size="compact-xs" color="blue" variant="light" component={LocalizedLink} href="/roleSettings">
+                            {t('tripDetails.chat.enablePushAction')}
+                        </Button>
+                    </Paper>
+                )}
                 <LoadingOverlay visible={!!loading} overlayProps={{ blur: 1 }} />
                 <ScrollArea h="100%" viewportRef={viewport} p="md">
                     <Stack gap="xs">

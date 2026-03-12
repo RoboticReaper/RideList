@@ -1091,7 +1091,10 @@
             "deleteMessage": "删除消息",
             "deleteConfirmation": "确定要删除此消息吗？此操作无法撤销。消息仍在数据库存储，但不会再显示。",
             "messageDeleted": "消息已删除",
-            "deleteFailed": "删除消息失败"
+            "deleteFailed": "删除消息失败",
+            "cannotReplySystem": "无法回复系统消息",
+            "enablePushBanner": "开启通知以接收实时消息更新。",
+            "enablePushAction": "开启"
         },
         "status": {
             "paid": "已付款",

@@ -1091,7 +1091,10 @@
             "deleteMessage": "Delete Message",
             "deleteConfirmation": "Are you sure you want to delete this message? This action cannot be undone. The message will be stored in the database, but it will not be visible.",
             "messageDeleted": "Message deleted",
-            "deleteFailed": "Failed to delete message"
+            "deleteFailed": "Failed to delete message",
+            "cannotReplySystem": "Cannot reply to system messages",
+            "enablePushBanner": "Enable notifications to receive real-time updates.",
+            "enablePushAction": "Enable"
         },
         "status": {
             "paid": "Paid",
