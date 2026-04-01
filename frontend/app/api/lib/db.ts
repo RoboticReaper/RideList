@@ -60,6 +60,7 @@ const getPool = async () => {
         pool = new Pool({
             connectionString: db_url,
             ssl: sslConfig,
+            database: process.env.DB_NAME,
             max: 24,
         })
 
