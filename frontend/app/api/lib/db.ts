@@ -46,7 +46,7 @@ const getPool = async () => {
             throw new Error("Missing DB_KEY_BASE64");
         }
         const sslConfig = {
-            rejectUnauthorized: true,
+            rejectUnauthorized: false,
             ca: Buffer.from(ca, 'base64').toString('utf-8'),
             cert: Buffer.from(cert, 'base64').toString('utf-8'),
             key: Buffer.from(key, 'base64').toString('utf-8'),
